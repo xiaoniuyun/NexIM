@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexIM · 即时通讯应用交互原型</title>
+<style>
+:root{
+  --brand:#4f6ef7; --brand2:#7b61ff; --brand-soft:#eef1ff;
+  --ink:#1b2333; --ink2:#4a556b; --muted:#8a95aa; --line:#e9edf5;
+  --bg:#f4f6fb; --card:#fff; --ok:#12b886; --ok-soft:#e6f8f2;
+  --warn:#f59e0b; --warn-soft:#fff5e5; --danger:#ef4b5b; --danger-soft:#ffedf0;
+  --shadow:0 10px 30px rgba(28,42,80,.08); --shadow-lg:0 24px 60px rgba(28,42,80,.16);
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit;outline:none}
+button{cursor:pointer;border:0;background:none}
+input,select,textarea{border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 12px;transition:.2s}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,110,247,.12)}
+.ic{flex:none;vertical-align:middle}
+.hide{display:none!important}
+
+/* ---------- 顶部工作台 ---------- */
+.topbar{height:66px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;padding:0 28px;position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:17px;letter-spacing:.2px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;color:#fff;box-shadow:0 6px 14px rgba(79,110,247,.35)}
+.logo svg{width:20px;height:20px}
+.brand small{display:block;font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.5px}
+.seg{display:flex;background:#f1f3f9;border-radius:12px;padding:4px;gap:2px;margin-left:14px}
+.seg button{padding:8px 20px;border-radius:9px;color:var(--ink2);font-weight:600;font-size:13px;display:flex;align-items:center;gap:7px;transition:.2s;white-space:nowrap}
+.seg button.on{background:#fff;color:var(--brand);box-shadow:0 2px 8px rgba(30,45,90,.1)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;font-size:12px;font-weight:600;background:var(--ok-soft);color:#0b8f68}
+.pill.blue{background:var(--brand-soft);color:var(--brand)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.stage{max-width:1500px;margin:0 auto;padding:26px 28px 50px}
+.view{animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- 通用侧栏说明 ---------- */
+.layout{display:grid;grid-template-columns:255px minmax(0,1fr) 265px;gap:26px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px}
+.panel h3{font-size:14px;margin-bottom:6px}
+.panel .sub{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:16px}
+.page-list{display:flex;flex-direction:column;gap:5px}
+.page-list button{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:10px;color:var(--ink2);font-size:13px;text-align:left;transition:.18s}
+.page-list button:hover{background:#f6f8fd}
+.page-list button.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.page-list .num{margin-left:auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.chip{font-size:11px;padding:5px 9px;border-radius:7px;background:#f3f5fa;color:var(--ink2);border:1px solid var(--line)}
+.chip.b{background:var(--brand-soft);color:var(--brand);border-color:#dfe4ff}
+.note-item{display:flex;gap:10px;padding:11px 0;border-bottom:1px dashed var(--line);font-size:12px;line-height:1.6;color:var(--ink2)}
+.note-item:last-child{border:0}
+.note-item b{color:var(--brand);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.center-wrap{display:flex;justify-content:center;align-items:flex-start;min-height:760px}
+
+/* ---------- H5 手机 ---------- */
+.phone{width:352px;height:724px;background:#fff;border-radius:38px;border:9px solid #20263a;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.phone::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:112px;height:20px;background:#20263a;border-radius:0 0 16px 16px;z-index:6}
+.statusbar{height:36px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px;font-weight:700;color:#20263a;background:#fff}
+.statusbar .sb-r{display:flex;align-items:center;gap:5px}
+.h5-head{flex:none;padding:8px 16px 12px;background:#fff;border-bottom:1px solid #f2f4f9;display:flex;align-items:center;gap:10px}
+.h5-head h2{font-size:17px;font-weight:700}
+.h5-head .sp{flex:1}
+.icon-btn{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:var(--ink2);background:#f5f7fb}
+.icon-btn:hover{background:var(--brand-soft);color:var(--brand)}
+.h5-search{display:flex;align-items:center;gap:7px;background:#f5f7fb;border-radius:10px;padding:8px 11px;color:var(--muted);font-size:12px;margin-bottom:10px}
+.h5-body{flex:1;overflow:auto;background:#fafbfe;padding:12px 14px}
+.h5-body::-webkit-scrollbar,.scroll::-webkit-scrollbar{width:5px;height:5px}
+.h5-body::-webkit-scrollbar-thumb,.scroll::-webkit-scrollbar-thumb{background:#d9dfeb;border-radius:9px}
+.avatar{width:42px;height:42px;border-radius:13px;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;letter-spacing:.5px}
+.avatar.sm{width:32px;height:32px;border-radius:10px;font-size:11px}
+.avatar.lg{width:60px;height:60px;border-radius:18px;font-size:19px}
+.conv-item{display:flex;align-items:center;gap:11px;padding:11px 10px;border-radius:12px;width:100%;text-align:left;transition:.16s;position:relative}
+.conv-item:hover{background:#f3f5fb}
+.conv-item.on{background:var(--brand-soft)}
+.conv-item .ci-main{flex:1;min-width:0}
+.conv-item .ci-top{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.conv-item .ci-name{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.conv-item .ci-time{margin-left:auto;font-size:10.5px;color:var(--muted);white-space:nowrap}
+.conv-item .ci-last{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center}
+.badge.grey{background:#c9d1e0}
+.tag-pin{font-size:9px;padding:2px 5px;border-radius:5px;background:#fff0dc;color:#c47a08;font-weight:700}
+.sec-title{font-size:11px;color:var(--muted);font-weight:700;padding:8px 10px 5px;letter-spacing:.6px}
+.tabbar{flex:none;height:62px;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:6px}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9aa5b8;font-size:10px;position:relative}
+.tabbar button.on{color:var(--brand);font-weight:700}
+.tabbar .tb-badge{position:absolute;top:5px;right:calc(50% - 22px);min-width:15px;height:15px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;display:grid;place-items:center;padding:0 3px}
+.home-bar{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:110px;height:4px;border-radius:9px;background:#cbd2e0;z-index:6}
+
+/* 聊天页 */
+.chat-head{flex:none;display:flex;align-items:center;gap:9px;padding:9px 14px;background:#fff;border-bottom:1px solid var(--line)}
+.chat-head .ch-name{font-size:14px;font-weight:700;line-height:1.2}
+.chat-head .ch-sub{font-size:10px;color:var(--ok);display:flex;align-items:center;gap:4px;margin-top:3px}
+.chat-msgs{flex:1;overflow:auto;background:#f7f9fd;padding:14px 12px 8px}
+.time-sep{text-align:center;font-size:10px;color:#a3adbf;margin:6px 0 14px}
+.msg-row{display:flex;gap:8px;margin-bottom:14px;align-items:flex-start}
+.msg-row.mine{flex-direction:row-reverse}
+.msg-row .m-wrap{max-width:76%}
+.msg-row.mine .m-wrap{display:flex;flex-direction:column;align-items:flex-end}
+.msg-sender{font-size:10px;color:var(--muted);margin:0 2px 5px}
+.bubble{background:#fff;padding:9px 12px;border-radius:4px 13px 13px 13px;font-size:13px;line-height:1.6;box-shadow:0 2px 7px rgba(30,45,90,.05);word-break:break-word}
+.msg-row.mine .bubble{background:linear-gradient(135deg,var(--brand),#6a72f8);color:#fff;border-radius:13px 4px 13px 13px}
+.msg-meta{font-size:9.5px;color:#aab3c4;margin-top:5px;display:flex;gap:6px;align-items:center}
+.msg-row.mine .msg-meta{justify-content:flex-end}
+.bubble.file{display:flex;align-items:center;gap:9px;min-width:170px}
+.bubble.file .fname{font-size:12px;font-weight:600}
+.bubble.file .fsize{font-size:10px;opacity:.65}
+.composer{flex:none;display:flex;align-items:flex-end;gap:8px;padding:10px 12px 16px;background:#fff;border-top:1px solid var(--line)}
+.composer input{flex:1;border-radius:20px;padding:9px 13px;font-size:13px;background:#f6f8fc;border-color:transparent}
+.composer input:focus{background:#fff}
+.send-btn{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:grid;place-items:center;box-shadow:0 5px 12px rgba(79,110,247,.35)}
+.attach-panel{display:flex;gap:16px;padding:14px 22px 18px;background:#fff;border-top:1px solid var(--line);justify-content:flex-start}
+.attach-panel button{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10px;color:var(--ink2)}
+.attach-panel .at-icon{width:44px;height:44px;border-radius:14px;background:#f4f6fb;display:grid;place-items:center;color:var(--brand)}
+.qentry{display:flex;align-items:center;gap:11px;background:#fff;border-radius:12px;padding:11px;margin-bottom:9px}
+.qentry .qe-t{font-size:13px;font-weight:600}
+.qentry .qe-s{font-size:10.5px;color:var(--muted);margin-top:3px}
+.profile-card{background:linear-gradient(135deg,#5c6ff5,#8659ef);border-radius:16px;padding:20px;color:#fff;display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.profile-card .pc-name{font-size:16px;font-weight:700}
+.profile-card .pc-sub{font-size:11px;opacity:.85;margin-top:5px}
+.group-block{background:#fff;border-radius:13px;overflow:hidden;margin-bottom:12px}
+.gb-row{display:flex;align-items:center;gap:11px;padding:12px 14px;border-bottom:1px solid #f2f4f9;font-size:13px;width:100%;text-align:left}
+.gb-row:last-child{border:0}
+.gb-row .gb-r{margin-left:auto;color:var(--muted);font-size:11px;display:flex;align-items:center;gap:5px}
+.status-opts{display:flex;gap:7px;margin:10px 0 14px}
+.status-opts button{flex:1;padding:7px 4px;border-radius:9px;background:#f4f6fb;font-size:11px;color:var(--ink2);border:1px solid transparent}
+.status-opts button.on{background:var(--ok-soft);color:#0b8f68;border-color:#bdeadd;font-weight:700}
+
+/* ---------- 桌面客户端 ---------- */
+.desktop{width:100%;max-width:1120px;border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--shadow-lg);border:1px solid #dbe1ee}
+.titlebar{height:42px;background:linear-gradient(180deg,#fafbfe,#f1f3f9);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 14px;gap:8px}
+.mac-dots{display:flex;gap:6px}
+.mac-dots i{width:11px;height:11px;border-radius:50%;display:block}
+.titlebar .tb-title{flex:1;text-align:center;font-size:12px;color:var(--ink2);font-weight:600}
+.titlebar .tb-sync{font-size:11px;color:var(--ok);display:flex;align-items:center;gap:5px}
+.desktop-body{display:grid;grid-template-columns:62px 282px minmax(0,1fr);height:610px}
+.rail{background:#202948;display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px 0}
+.rail .r-logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;color:#fff;font-weight:800}
+.rail button{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#8d9ab8;transition:.18s}
+.rail button:hover,.rail button.on{background:rgba(255,255,255,.13);color:#fff}
+.rail .r-bottom{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.conv-col{border-right:1px solid var(--line);display:flex;flex-direction:column;background:#fbfcfe;overflow:hidden}
+.conv-col .cc-head{padding:14px;border-bottom:1px solid var(--line)}
+.conv-filters{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.conv-filters button{font-size:11px;padding:5px 10px;border-radius:8px;background:#f0f2f8;color:var(--ink2)}
+.conv-filters button.on{background:var(--brand-soft);color:var(--brand);font-weight:700}
+.conv-scroll{flex:1;overflow:auto;padding:8px}
+.desktop .conv-item{padding:10px 9px}
+.desktop .conv-item .ci-name{max-width:130px}
+.desktop .conv-item .ci-last{max-width:168px}
+.chat-col{display:flex;flex-direction:column;min-width:0;position:relative}
+.chat-top{height:62px;flex:none;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 18px}
+.chat-top .ct-name{font-size:15px;font-weight:700}
+.chat-top .ct-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.desktop .chat-msgs{padding:20px 26px;background:#f8faff}
+.desktop .bubble{font-size:13px;border-radius:5px 14px 14px 14px}
+.desktop .msg-row .m-wrap{max-width:70%}
+.desktop .composer{padding:12px 18px 16px;align-items:center}
+.composer-tools{display:flex;gap:4px;color:var(--muted);margin-right:4px}
+.composer-tools button{width:30px;height:30px;border-radius:8px;display:grid;place-items:center}
+.composer-tools button:hover{background:#f0f2f8;color:var(--brand)}
+.desktop .composer input{background:#f6f8fc;border-radius:10px}
+.tip-line{font-size:10px;color:var(--muted);padding:0 18px 10px;display:flex;gap:14px}
+.tip-line kbd{background:#eef1f7;border:1px solid #dfe4ee;border-radius:5px;padding:1px 5px;font-size:9px;font-family:inherit}
+.desk-status{height:30px;background:#fafbfe;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 14px;font-size:11px;color:var(--muted)}
+.desk-status .ds-ok{color:var(--ok);display:flex;align-items:center;gap:5px}
+.member-panel{position:absolute;right:0;top:62px;bottom:0;width:210px;background:#fff;border-left:1px solid var(--line);box-shadow:-8px 0 20px rgba(30,45,90,.06);padding:14px;z-index:5;animation:slide .25s ease}
+@keyframes slide{from{transform:translateX(100%)}to{transform:none}}
+.member-panel h4{font-size:12px;margin-bottom:12px}
+.member-panel .mp-row{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:12px}
+.toast-notify{position:fixed;right:34px;bottom:34px;width:300px;background:#fff;border-radius:13px;box-shadow:var(--shadow-lg);border:1px solid var(--line);padding:14px;display:flex;gap:11px;z-index:80;animation:fade .25s ease}
+.toast-notify .tn-t{font-size:13px;font-weight:700}
+.toast-notify .tn-s{font-size:11.5px;color:var(--ink2);margin-top:5px;line-height:1.5}
+.toast-notify .tn-x{margin-left:auto;color:var(--muted)}
+
+/* ---------- 管理后台 ---------- */
+.admin{display:grid;grid-template-columns:222px minmax(0,1fr);background:#fff;border-radius:14px;overflow:hidden;box-shadow:var(--shadow-lg);border:1px solid #dbe1ee;min-height:730px}
+.admin-side{background:#1e2742;color:#c6cfe3;padding:18px 12px;display:flex;flex-direction:column}
+.admin-side .as-brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;color:#fff;font-weight:700;font-size:15px}
+.admin-side .as-brand small{display:block;font-size:10px;color:#8290b0;font-weight:500}
+.as-group{font-size:10px;color:#6d7b9c;padding:14px 10px 7px;letter-spacing:1px;font-weight:700}
+.admin-side button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 11px;border-radius:9px;color:#aab6d0;font-size:13px;text-align:left;transition:.18s}
+.admin-side button:hover{background:rgba(255,255,255,.08);color:#fff}
+.admin-side button.on{background:linear-gradient(90deg,rgba(79,110,247,.95),rgba(123,97,255,.75));color:#fff;font-weight:600;box-shadow:0 6px 16px rgba(60,80,200,.3)}
+.admin-side .as-foot{margin-top:auto;padding:12px 10px 0;border-top:1px solid rgba(255,255,255,.08);font-size:10.5px;color:#7583a3;line-height:1.7}
+.admin-main{display:flex;flex-direction:column;min-width:0;background:#f7f9fd}
+.admin-top{height:60px;flex:none;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 22px}
+.admin-top .crumb{font-size:13px;color:var(--muted)}
+.admin-top .crumb b{color:var(--ink);font-weight:700}
+.admin-top .at-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.admin-top .at-search{display:flex;align-items:center;gap:7px;background:#f5f7fb;border-radius:9px;padding:7px 11px;color:var(--muted);font-size:12px;width:190px}
+.admin-user{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600}
+.admin-content{flex:1;padding:20px 22px 26px;overflow:auto}
+.proto-hint{display:flex;align-items:center;gap:9px;background:var(--brand-soft);border:1px solid #dde3ff;color:#4257b8;border-radius:10px;padding:10px 13px;font-size:12px;margin-bottom:18px}
+.proto-hint .ph-r{margin-left:auto;font-size:11px;opacity:.85}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 10px rgba(28,42,80,.04);padding:18px}
+.card h3{font-size:14px;margin-bottom:3px}
+.card .csub{font-size:11.5px;color:var(--muted);margin-bottom:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.kpi{position:relative;overflow:hidden}
+.kpi .k-t{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.kpi .k-v{font-size:27px;font-weight:800;margin-top:10px;letter-spacing:-.5px}
+.kpi .k-d{font-size:11px;margin-top:7px;color:var(--ok)}
+.kpi .k-d.down{color:var(--danger)}
+.kpi .k-ico{position:absolute;right:16px;top:17px;width:36px;height:36px;border-radius:11px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center}
+.grid2{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-bottom:16px}
+.chart-wrap{width:100%;height:200px}
+.legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin-top:8px}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:5px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:13px;font-size:11.5px}
+.bar-row .bl{width:62px;color:var(--ink2)}
+.bar-track{flex:1;height:9px;background:#f0f2f8;border-radius:9px;overflow:hidden}
+.bar-fill{height:100%;border-radius:9px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+.bar-row .bv{width:42px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.timeline-item{display:flex;gap:11px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:12px}
+.timeline-item:last-child{border:0}
+.timeline-item .tl-dot{width:7px;height:7px;border-radius:50%;background:var(--brand);margin-top:6px;flex:none}
+.timeline-item .tl-time{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.toolbar .sp{flex:1}
+.btn{padding:8px 14px;border-radius:9px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:.18s;border:1px solid var(--line);background:#fff;color:var(--ink2)}
+.btn:hover{border-color:var(--brand);color:var(--brand)}
+.btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-color:transparent;box-shadow:0 5px 14px rgba(79,110,247,.28)}
+.btn.ghost{background:var(--brand-soft);color:var(--brand);border-color:transparent}
+.btn.danger{background:var(--danger-soft);color:var(--danger);border-color:transparent}
+.btn.sm{padding:5px 9px;font-size:11px;border-radius:7px}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;color:var(--muted);font-weight:600;font-size:11px;padding:11px 10px;background:#fafbfe;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:11px 10px;border-bottom:1px solid #f1f3f9;vertical-align:middle}
+.tbl tr:last-child td{border:0}
+.tbl tbody tr:hover{background:#fafbff}
+.u-cell{display:flex;align-items:center;gap:9px;font-weight:600}
+.u-cell small{display:block;font-weight:400;color:var(--muted);font-size:10.5px;margin-top:2px}
+.state{padding:4px 9px;border-radius:99px;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.state.ok{background:var(--ok-soft);color:#0b8f68}
+.state.off{background:#f1f3f8;color:#8a95aa}
+.state.warn{background:var(--warn-soft);color:#b8790a}
+.state.danger{background:var(--danger-soft);color:var(--danger)}
+.state.info{background:var(--brand-soft);color:var(--brand)}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:#f2f4fa;padding:3px 7px;border-radius:6px;color:#5a67a8}
+.pager{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-top:14px;font-size:11.5px;color:var(--muted)}
+.pager button{padding:5px 9px;border:1px solid var(--line);border-radius:7px;font-size:11px}
+.pager button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+/* 部门 / 角色 */
+.split{display:grid;grid-template-columns:230px minmax(0,1fr);gap:16px}
+.tree-row{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;font-size:12.5px;cursor:pointer}
+.tree-row:hover{background:#f6f8fd}
+.tree-row.on{background:var(--brand-soft);color:var(--brand);font-weight:700}
+.tree-row .tr-c{margin-left:auto;font-size:10px;color:var(--muted)}
+.role-split{display:grid;grid-template-columns:210px minmax(0,1fr);gap:16px}
+.role-item{display:flex;align-items:center;gap:9px;padding:11px 10px;border-radius:10px;margin-bottom:5px;cursor:pointer;font-size:12.5px}
+.role-item.on{background:var(--brand-soft);color:var(--brand);font-weight:700}
+.role-item .ri-c{margin-left:auto;font-size:10px;color:var(--muted)}
+.perm-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.perm-head .sp{flex:1}
+.perm-group{border:1px solid var(--line);border-radius:11px;margin-bottom:11px;overflow:hidden}
+.pg-title{background:#fafbfe;padding:10px 13px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+.pg-title .pg-txt{font-size:10.5px;color:var(--muted);font-weight:400}
+.pg-body{padding:6px 13px 11px}
+.perm-node{display:flex;align-items:center;gap:9px;padding:7px 0 7px 4px;font-size:12px;border-bottom:1px dashed #f2f4f9}
+.perm-node:last-child{border:0}
+.perm-node.child{padding-left:26px;color:var(--ink2)}
+.perm-node label{display:flex;align-items:center;gap:9px;cursor:pointer}
+.perm-node input[type=checkbox]{width:15px;height:15px;accent-color:var(--brand);cursor:pointer}
+.perm-node .pn-code{margin-left:auto;font-size:10.5px;color:#7c89a8;font-family:ui-monospace,Menlo,monospace}
+.perm-node .pn-type{font-size:10px;padding:2px 6px;border-radius:5px;background:#f1f3f9;color:var(--muted)}
+.scope-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.scope-list label{display:flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid var(--line);border-radius:9px;font-size:11.5px;cursor:pointer}
+.scope-list label.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand);font-weight:700}
+.scope-list input{accent-color:var(--brand)}
+.word-cloud{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px}
+.word{padding:6px 10px;border-radius:8px;background:#fff1f3;color:#c8384a;font-size:12px;display:flex;align-items:center;gap:7px;border:1px solid #ffdde2}
+.word button{color:#e08a95;display:grid;place-items:center}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px 22px}
+.field label{display:block;font-size:12px;font-weight:600;margin-bottom:7px}
+.field .fh{font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5}
+.field input,.field select{width:100%}
+.switch-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.switch-row:last-child{border:0}
+.switch{width:38px;height:21px;border-radius:99px;background:#d5dbe8;position:relative;cursor:pointer;transition:.2s;flex:none}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.switch.on{background:var(--brand)}
+.switch.on::after{left:20px}
+.sr-desc{font-size:10.5px;color:var(--muted);margin-top:3px}
+
+/* ---------- 音视频通话 ---------- */
+.vcall{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;background:linear-gradient(160deg,#232a45,#1a2038 60%,#151a30);color:#fff}
+.vcall .vc-head{display:flex;align-items:center;gap:10px;padding:14px 16px;font-size:13px}
+.vcall .vc-head .sp{flex:1}
+.vcall .vc-head button{color:rgba(255,255,255,.75);width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.1)}
+.vcall .vc-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;position:relative;padding:0 20px}
+.vcall .vc-remote{width:112px;height:112px;border-radius:32px;display:grid;place-items:center;font-size:34px;font-weight:800;background:linear-gradient(135deg,#5c6ff5,#8659ef);box-shadow:0 16px 40px rgba(80,90,220,.4)}
+.vcall.video .vc-remote{position:absolute;inset:0;width:auto;height:auto;border-radius:0;background:linear-gradient(160deg,#31406e,#232a4d);font-size:0;box-shadow:none}
+.vcall .vc-name{font-size:18px;font-weight:700}
+.vcall .vc-state{font-size:12px;color:rgba(255,255,255,.7);letter-spacing:.5px}
+.vcall .vc-state b{font-variant-numeric:tabular-nums;color:#fff}
+.vcall .vc-tip{margin-top:10px;font-size:11px;color:rgba(255,255,255,.55);background:rgba(255,255,255,.08);padding:6px 12px;border-radius:99px}
+.vcall .vc-local{position:absolute;right:16px;top:14px;width:86px;height:120px;border-radius:14px;background:linear-gradient(160deg,#3d4a7d,#2a3156);border:1px solid rgba(255,255,255,.18);display:flex;align-items:flex-end;justify-content:center;padding-bottom:7px;font-size:10px;color:rgba(255,255,255,.75)}
+.vcall .vc-ctrl{display:flex;justify-content:center;gap:16px;padding:20px 0 34px}
+.vcall .vc-btn{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;color:#fff;transition:.18s}
+.vcall .vc-btn:hover{background:rgba(255,255,255,.24)}
+.vcall .vc-btn.off{background:rgba(255,255,255,.9);color:#1b2333}
+.vcall .vc-btn.hang{background:linear-gradient(135deg,#ef4b5b,#d63b4c);width:62px;height:62px;box-shadow:0 10px 24px rgba(239,75,91,.4)}
+.vcall .vc-btn.small{width:46px;height:46px}
+.vcall .vc-quality{display:flex;gap:14px;font-size:10.5px;color:rgba(255,255,255,.6);justify-content:center;padding-bottom:14px}
+.vcall .vc-quality span{display:flex;align-items:center;gap:5px}
+.bubble.call{display:flex;align-items:center;gap:10px;min-width:180px}
+.bubble.call .cl-ico{width:32px;height:32px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;flex:none}
+.msg-row.mine .bubble.call .cl-ico{background:rgba(255,255,255,.22);color:#fff}
+.bubble.call .cl-t{font-size:12.5px;font-weight:600}
+.bubble.call .cl-s{font-size:10.5px;opacity:.7;margin-top:2px}
+.call-enter{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--brand);font-weight:600}
+.incoming{position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(15,20,40,.55);z-index:30;display:flex;align-items:flex-end;padding:18px}
+.incoming .inc-card{width:100%;background:#fff;border-radius:18px;padding:18px;display:flex;align-items:center;gap:13px;box-shadow:var(--shadow-lg);animation:fade .25s ease}
+.incoming .inc-t{font-size:14px;font-weight:700}
+.incoming .inc-s{font-size:11px;color:var(--muted);margin-top:4px}
+.incoming .inc-btns{margin-left:auto;display:flex;gap:9px}
+.incoming .inc-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.incoming .inc-btn.ok{background:linear-gradient(135deg,#12b886,#0ea87a)}
+.incoming .inc-btn.no{background:linear-gradient(135deg,#ef4b5b,#d63b4c)}
+
+/* toast / modal */
+#toastBox{position:fixed;top:80px;right:26px;z-index:100;display:flex;flex-direction:column;gap:9px}
+.toast{background:#1e2742;color:#fff;padding:11px 15px;border-radius:10px;box-shadow:var(--shadow-lg);font-size:12.5px;display:flex;align-items:center;gap:9px;animation:fade .25s ease;max-width:330px}
+.toast.ok{background:#0f9d75}.toast.warn{background:#c47a08}.toast.err{background:#d63b4c}
+.modal-mask{position:fixed;inset:0;background:rgba(18,26,48,.46);z-index:90;display:grid;place-items:center;animation:fade .2s ease;padding:20px}
+.modal{background:#fff;border-radius:16px;width:430px;max-width:100%;box-shadow:var(--shadow-lg);overflow:hidden}
+.modal .m-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;font-size:15px;font-weight:700}
+.modal .m-head button{margin-left:auto;color:var(--muted)}
+.modal .m-body{padding:20px;font-size:13px;line-height:1.7;color:var(--ink2)}
+.modal .m-body .field{margin-bottom:14px}
+.modal .m-foot{padding:14px 20px;background:#fafbfe;display:flex;justify-content:flex-end;gap:9px}
+
+@media(max-width:1250px){
+  .layout{grid-template-columns:1fr minmax(0,1fr)}
+  .layout>.panel:last-child{grid-column:1/-1}
+  .grid4{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:900px){
+  .topbar{flex-wrap:wrap;height:auto;padding:12px 16px;gap:10px}
+  .seg{margin-left:0;overflow:auto;width:100%}
+  .seg button{flex:1;justify-content:center;padding:8px 10px}
+  .top-right{display:none}
+  .stage{padding:16px}
+  .layout{grid-template-columns:1fr}
+  .layout>.panel:last-child{grid-column:auto}
+  .center-wrap{min-height:0}
+  .desktop-body{grid-template-columns:52px 200px minmax(0,1fr)}
+  .admin{grid-template-columns:64px minmax(0,1fr)}
+  .admin-side{padding:14px 8px;align-items:center}
+  .admin-side .as-brand span,.admin-side button span,.as-group,.as-foot{display:none}
+  .admin-side button{justify-content:center;width:42px}
+  .grid2,.split,.role-split,.form-grid{grid-template-columns:1fr}
+  .admin-content{padding:14px}
+}
+/* ---------- 全局搜索命令面板 ---------- */
+.cmd-mask{position:fixed;inset:0;background:rgba(15,20,40,.42);z-index:120;display:flex;justify-content:center;align-items:flex-start;padding-top:9vh;animation:fade .15s ease}
+.cmd-panel{width:560px;max-width:calc(100vw - 32px);background:var(--card);border-radius:16px;box-shadow:var(--shadow-lg);overflow:hidden;border:1px solid var(--line)}
+.cmd-input{display:flex;align-items:center;gap:10px;padding:15px 17px;border-bottom:1px solid var(--line)}
+.cmd-input input{flex:1;border:0;background:none;font-size:15px;padding:0}
+.cmd-input kbd{background:#eef1f7;border:1px solid #dfe4ee;border-radius:6px;padding:2px 7px;font-size:11px;font-family:inherit}
+.cmd-list{max-height:400px;overflow:auto;padding:8px}
+.cmd-group{font-size:10.5px;color:var(--muted);font-weight:700;padding:9px 10px 4px;letter-spacing:.6px}
+.cmd-item{display:flex;align-items:center;gap:11px;width:100%;padding:10px 11px;border-radius:10px;text-align:left;font-size:13px}
+.cmd-item:hover,.cmd-item.sel{background:var(--brand-soft)}
+.cmd-item .ci-icon{width:30px;height:30px;border-radius:9px;background:#f1f3f9;display:grid;place-items:center;color:var(--brand);flex:none}
+.cmd-item .ci-t{font-weight:600}
+.cmd-item .ci-s{font-size:11px;color:var(--muted);margin-top:2px}
+.cmd-item .ci-k{margin-left:auto;color:var(--muted);font-size:11px}
+
+/* ---------- 消息右键/长按菜单 ---------- */
+.msg-menu{position:fixed;z-index:140;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);padding:6px;animation:fade .12s ease}
+.msg-menu button{display:flex;align-items:center;gap:9px;width:100%;padding:9px 11px;border-radius:8px;font-size:12.5px;text-align:left}
+.msg-menu button:hover{background:#f3f5fb}
+.msg-menu button.danger{color:var(--danger)}
+.msg-menu button.danger:hover{background:var(--danger-soft)}
+.msg-menu .mm-sep{height:1px;background:var(--line);margin:5px 4px}
+
+/* ---------- @提及面板 ---------- */
+.mention-panel{position:absolute;left:14px;right:14px;bottom:64px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);max-height:220px;overflow:auto;padding:6px;z-index:15}
+.mention-panel .mp-head{font-size:10.5px;color:var(--muted);padding:6px 8px 4px;font-weight:700}
+.mention-panel button{display:flex;align-items:center;gap:9px;width:100%;padding:8px 9px;border-radius:8px;font-size:12.5px;text-align:left}
+.mention-panel button:hover{background:var(--brand-soft)}
+
+/* ---------- 登录 / 注册 ---------- */
+.auth{flex:1;display:flex;flex-direction:column;background:#fff;padding:26px 24px 20px;overflow:auto}
+.auth .a-back{width:32px;height:32px;border-radius:10px;background:#f5f7fb;display:grid;place-items:center;color:var(--ink2);margin-bottom:14px}
+.auth .a-logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px;margin-bottom:16px;box-shadow:0 10px 24px rgba(79,110,247,.35)}
+.auth h2{font-size:21px;letter-spacing:-.4px}
+.auth .a-sub{font-size:11.5px;color:var(--muted);margin:7px 0 20px;line-height:1.6}
+.auth .a-field{margin-bottom:11px}
+.auth .a-field label{font-size:10.5px;font-weight:700;color:var(--ink2);display:block;margin-bottom:5px}
+.auth .a-field input{width:100%;background:#f5f7fb;border-color:transparent;padding:11px 12px;font-size:12.5px}
+.auth .a-row{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;color:var(--ink2);margin:2px 0 15px}
+.auth .a-row label{display:flex;align-items:center;gap:6px}
+.auth .a-row a{color:var(--brand);font-weight:700}
+.auth .a-btn{width:100%;padding:12px;border-radius:11px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;font-weight:700;font-size:13.5px;box-shadow:0 8px 20px rgba(79,110,247,.3)}
+.auth .a-alt{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:10px}
+.auth .a-alt::before,.auth .a-alt::after{content:"";flex:1;height:1px;background:var(--line)}
+.auth .a-others{display:flex;gap:8px}
+.auth .a-others button{flex:1;padding:9px 4px;border-radius:10px;background:#f5f7fb;font-size:11px;color:var(--ink2);display:flex;align-items:center;justify-content:center;gap:5px}
+.auth .a-demo{margin-top:12px;background:var(--brand-soft);border-radius:10px;padding:9px 11px;font-size:10px;color:#4257b8;display:flex;align-items:center;gap:6px}
+.auth .a-demo button{margin-left:auto;font-size:10px;font-weight:700;color:var(--brand);background:#fff;padding:5px 8px;border-radius:7px;box-shadow:0 1px 4px rgba(30,45,90,.08)}
+.auth .a-foot{margin-top:auto;text-align:center;font-size:11.5px;color:var(--muted);padding-top:16px}
+.auth .a-foot a{color:var(--brand);font-weight:700}
+.auth .a-code{display:flex;gap:7px}
+.auth .a-code input{flex:1}
+.auth .a-code button{white-space:nowrap;padding:0 10px;border-radius:10px;background:var(--brand-soft);color:var(--brand);font-size:10.5px;font-weight:700}
+.auth .a-agree{display:flex;gap:6px;align-items:flex-start;font-size:10px;color:var(--muted);line-height:1.6;margin:4px 0 13px}
+.auth .a-agree input{margin-top:2px}
+
+/* ---------- 富媒体消息 ---------- */
+.bubble.media{padding:5px;overflow:hidden;cursor:pointer}
+.img-ph{width:166px;height:110px;border-radius:9px;display:grid;place-items:center;color:rgba(255,255,255,.92);font-size:10.5px;font-weight:700;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.2)}
+.video-ph{position:relative;width:188px;height:110px;border-radius:9px;background:linear-gradient(135deg,#2b3556,#4a3a6e);display:grid;place-items:center;color:#fff}
+.video-ph .v-play{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.24);display:grid;place-items:center}
+.video-ph .v-time{position:absolute;right:6px;bottom:5px;font-size:9px;background:rgba(0,0,0,.5);padding:2px 5px;border-radius:4px}
+.pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.pick-grid button{border-radius:9px;overflow:hidden;border:1px solid var(--line);font-size:10px;text-align:left;background:#fff}
+.pick-thumb{height:60px;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:700}
+.pick-name{padding:5px 6px;font-size:9.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact-pick{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:12.5px}
+.contact-pick input{width:16px;height:16px;accent-color:var(--brand);flex:none}
+.picked-row{display:flex;gap:6px;padding:10px 0;overflow:auto}
+.picked-row .avatar{flex:none;box-shadow:0 0 0 2px #fff}
+
+/* ---------- 深色主题 ---------- */
+body.dark{--bg:#0e1320;--card:#181f31;--ink:#e6eaf4;--ink2:#aeb8cd;--muted:#7e89a0;--line:#2a3348;--brand-soft:#1e2a4a}
+body.dark .topbar,body.dark .admin-top,body.dark .titlebar,body.dark .desk-status{background:#151c2d;border-color:#2a3348}
+body.dark .panel,body.dark .card,body.dark .modal,body.dark .word{background:#181f31;border-color:#2a3348}
+body.dark .page-list button:hover,body.dark .conv-item:hover,body.dark .tree-row:hover,body.dark .msg-menu button:hover,body.dark .mention-panel button:hover{background:#212a40}
+body.dark .chip,body.dark .code,body.dark .cmd-item .ci-icon,body.dark .cmd-input kbd{background:#222b41;color:#aeb8cd;border-color:#2f3950}
+body.dark .conv-item .ci-name,body.dark .u-cell,body.dark .qentry .qe-t,body.dark .kpi .k-v,body.dark .chat-head .ch-name,body.dark .ct-name{color:#e6eaf4}
+body.dark .ci-last,body.dark .gb-r,body.dark .mp-row span,body.dark .timeline-item,body.dark .note-item,body.dark .sr-desc{color:#8d99b0}
+body.dark .phone{background:#131a2a;border-color:#0a0e1a}
+body.dark .statusbar,body.dark .h5-head,body.dark .chat-head,body.dark .composer,body.dark .tabbar,body.dark .attach-panel{background:#151d2f;border-color:#232d44}
+body.dark .h5-body,body.dark .chat-msgs{background:#101726}
+body.dark .bubble{background:#232c42;color:#e6eaf4;box-shadow:none}
+body.dark .h5-search,body.dark .composer input,body.dark .desktop .composer input{background:#20293d;color:#e6eaf4}
+body.dark .desktop-body{background:#0f1524}
+body.dark .conv-col{background:#131b2c;border-color:#2a3348}
+body.dark .rail{background:#161c2e}
+body.dark .member-panel{background:#181f31;border-color:#2a3348}
+body.dark .admin-side{background:#151c2d}
+body.dark .admin-main,body.dark .admin-content{background:#0f1524}
+body.dark .tbl th{background:#161d2e;color:#8d99b0}
+body.dark .tbl td{border-color:#232c42}
+body.dark .tbl tbody tr:hover{background:#161d2e}
+body.dark .pg-title,body.dark .gb-row,body.dark .perm-node,body.dark .switch-row{border-color:#232c42}
+body.dark .bar-track,body.dark .state.off,body.dark .qentry{background:#1b2438}
+body.dark .btn{background:#1b2438;color:#c5cfe2;border-color:#2f3950}
+body.dark .toolbar input,body.dark .toolbar select,body.dark .field input,body.dark .field select{border-color:#2f3950}
+body.dark .seg{background:#181f31}
+body.dark .seg button.on{background:#242e47;color:#8fa2ff}
+body.dark .modal .m-foot{background:#141b2b}
+body.dark .auth{background:#131a2a}
+body.dark .auth .a-field input,body.dark .auth .a-others button,body.dark .auth .a-back,body.dark .auth .a-demo button{background:#1e2740;color:#e6eaf4}
+body.dark .auth .a-demo{background:#1e2a4a;color:#a9b8ff}
+body.dark .pick-grid button{background:#181f31;border-color:#2a3348}
+body.dark .pick-name{color:#aeb8cd}
+body.dark .contact-pick{border-color:#232c42}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.2 9.2 0 0 1-3.9-.9L3 21l1.9-4.7A8.4 8.4 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/></svg></div>
+    <div>NexIM<small>企业级即时通讯平台</small></div>
+  </div>
+  <div class="seg" id="viewTabs">
+    <button data-act="switch-view" data-view="h5" class="on">H5 移动端</button>
+    <button data-act="switch-view" data-view="desktop">桌面客户端</button>
+    <button data-act="switch-view" data-view="admin">Vue 管理后台</button>
+  </div>
+  <div class="top-right">
+    <span class="pill" id="syncPill"><i class="dot"></i>已同步 · 3 端在线</span>
+    <span class="pill blue">交互原型 v1.3</span>
+    <button class="icon-btn" id="themeBtn" data-act="toggle-theme" title="切换深浅色主题"></button>
+  </div>
+</header>
+
+<main class="stage">
+  <!-- ========== H5 ========== -->
+  <section class="view" id="view-h5">
+    <div class="layout">
+      <aside class="panel">
+        <h3>H5 移动端页面</h3>
+        <p class="sub">移动浏览器 / PWA / 企业微信内嵌，点击切换页面。与桌面端共享同一份会话数据。</p>
+        <div class="page-list" id="h5PageList"></div>
+        <div class="chips"><span class="chip b">Vue 3</span><span class="chip">WebSocket</span><span class="chip">IndexedDB</span><span class="chip">PWA</span></div>
+      </aside>
+      <div class="center-wrap"><div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="sb-r">5G &nbsp;▮▮▮ &nbsp;78%</span></div>
+        <div id="h5Screen" class="h5-body" style="flex:1;display:flex;flex-direction:column;padding:0"></div>
+        <div class="tabbar" id="h5Tabbar"></div>
+        <div class="home-bar"></div>
+      </div></div>
+      <aside class="panel">
+        <h3>业务规则对照</h3>
+        <p class="sub">对应《业务需求文档》需求编号，鼠标操作即可体验交互。</p>
+        <div class="note-item"><b>FR-MSG-01</b><span>会话列表含置顶、免打扰、未读角标，按最后消息时间排序。</span></div>
+        <div class="note-item"><b>FR-MSG-05</b><span>发送以 clientMsgId 幂等，弱网重发不会产生重复消息。</span></div>
+        <div class="note-item"><b>FR-MSG-11</b><span>在 H5 发送后切到桌面端，可看到同一条消息与已读状态。</span></div>
+        <div class="note-item"><b>FR-MSG-08</b><span>长按/点击自己的气泡可撤回（2 分钟内）。</span></div>
+        <div class="note-item"><b>FR-H5-04</b><span>断线时消息进入本地队列，恢复后自动补发。</span></div>
+        <div class="note-item"><b>FR-CONTACT-01</b><span>通讯录按组织架构树展示，支持人员搜索。</span></div>
+        <div class="note-item"><b>FR-RTC-01</b><span>聊天页或 + 号面板可发起语音 / 视频通话，呼叫 → 振铃 → 接听 → 挂断全流程可走通。</span></div>
+        <div class="note-item"><b>FR-RTC-04</b><span>挂断后自动生成通话卡片（类型、时长、结果）写入会话，并同步其他端。</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ========== 桌面 ========== -->
+  <section class="view hide" id="view-desktop">
+    <div class="layout">
+      <aside class="panel">
+        <h3>桌面端原生能力</h3>
+        <p class="sub">Windows / Linux / macOS 三平台一致体验，原生层通过 preload 白名单 API 注入。</p>
+        <div class="page-list">
+          <button class="on">三栏主窗口<span class="num">FR-PC-02</span></button>
+          <button data-act="desk-tray-demo">托盘与系统通知<span class="num">FR-PC-03</span></button>
+          <button data-act="desk-shortcut">全局快捷键<span class="num">FR-PC-04</span></button>
+          <button data-act="desk-file">拖拽 / 截图发送<span class="num">FR-PC-05</span></button>
+          <button data-act="desk-update">差分自动更新<span class="num">FR-PC-07</span></button>
+        </div>
+        <div class="chips"><span class="chip b">Electron</span><span class="chip">Vue 3 组件复用</span><span class="chip">SQLite 加密</span></div>
+      </aside>
+      <div class="center-wrap" style="flex-direction:column;gap:16px">
+        <div class="desktop" id="desktopFrame"></div>
+      </div>
+      <aside class="panel">
+        <h3>设计与实现要点</h3>
+        <p class="sub">桌面端与 H5 共用业务组件与 IM SDK，仅替换原生适配层。</p>
+        <div class="note-item"><b>架构 5.2</b><span>渲染进程 / preload / 主进程三层隔离，nodeIntegration 关闭。</span></div>
+        <div class="note-item"><b>架构 5.1</b><span>IM SDK 状态机：connecting → authing → syncing → online。</span></div>
+        <div class="note-item"><b>FR-MSG-19</b><span>本地加密 SQLite 缓存消息，冷启动先渲染缓存再增量同步。</span></div>
+        <div class="note-item"><b>FR-PC-01</b><span>NSIS / dmg / AppImage + deb 四种安装包由 CI 统一产出。</span></div>
+        <div class="note-item"><b>NFR-UX</b><span>虚拟列表渲染万级消息，桌面冷启动 ≤ 3s。</span></div>
+        <div class="note-item"><b>FR-RTC-05</b><span>点击「模拟来电」体验被叫：多端登录时仅主端振铃，可接听或拒接。</span></div>
+        <div class="note-item"><b>架构 6.6</b><span>信令走 IM 长连接（CALL_* 命令字），媒体面独立 UDP/SRTP，1v1 优先 P2P。</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ========== 管理后台 ========== -->
+  <section class="view hide" id="view-admin">
+    <div class="admin">
+      <aside class="admin-side">
+        <div class="as-brand">
+          <div class="logo" style="width:30px;height:30px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg></div>
+          <div>NexIM Console<small>运营管理后台</small></div>
+        </div>
+        <div id="adminMenu"></div>
+        <div class="as-foot">当前登录：超级管理员<br>权限版本 v12 · 全部数据范围<br>所有写操作均记录审计日志</div>
+      </aside>
+      <div class="admin-main">
+        <div class="admin-top">
+          <div class="crumb">控制台 / <b id="adminCrumb">工作台</b></div>
+          <div class="at-right">
+            <div class="at-search"><span id="atSearchIcon"></span>全局搜索用户 / 消息</div>
+            <button class="icon-btn" data-act="admin-bell" id="btnBell"></button>
+            <div class="admin-user"><div class="avatar sm" style="background:linear-gradient(135deg,#3c4b8f,#7b61ff)">超</div>超级管理员</div>
+          </div>
+        </div>
+        <div class="admin-content" id="adminContent"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toastBox"></div>
+<div id="modalBox"></div>
+
+<script>
+/* ==================== 图标 ==================== */
+const P={
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  back:'<path d="M15 18l-6-6 6-6"/>',
+  more:'<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>',
+  msg:'<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.7A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/>',
+  contacts:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+  compass:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2.1 5-5 2.1 2.1-5z"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+  send:'<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
+  smile:'<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
+  clip:'<path d="M21 11.5l-8.4 8.4a5 5 0 0 1-7.1-7.1l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-2.8-2.8l8.4-8.4"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2h-4v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3v-4h.2A1.7 1.7 0 0 0 4.4 7l-.1-.1L7.1 4l.1.1A1.7 1.7 0 0 0 10 2.9V3h4v-.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1 2.8 2.8-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2v4h-.2a1.7 1.7 0 0 0-1.5 1.3z"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  dept:'<rect x="3" y="3" width="7" height="6" rx="1"/><rect x="14" y="3" width="7" height="6" rx="1"/><rect x="8.5" y="15" width="7" height="6" rx="1"/><path d="M6.5 9v3h11V9M12 12v3"/>',
+  audit:'<path d="M9 3h6l2 3h4v15H3V6h4z"/><path d="M7 12h10M7 16h7"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  phone:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/>',
+  lock:'<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  edit:'<path d="M11 4H4v16h16v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/>',
+  power:'<path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/>',
+  download:'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
+  filter:'<path d="M3 4h18l-7 8v6l-4 2v-8z"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6"/>',
+  check:'<path d="M20 6L9 17l-5-5"/>',
+  x:'<path d="M18 6L6 18M6 6l12 12"/>',
+  chev:'<path d="M9 18l6-6-6-6"/>',
+  key:'<circle cx="7.5" cy="15.5" r="4.5"/><path d="M11 12l9-9 2 2-2 2 2 2-3 3-2-2-2 2"/>',
+  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  alert:'<path d="M12 3l10 18H2z"/><path d="M12 9v5M12 18h.01"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  pin:'<path d="M12 17v5M9 3h6l1 6 3 3v2H5v-2l3-3z"/>',
+  hash:'<path d="M5 9h14M4 15h14M10 3L8 21M16 3l-2 18"/>',
+  refresh:'<path d="M20 11a8 8 0 1 0-2 6.5M20 5v6h-6"/>',
+  folder:'<path d="M3 6h6l2 2h10v12H3z"/>',
+  flag:'<path d="M5 21V4h14l-3 4 3 4H5"/>',
+  video:'<rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l7-3v10l-7-3"/>',
+  mic:'<rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>',
+  micOff:'<path d="M9 5a3 3 0 0 1 6 0v5"/><path d="M5 11a7 7 0 0 0 10.5 6M19 11a7 7 0 0 1-1 3.5M3 3l18 18M12 18v4"/>',
+  videoOff:'<path d="M3 3l18 18"/><path d="M15 8.5V6a2 2 0 0 0-2-2H6"/><path d="M2 8v8a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1"/>',
+  share:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4M12 12V8M9 10l3-3 3 3"/>',
+  phoneOff:'<path d="M2 2l20 20"/><path d="M5.2 4.2C3.4 6 2.5 8.4 3 11c1.5 8 9 15.5 17 17 2.6.5 5-.4 6.8-2.2"/><path d="M8.3 6.3C11 6 13.5 7.5 14.5 10M18.5 15.5c-.6 2.3-2.5 3.7-4.8 3.6"/>',
+  phoneIn:'<path d="M5 3h4l2 5-2.5 1.5a12 12 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/>',
+  activity:'<path d="M22 12h-4l-3 8-4-16-3 8H2"/>',
+  volume:'<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/>',
+  minimize:'<path d="M5 12h14"/>'
+};
+function ic(n,s){s=s||18;return '<svg class="ic" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(P[n]||'')+'</svg>';}
+function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function av(name,color,cls){return '<div class="avatar '+(cls||'')+'" style="background:'+color+'">'+esc(name.slice(0,1))+'</div>';}
+function toast(msg,type){
+  var d=document.createElement('div');d.className='toast '+(type||'');
+  d.innerHTML=ic(type==='err'?'alert':(type==='warn'?'alert':'check'),16)+'<span>'+esc(msg)+'</span>';
+  document.getElementById('toastBox').appendChild(d);
+  setTimeout(function(){d.style.opacity='0';d.style.transform='translateX(20px)';d.style.transition='.3s';setTimeout(function(){d.remove();},320);},2600);
+}
+function modal(title,body,onOk,okText,danger){
+  document.getElementById('modalBox').innerHTML='<div class="modal-mask"><div class="modal">'+
+    '<div class="m-head">'+esc(title)+'<button data-act="modal-close">'+ic('x',18)+'</button></div>'+
+    '<div class="m-body">'+body+'</div>'+
+    '<div class="m-foot"><button class="btn" data-act="modal-close">取消</button>'+
+    '<button class="btn '+(danger?'danger':'primary')+'" data-act="modal-confirm">'+esc(okText||'确定')+'</button></div></div></div>';
+  window.__modalOk=onOk;
+}
+function closeModal(){document.getElementById('modalBox').innerHTML='';window.__modalOk=null;}
+
+/* ==================== 共享数据（多端同步演示） ==================== */
+const C={
+  c1:{id:'c1',name:'产品评审群',type:'group',color:'linear-gradient(135deg,#5f72f6,#8b5cf6)',short:'产',unread:3,pinned:true,muted:false,time:'09:42',last:'李工：架构文档已更新到 v1.0',online:'12 人在线',members:12,messages:[
+    {mine:false,sender:'李工',text:'早上好，架构评审材料我整理好了，大家先看一下。',time:'09:24',color:'#e9834a'},
+    {mine:false,sender:'王敏',text:'收到，我先重点看消息可靠性和分库分表部分。',time:'09:26',color:'#3ba58c'},
+    {mine:true,sender:'我',text:'好的，RBAC 那块我补充了数据范围的四种策略。',time:'09:30',read:true},
+    {mine:false,sender:'李工',text:'架构文档已更新到 v1.0，增加了大群读扩散和 Kafka 分区保序。',time:'09:42',color:'#e9834a',type:'file',fileName:'02-技术架构文档.md',fileSize:'38 KB'}
+  ]},
+  c2:{id:'c2',name:'张伟',type:'single',color:'linear-gradient(135deg,#3ba7d8,#3f6fe8)',short:'张',unread:1,pinned:false,muted:false,time:'09:18',last:'那我们十点先对齐一下接口',online:'在线',messages:[
+    {mine:false,sender:'张伟',text:'协议帧结构定稿了吗？客户端这边准备接入了。',time:'09:10',color:'#3ba7d8'},
+    {mine:true,sender:'我',text:'定稿了，Protobuf + 命令字表都在架构文档第 6 章。',time:'09:14',read:true},
+    {mine:false,sender:'张伟',text:'那我们十点先对齐一下接口',time:'09:18',color:'#3ba7d8'}
+  ]},
+  c3:{id:'c3',name:'前端研发组',type:'group',color:'linear-gradient(135deg,#f2994a,#eb5757)',short:'前',unread:0,pinned:true,muted:true,time:'昨天',last:'赵琳：动态路由已经跑通',online:'8 人在线',members:8,messages:[
+    {mine:false,sender:'赵琳',text:'管理后台的动态路由已经跑通，菜单按权限码过滤了。',time:'昨天 17:20',color:'#e9834a'},
+    {mine:true,sender:'我',text:'按钮级权限记得用 v-permission，服务端还要二次校验。',time:'昨天 17:24',read:true}
+  ]},
+  c4:{id:'c4',name:'系统通知',type:'system',color:'linear-gradient(135deg,#64748b,#94a3b8)',short:'系',unread:0,pinned:false,muted:true,time:'昨天',last:'安全提醒：检测到异地登录尝试',online:'',messages:[
+    {mine:false,sender:'系统',text:'安全提醒：检测到异地登录尝试，如非本人操作请及时修改密码。',time:'昨天 20:11',color:'#64748b'},
+    {mine:false,sender:'系统',text:'本周系统维护窗口：周日 02:00 - 03:00，期间消息可能短暂延迟。',time:'昨天 18:02',color:'#64748b'}
+  ]},
+  c5:{id:'c5',name:'陈静',type:'single',color:'linear-gradient(135deg,#a05ce6,#e26ab4)',short:'陈',unread:0,pinned:false,muted:false,time:'周三',last:'原型页面我看过了，交互很顺',online:'离线',messages:[
+    {mine:false,sender:'陈静',text:'原型页面我看过了，交互很顺，权限树那块建议加半选状态。',time:'周三 14:02',color:'#a05ce6'},
+    {mine:true,sender:'我',text:'已经加上了，父子联动也做了。',time:'周三 14:10',read:true}
+  ]},
+  c6:{id:'c6',name:'运维值班群',type:'group',color:'linear-gradient(135deg,#12a594,#3f9dd8)',short:'运',unread:0,pinned:false,muted:false,time:'周二',last:'告警：Kafka 消费 lag 已恢复',online:'6 人在线',members:6,messages:[
+    {mine:false,sender:'值班机器人',text:'告警：Kafka 消费 lag 已恢复，峰值 12,400 条。',time:'周二 11:32',color:'#12a594'}
+  ]}
+};
+const convOrder=['c1','c2','c3','c4','c5','c6'];
+const friendApplies=[
+  {id:'fa1',name:'周涛',color:'#12a594',msg:'你好，我是客服部周涛，来自群聊「外部协作群」',source:'群聊',time:'今天 09:20',status:0},
+  {id:'fa2',name:'何雨',color:'#e26ab4',msg:'市场部同事推荐添加，备注：渠道合作',source:'名片分享',time:'昨天 16:40',status:0},
+  {id:'fa3',name:'吴磊',color:'#f2994a',msg:'我们在产品评审群见过',source:'搜索',time:'周三 11:02',status:1},
+  {id:'fa4',name:'郑洁',color:'#3ba7d8',msg:'供应商对接',source:'搜索',time:'11-08 10:15',status:2}
+];
+const searchUsers=[
+  {id:'su1',name:'周涛',phone:'138****0086',dept:'客服部',color:'#12a594',added:false},
+  {id:'su2',name:'何雨',phone:'139****2214',dept:'市场部',color:'#e26ab4',added:false},
+  {id:'su3',name:'吴磊',phone:'137****8890',dept:'研发中心',color:'#f2994a',added:false},
+  {id:'su4',name:'郑洁',phone:'136****4412',dept:'采购部',color:'#3ba7d8',added:false}
+];
+const groupCandidates=[
+  {id:'gp1',name:'张伟',dept:'后端组',color:'#3ba7d8'},
+  {id:'gp2',name:'赵琳',dept:'前端组',color:'#e9834a'},
+  {id:'gp3',name:'李工',dept:'架构组',color:'#3ba58c'},
+  {id:'gp4',name:'陈静',dept:'产品组',color:'#a05ce6'},
+  {id:'gp5',name:'王敏',dept:'审计部',color:'#f2994a'},
+  {id:'gp6',name:'周涛',dept:'客服部',color:'#12a594'},
+  {id:'gp7',name:'何雨',dept:'市场部',color:'#e26ab4'}
+];
+const mediaItems={
+  image:[{label:'架构图',bg:'linear-gradient(135deg,#5f72f6,#8b5cf6)'},{label:'白板照片',bg:'linear-gradient(135deg,#12a594,#3ba7d8)'},{label:'产品截图',bg:'linear-gradient(135deg,#f2994a,#eb5757)'}],
+  video:[{label:'架构评审录屏',duration:'02:18',bg:'linear-gradient(135deg,#2b3556,#4a3a6e)'},{label:'原型演示视频',duration:'00:46',bg:'linear-gradient(135deg,#3b2f56,#6b3a6e)'}],
+  file:[{label:'02-技术架构文档.md',size:'38 KB'},{label:'需求评审纪要.docx',size:'1.2 MB'},{label:'接口清单.xlsx',size:'86 KB'}]
+};
+const state={view:'h5',h5Page:'convs',h5Conv:null,deskConv:'c1',adminPage:'dashboard',role:'r1',status:'在线',attach:false,memberPanel:true,  filter:'all',theme:'light',mention:null,msgMenuIdx:null,authed:false,authPage:'login',loginUser:'林晓',groupPicked:[],
+  call:{active:false,convId:null,type:'audio',phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:false}};
+
+function bubbleHtml(m,idx,group){
+  var body;
+  if(m.type==='file'){
+    body='<div class="bubble file" data-act="view-media" data-idx="'+idx+'">'+ic('file',20)+'<div><div class="fname">'+esc(m.fileName)+'</div><div class="fsize">'+esc(m.fileSize)+' · 点击下载</div></div></div>';
+  }else if(m.type==='image'){
+    body='<div class="bubble media" data-act="view-media" data-idx="'+idx+'"><div class="img-ph" style="background:'+m.bg+'">'+esc(m.label||'图片')+'</div></div>';
+  }else if(m.type==='video'){
+    body='<div class="bubble media" data-act="view-media" data-idx="'+idx+'"><div class="video-ph" style="background:'+m.bg+'"><span class="v-play">'+ic('video',18)+'</span><span class="v-time">'+esc(m.duration||'00:15')+'</span></div></div>';
+  }else if(m.type==='call'){
+    body='<div class="bubble call"><span class="cl-ico">'+ic(m.callType==='video'?'video':'phoneIn',18)+'</span><div><div class="cl-t">'+(m.callType==='video'?'视频通话':'语音通话')+'</div><div class="cl-s">'+esc(m.duration)+' · '+esc(m.result)+'</div></div></div>';
+  }else{body='<div class="bubble">'+esc(m.text)+'</div>';}
+  var meta;
+  if(m.mine){
+    var readTxt=group?(m.read?'已读 5/12':'已读 1/12'):(m.read?'已读':'已送达');
+    meta='<span>'+esc(m.time)+'</span><span>'+readTxt+'</span>';
+  }else{meta='<span>'+esc(m.time)+'</span>';}
+  return '<div class="msg-row '+(m.mine?'mine':'')+'" data-idx="'+idx+'" '+(m.mine?'data-act="msg-revoke" title="点击撤回消息"':'')+'>'+
+    (m.mine?'':av(m.sender,m.color||'#94a3b8','sm'))+
+    '<div class="m-wrap">'+(m.mine?'':'<div class="msg-sender">'+esc(m.sender)+'</div>')+body+'<div class="msg-meta">'+meta+'</div></div></div>';
+}
+function messagesHtml(id){
+  var isGroup=C[id].type==='group';
+  return '<div class="time-sep">今天 09:20</div>'+C[id].messages.map(function(m,i){return bubbleHtml(m,i,isGroup);}).join('');
+}
+function convItemHtml(id,active){
+  var c=C[id];
+  return '<button class="conv-item '+(active===id?'on':'')+'" data-act="open-conv" data-id="'+id+'">'+
+    av(c.name,c.color)+
+    '<div class="ci-main"><div class="ci-top"><span class="ci-name">'+esc(c.name)+'</span>'+
+    (c.pinned?'<span class="tag-pin">置顶</span>':'')+(c.muted?'<span style="color:#aab3c4">'+ic('bell',11)+'</span>':'')+
+    '<span class="ci-time">'+esc(c.time)+'</span></div>'+
+    '<div class="ci-last">'+esc(c.last)+'</div></div>'+
+    (c.unread?'<span class="badge">'+c.unread+'</span>':'')+'</button>';
+}
+function convListHtml(active){
+  var pinned=convOrder.filter(function(i){return C[i].pinned;}),rest=convOrder.filter(function(i){return !C[i].pinned;});
+  return '<div class="sec-title">置顶会话</div>'+pinned.map(function(i){return convItemHtml(i,active);}).join('')+
+         '<div class="sec-title">全部会话</div>'+rest.map(function(i){return convItemHtml(i,active);}).join('');
+}
+function scrollBottom(el){if(el)setTimeout(function(){el.scrollTop=el.scrollHeight;},10);}
+function nowTime(){var n=new Date();return ('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2);}
+function fmtDur(s){var m=Math.floor(s/60),x=s%60;return ('0'+m).slice(-2)+':'+('0'+x).slice(-2);}
+
+/* ==================== 音视频通话 ==================== */
+function startCall(convId,type){
+  if(state.call.active){toast('已在通话中，请先结束当前通话','warn');return;}
+  state.call={active:true,convId:convId,type:type,phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:false};
+  if(state.view==='h5'){state.h5Page='call';renderH5();}else{renderDesktop();}
+  toast('正在呼叫 '+C[convId].name+'（'+(type==='video'?'视频通话':'语音通话')+'）...');
+  setTimeout(function(){
+    if(!state.call.active||state.call.convId!==convId||state.call.phase!=='ringing')return;
+    state.call.phase='connected';
+    state.call.timer=setInterval(callTick,1000);
+    if(state.view==='h5'&&state.h5Page==='call')renderH5();
+    if(state.view==='desktop')renderDesktop();
+    toast('通话已接通 · SRTP 加密 · 延迟 38ms','ok');
+  },2400);
+}
+function callTick(){state.call.sec++;var el=document.getElementById('callTimer');if(el)el.textContent=fmtDur(state.call.sec);}
+function callToggle(key){
+  var k=state.call;
+  if(key==='mute')k.muted=!k.muted;
+  if(key==='cam')k.cam=!k.cam;
+  if(key==='share')k.share=!k.share;
+  if(key==='speaker')k.speaker=!k.speaker;
+  if(state.view==='h5')renderH5();else renderDesktop();
+  toast({mute:k.muted?'麦克风已静音':'麦克风已开启',cam:k.cam?'摄像头已开启':'摄像头已关闭',share:k.share?'屏幕共享已开始':'屏幕共享已停止',speaker:k.speaker?'已切换免提':'已切换听筒'}[key]);
+}
+function endCall(reason){
+  var k=state.call;if(!k.active)return;
+  if(k.timer)clearInterval(k.timer);
+  var c=C[k.convId],dur=fmtDur(k.sec);
+  c.messages.push({mine:true,sender:'我',type:'call',callType:k.type,duration:dur,result:reason||'通话结束',time:nowTime()});
+  c.last='['+(k.type==='video'?'视频通话':'语音通话')+'] '+dur;c.time='刚刚';
+  var back=k.convId;
+  state.call={active:false,convId:null,type:'audio',phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:false};
+  if(state.view==='h5'){state.h5Page='chat';state.h5Conv=back;renderH5();}
+  else{state.deskConv=back;renderDesktop();}
+  toast('通话已结束（'+dur+'），通话卡片已同步到会话与其他端','ok');
+}
+function simulateIncoming(){
+  if(state.call.active){toast('已在通话中，新来电自动拒接','warn');return;}
+  var convId=state.deskConv==='c4'||state.deskConv==='c3'?'c2':(state.deskConv==='c2'?'c1':state.deskConv);
+  state.call={active:true,convId:convId,type:'video',phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:true};
+  renderDesktop();
+  toast('收到 '+C[convId].name+' 的来电（仅推主端）');
+}
+function answerCall(){
+  var k=state.call;k.ringing=false;k.phase='connected';k.timer=setInterval(callTick,1000);
+  if(state.view==='h5')renderH5();else renderDesktop();
+  toast('已接听 · 媒体面建立（SRTP）','ok');
+}
+function declineCall(){endCall('已拒接');}
+
+/* ==================== 全局搜索命令面板 ==================== */
+function openCmd(){
+  if(document.getElementById('cmdBox')){closeCmd();return;}
+  var d=document.createElement('div');d.className='cmd-mask';d.id='cmdBox';
+  d.innerHTML='<div class="cmd-panel"><div class="cmd-input">'+ic('search',18)+'<input id="cmdInput" data-input="cmd" placeholder="搜索会话、用户、后台功能…"><kbd>ESC</kbd></div><div class="cmd-list" id="cmdList"></div></div>';
+  document.body.appendChild(d);
+  setTimeout(function(){var i=document.getElementById('cmdInput');if(i)i.focus();},0);
+  cmdRender('');
+}
+function closeCmd(){var d=document.getElementById('cmdBox');if(d)d.remove();}
+function cmdRender(q){
+  q=(q||'').trim().toLowerCase();
+  var list=[];
+  convOrder.forEach(function(i){var c=C[i];if(!q||c.name.toLowerCase().indexOf(q)>=0||(c.last||'').toLowerCase().indexOf(q)>=0){list.push({g:'会话',icon:av(c.name,c.color,'sm'),t:c.name,s:c.last||'',k:'打开',act:'cmd-conv',id:i});}});
+  users.filter(function(u){return !q||u.name.toLowerCase().indexOf(q)>=0||u.account.toLowerCase().indexOf(q)>=0;}).slice(0,8).forEach(function(u){list.push({g:'用户',icon:av(u.name,u.color,'sm'),t:u.name,s:'@'+u.account+' · '+u.dept,k:'会话',act:'cmd-user',id:u.id});});
+  adminMenus.forEach(function(grp){grp.items.forEach(function(it){if(!q||it[1].toLowerCase().indexOf(q)>=0){list.push({g:'管理后台',icon:'<span class="ci-icon">'+ic(it[2],16)+'</span>',t:it[1],s:grp.g,k:'打开',act:'cmd-page',id:it[0]});}});});
+  var cmds=[
+    {g:'快捷命令',icon:'<span class="ci-icon">'+ic(state.theme==='light'?'moon':'sun',16)+'</span>',t:state.theme==='light'?'切换深色主题':'切换浅色主题',s:'Ctrl+K 可随时呼出',k:'',act:'cmd-theme'},
+    {g:'快捷命令',icon:'<span class="ci-icon">'+ic('phoneIn',16)+'</span>',t:'发起语音通话',s:'对当前会话',k:'',act:'cmd-call',id:'audio'},
+    {g:'快捷命令',icon:'<span class="ci-icon">'+ic('video',16)+'</span>',t:'发起视频通话',s:'对当前会话',k:'',act:'cmd-call',id:'video'}
+  ].filter(function(c){return !q||c.t.indexOf(q)>=0;});
+  list=list.concat(cmds);
+  var html='',lastG='';
+  list.forEach(function(it){if(it.g!==lastG){html+='<div class="cmd-group">'+it.g+'</div>';lastG=it.g;}
+    html+='<button class="cmd-item" data-act="'+it.act+'" data-id="'+(it.id||'')+'">'+it.icon+'<div><div class="ci-t">'+esc(it.t)+'</div><div class="ci-s">'+esc(it.s)+'</div></div><span class="ci-k">'+esc(it.k)+'</span></button>';});
+  if(!list.length)html='<div style="padding:26px;text-align:center;color:#8a95aa;font-size:12px">无匹配结果</div>';
+  document.getElementById('cmdList').innerHTML=html;
+}
+
+/* ==================== 消息右键/长按菜单 ==================== */
+function closeMsgMenu(){var m=document.getElementById('msgMenu');if(m)m.remove();state.msgMenuIdx=null;}
+function openMsgMenu(e,row){
+  e.preventDefault();closeMsgMenu();
+  var idx=parseInt(row.dataset.idx,10);
+  var cid=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv;
+  var m=C[cid].messages[idx];if(!m)return;
+  state.msgMenuIdx=idx;
+  var d=document.createElement('div');d.className='msg-menu';d.id='msgMenu';
+  d.style.left=Math.min((e.clientX||10),window.innerWidth-170)+'px';
+  d.style.top=Math.min((e.clientY||10),window.innerHeight-220)+'px';
+  var items=[['copy','复制文本','copy'],['reply','引用回复','reply'],['forward','转发','forward']];
+  if(m.mine){items.push(['sep']);items.push(['revoke','撤回','trash','danger']);items.push(['delete','删除','trash','danger']);}
+  d.innerHTML=items.map(function(it){
+    if(it[0]==='sep')return '<div class="mm-sep"></div>';
+    return '<button data-act="mm" data-k="'+it[0]+'" data-idx="'+idx+'" class="'+(it[3]||'')+'">'+ic(it[2],16)+it[1]+'</button>';
+  }).join('');
+  document.body.appendChild(d);
+}
+function mmAction(k,idx){
+  var cid=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv;
+  var m=C[cid].messages[idx];if(!m)return;
+  closeMsgMenu();
+  if(k==='copy'){var txt=m.text||(m.fileName||'');
+    if(typeof navigator!=='undefined'&&navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt);}
+    toast('已复制到剪贴板','ok');}
+  else if(k==='reply'){var inp=document.getElementById(state.view==='h5'?'h5Input':'deskInput');
+    if(inp)inp.value='引用 '+esc(m.text||'').slice(0,40)+' — ';toast('已引用该消息，可输入回复');}
+  else if(k==='forward'){forwardModal(idx);}
+  else if(k==='revoke'){modal('撤回消息','确认撤回？撤回后各端同步移除该消息。',function(){C[cid].messages.splice(idx,1);closeModal();if(state.view==='h5')renderH5();else renderDesktop();toast('消息已撤回','ok');},'撤回',true);}
+  else if(k==='delete'){C[cid].messages.splice(idx,1);if(state.view==='h5')renderH5();else renderDesktop();toast('消息已删除（仅自己可见）','ok');}
+}
+
+/* ==================== 会话右键/长按菜单 ==================== */
+function openConvMenu(e,conv){
+  e.preventDefault();closeMsgMenu();
+  var id=conv.dataset.id,c=C[id];if(!c)return;
+  var d=document.createElement('div');d.className='msg-menu';d.id='msgMenu';
+  d.style.left=Math.min((e.clientX||10),window.innerWidth-170)+'px';
+  d.style.top=Math.min((e.clientY||10),window.innerHeight-200)+'px';
+  d.innerHTML=
+    '<button data-act="cm" data-k="pin" data-id="'+id+'">'+ic('pin',16)+(c.pinned?'取消置顶':'置顶会话')+'</button>'+
+    '<button data-act="cm" data-k="mute" data-id="'+id+'">'+ic('bell',16)+(c.muted?'开启提醒':'消息免打扰')+'</button>'+
+    '<button data-act="cm" data-k="read" data-id="'+id+'">'+ic('check',16)+'标记已读</button>'+
+    '<div class="mm-sep"></div>'+
+    '<button class="danger" data-act="cm" data-k="clear" data-id="'+id+'">'+ic('trash',16)+'清空聊天记录</button>';
+  document.body.appendChild(d);
+}
+function convAction(k,id){
+  closeMsgMenu();
+  var c=C[id];if(!c)return;
+  if(k==='pin'){c.pinned=!c.pinned;toast(c.pinned?'已置顶「'+c.name+'」':'已取消置顶','ok');}
+  else if(k==='mute'){c.muted=!c.muted;toast(c.muted?'「'+c.name+'」已开启免打扰':'「'+c.name+'」已恢复提醒','ok');}
+  else if(k==='read'){c.unread=0;toast('已标记「'+c.name+'」为已读','ok');}
+  else if(k==='clear'){
+    modal('清空聊天记录','确认清空与「'+esc(c.name)+'」的本地聊天记录？云端漫游仍可按会话拉取（FR-MSG-24），该操作不影响对方。',function(){
+      c.messages=[];c.last='';closeModal();
+      if(state.view==='h5')renderH5();else renderDesktop();
+      toast('本地记录已清空，云端漫游保留','ok');
+    },'清空',true);return;
+  }
+  if(state.view==='h5')renderH5();else renderDesktop();
+}
+
+/* ==================== 富媒体消息 ==================== */
+function openPicker(kind){
+  var items=mediaItems[kind]||[];
+  var title={image:'选择图片',video:'选择视频',file:'选择文档'}[kind];
+  modal(title,'<div class="pick-grid">'+items.map(function(it,i){
+    if(kind==='image')return '<button data-act="pick-media" data-kind="image" data-i="'+i+'"><div class="pick-thumb" style="background:'+it.bg+'">'+esc(it.label)+'</div><div class="pick-name">'+esc(it.label)+'</div></button>';
+    if(kind==='video')return '<button data-act="pick-media" data-kind="video" data-i="'+i+'"><div class="pick-thumb" style="background:'+it.bg+'">'+ic('video',18)+' '+esc(it.duration)+'</div><div class="pick-name">'+esc(it.label)+'</div></button>';
+    return '<button data-act="pick-media" data-kind="file" data-i="'+i+'"><div class="pick-thumb" style="background:linear-gradient(135deg,#4f6ef7,#7b61ff)">'+ic('file',18)+'</div><div class="pick-name">'+esc(it.label)+' · '+esc(it.size)+'</div></button>';
+  }).join('')+'</div><div style="font-size:10.5px;color:#8a95aa;margin-top:10px">图片压缩上传并生成缩略图；视频转码为 HLS 自适应码率；文档分片上传、秒传与预签名下载</div>',null,'取消');
+}
+function sendMedia(kind,item){
+  var cid=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv;
+  var msg={mine:true,sender:'我',time:nowTime(),read:false};
+  if(kind==='image'){msg.type='image';msg.bg=item.bg;msg.label=item.label;}
+  else if(kind==='video'){msg.type='video';msg.bg=item.bg;msg.duration=item.duration;msg.label=item.label;}
+  else{msg.type='file';msg.fileName=item.label;msg.fileSize=item.size;}
+  C[cid].messages.push(msg);
+  C[cid].last='我：['+({image:'图片',video:'视频',file:'文件'}[kind])+'] '+(item.label||'');
+  C[cid].time='刚刚';
+  if(state.view==='h5')renderH5();else renderDesktop();
+  flashSync();
+  toast(({image:'图片',video:'视频',file:'文件'}[kind])+'已发送 · 已同步到 H5 / 桌面其他端','ok');
+}
+function openMedia(idx){
+  var cid=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv;
+  var m=C[cid].messages[idx];if(!m)return;
+  if(m.type==='image'){
+    modal('查看图片','<div style="height:230px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;background:'+m.bg+'">'+esc(m.label||'图片')+'</div><div style="font-size:11px;color:#8a95aa;margin-top:10px">原图 2048×1366 · 2.4 MB · 支持保存、转发与 OCR 提取文字</div>',null,'关闭');
+  }else if(m.type==='video'){
+    modal('播放视频','<div style="height:210px;border-radius:12px;background:'+m.bg+';display:grid;place-items:center;color:#fff"><div style="text-align:center"><div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;margin:0 auto 10px">'+ic('video',24)+'</div><div style="font-size:12px">'+esc(m.label||'视频')+' · '+esc(m.duration||'00:15')+'</div></div></div><div style="font-size:11px;color:#8a95aa;margin-top:10px">HLS 自适应播放 · 支持 0.5x~2x 倍速与全屏</div>',null,'关闭');
+  }else if(m.type==='file'){
+    toast('正在下载 '+m.fileName+'（预签名 URL 有效期 15 分钟）','ok');
+  }
+}
+
+/* ==================== 消息转发 ==================== */
+function forwardModal(idx){
+  var from=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv;
+  var m=C[from].messages[idx];if(!m)return;
+  modal('转发消息','转发到（保留原始类型与发送者署名，可附留言）：<div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto">'+
+    convOrder.filter(function(i){return i!==from;}).map(function(i){
+      return '<button class="btn" style="justify-content:flex-start" data-act="fwd" data-id="'+i+'" data-idx="'+idx+'" data-from="'+from+'">'+av(C[i].name,C[i].color,'sm')+C[i].name+'<span style="margin-left:auto;color:#8a95aa;font-size:11px">'+esc(C[i].last||'')+'</span></button>';
+    }).join('')+'</div>',null,'取消');
+}
+
+/* ==================== @提及 ==================== */
+function mentionList(){
+  var cid=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv;
+  var c=C[cid];
+  if(c.type!=='group')return [['全体成员','@全体成员']];
+  return [['全体成员','@全体成员'],['林晓','@林晓'],['李工','@李工'],['王敏','@王敏'],['赵琳','@赵琳'],['张伟','@张伟'],['陈静','@陈静']];
+}
+function toggleMention(){
+  state.mention=state.mention?null:(state.view==='h5'?'h5':'desk');
+  if(state.view==='h5')renderH5();else renderDesktop();
+}
+function mentionHtml(){
+  return '<div class="mention-panel"><div class="mp-head">选择要 @ 的人</div>'+
+    mentionList().map(function(x){return '<button data-act="mention-pick" data-name="'+esc(x[1])+'">'+av(x[0],'linear-gradient(135deg,#4f6ef7,#7b61ff)','sm')+x[1]+'</button>';}).join('')+'</div>';
+}
+
+/* ==================== 主题切换 ==================== */
+function applyTheme(){
+  document.body.classList.toggle('dark',state.theme==='dark');
+  var b=document.getElementById('themeBtn');
+  if(b)b.innerHTML=ic(state.theme==='dark'?'sun':'moon',17);
+  var cm=document.getElementById('cmdBox');if(cm)closeCmd();
+}
+function toggleTheme(){state.theme=state.theme==='light'?'dark':'light';applyTheme();toast(state.theme==='dark'?'已切换深色主题':'已切换浅色主题','ok');}
+function flashSync(){
+  var p=document.getElementById('syncPill');if(!p)return;
+  p.innerHTML='<i class="dot"></i>同步中…';
+  p.style.background='#fff5e5';p.style.color='#c47a08';
+  setTimeout(function(){p.innerHTML='<i class="dot"></i>已同步 · 3 端在线';p.style.background='';p.style.color='';},900);
+}
+function vcallHtml(){
+  var k=state.call,c=C[k.convId];
+  var ctrl='<div class="vc-ctrl">'+
+    '<button class="vc-btn '+(k.muted?'off':'')+'" data-act="call-toggle" data-key="mute" title="静音">'+ic(k.muted?'micOff':'mic',20)+'</button>'+
+    (k.type==='video'?'<button class="vc-btn '+(k.cam?'':'off')+'" data-act="call-toggle" data-key="cam" title="摄像头">'+ic(k.cam?'video':'videoOff',20)+'</button>':'')+
+    '<button class="vc-btn small" data-act="call-toggle" data-key="speaker" title="扬声器">'+ic('volume',18)+'</button>'+
+    '<button class="vc-btn hang" data-act="call-end" title="挂断">'+ic('phoneOff',20)+'</button></div>';
+  return '<div class="vcall '+(k.type==='video'?'video':'')+'">'+
+    '<div class="vc-head">'+ic(k.type==='video'?'video':'phoneIn',16)+esc(c.name)+'<div class="sp"></div>'+
+    '<button data-act="call-min" title="最小化">'+ic('minimize',16)+'</button></div>'+
+    '<div class="vc-body">'+(k.type==='video'?'':'<div class="vc-remote">'+esc(c.name.slice(0,1))+'</div>')+
+    '<div class="vc-name">'+esc(c.name)+'</div>'+
+    '<div class="vc-state">'+(k.phase==='ringing'?'正在等待接听…':'通话中 <b id="callTimer">'+fmtDur(k.sec)+'</b>')+'</div>'+
+    (k.type==='video'?'<div class="vc-local">本地画面</div>':'')+
+    '<div class="vc-tip">'+(k.phase==='ringing'?'呼叫中 · 信令已加密':'音频 Opus 48kHz · 视频 720p Simulcast')+'</div></div>'+
+    ctrl+
+    '<div class="vc-quality"><span>'+ic('activity',12)+'MOS 4.3</span><span>丢包 0.4%</span><span>码率 1.2Mbps</span><span>延迟 38ms</span></div></div>';
+}
+function incomingHtml(){
+  var k=state.call,c=C[k.convId];
+  return '<div class="incoming"><div class="inc-card">'+av(c.name,c.color,'lg')+
+    '<div><div class="inc-t">'+esc(c.name)+'</div><div class="inc-s">邀请你加入'+(k.type==='video'?'视频':'语音')+'通话</div></div>'+
+    '<div class="inc-btns"><button class="inc-btn no" data-act="call-decline" title="拒接">'+ic('phoneOff',20)+'</button>'+
+    '<button class="inc-btn ok" data-act="call-answer" title="接听">'+ic('phoneIn',20)+'</button></div></div></div>';
+}
+
+/* ==================== H5 ==================== */
+const h5Pages=[{k:'convs',n:'消息 / 会话列表',i:'msg',no:'FR-MSG-01'},{k:'chat',n:'聊天页',i:'msg',no:'FR-MSG-02'},{k:'call',n:'音视频通话页',i:'phoneIn',no:'FR-RTC-01'},{k:'addFriend',n:'添加朋友',i:'user',no:'FR-CONTACT-08'},{k:'createGroup',n:'发起群聊',i:'users',no:'FR-GROUP-09'},{k:'contacts',n:'通讯录 / 组织架构',i:'contacts',no:'FR-CONTACT-01'},{k:'friends',n:'好友申请（新的朋友）',i:'contacts',no:'FR-CONTACT-07'},{k:'discover',n:'发现',i:'compass',no:'FR-H5-02'},{k:'mine',n:'我的 / 设备与设置',i:'user',no:'FR-AUTH-07'}];
+function renderH5Nav(){
+  document.getElementById('h5PageList').innerHTML=h5Pages.map(function(p){
+    return '<button data-act="h5-page" data-page="'+p.k+'" class="'+(state.h5Page===p.k?'on':'')+'">'+ic(p.i,16)+p.n+'<span class="num">'+p.no+'</span></button>';
+  }).join('');
+  var tabs=[{k:'convs',n:'消息',i:'msg'},{k:'contacts',n:'通讯录',i:'contacts'},{k:'discover',n:'发现',i:'compass'},{k:'mine',n:'我的',i:'user'}];
+  var total=convOrder.reduce(function(s,i){return s+C[i].unread;},0);
+  document.getElementById('h5Tabbar').innerHTML=state.h5Page==='call'?'':tabs.map(function(t){
+    var on=(state.h5Page==='chat'&&t.k==='convs')||state.h5Page===t.k||(state.h5Page==='friends'&&t.k==='contacts');
+    return '<button data-act="h5-page" data-page="'+t.k+'" class="'+(on?'on':'')+'">'+ic(t.i,20)+
+      (t.k==='convs'&&total?'<span class="tb-badge">'+total+'</span>':'')+'<span>'+t.n+'</span></button>';
+  }).join('');
+}
+function h5Head(title,left,right){
+  return '<div class="h5-head">'+(left||'')+'<h2>'+esc(title)+'</h2><div class="sp"></div>'+(right||'')+'</div>';
+}
+function friendRowsHtml(q){
+  q=(q||'').trim();
+  var list=searchUsers.filter(function(u){return !q||u.name.indexOf(q)>=0||u.phone.indexOf(q)>=0||u.dept.indexOf(q)>=0;});
+  if(!list.length)return '<div style="text-align:center;color:#8a95aa;font-size:12px;padding:26px">未找到匹配用户，试试手机号或姓名</div>';
+  return list.map(function(u){
+    return '<div class="qentry">'+av(u.name,u.color)+
+      '<div style="flex:1"><div class="qe-t">'+esc(u.name)+'<span style="font-size:10px;color:#8a95aa;font-weight:400"> · '+esc(u.dept)+'</span></div>'+
+      '<div class="qe-s">'+esc(u.phone)+'</div></div>'+
+      (u.added?'<span class="state info">已申请</span>':'<button class="btn sm primary" data-act="add-friend" data-id="'+u.id+'">添加</button>')+'</div>';
+  }).join('');
+}
+function authHtml(){
+  if(state.authPage==='register'){
+    return '<div class="auth">'+
+      '<button class="a-back" data-act="auth-back">'+ic('back',17)+'</button>'+
+      '<div class="a-logo">N</div><h2>创建账号</h2><div class="a-sub">注册后即可添加好友、创建群聊，消息在 H5 与桌面端实时同步</div>'+
+      '<div class="a-field"><label>昵称</label><input id="regNick" placeholder="请输入昵称（如：陈晨）"></div>'+
+      '<div class="a-field"><label>手机号</label><input id="regPhone" placeholder="11 位手机号"></div>'+
+      '<div class="a-field"><label>验证码</label><div class="a-code"><input id="regCode" placeholder="6 位验证码"><button data-act="auth-send-code" id="codeBtn">获取验证码</button></div></div>'+
+      '<div class="a-field"><label>设置密码</label><input id="regPwd" type="password" placeholder="8~20 位，含字母与数字"></div>'+
+      '<div class="a-field"><label>确认密码</label><input id="regPwd2" type="password" placeholder="再次输入密码"></div>'+
+      '<label class="a-agree"><input type="checkbox" id="regAgree">我已阅读并同意《服务协议》与《隐私政策》，了解消息将按企业留存策略保存</label>'+
+      '<button class="a-btn" data-act="auth-register-submit">注册并登录</button>'+
+      '<div class="a-foot">已有账号？<a data-act="auth-back">返回登录</a></div></div>';
+  }
+  return '<div class="auth">'+
+    '<div class="a-logo">N</div><h2>欢迎回来</h2><div class="a-sub">登录后同步你的消息、文件与通话记录</div>'+
+    '<div class="a-field"><label>账号 / 手机号</label><input id="loginAcc" value="linxiao" placeholder="请输入账号或手机号"></div>'+
+    '<div class="a-field"><label>密码</label><input id="loginPwd" type="password" value="123456" placeholder="请输入密码"></div>'+
+    '<div class="a-row"><label><input type="checkbox" checked> 记住我</label><a data-act="auth-forgot">忘记密码？</a></div>'+
+    '<button class="a-btn" data-act="auth-login">登录</button>'+
+    '<div class="a-alt">其他登录方式</div>'+
+    '<div class="a-others"><button data-act="auth-sso">'+ic('shield',14)+'企业 SSO</button><button data-act="auth-code">'+ic('phone',14)+'验证码登录</button></div>'+
+    '<div class="a-demo">演示账号 linxiao / 123456<button data-act="auth-demo">一键登录</button></div>'+
+    '<div class="a-foot">还没有账号？<a data-act="auth-register">立即注册</a></div></div>';
+}
+function doLogin(accIn,pwdIn){
+  var a=document.getElementById('loginAcc'),p=document.getElementById('loginPwd');
+  var acc=(accIn||((a&&a.value)||'linxiao')).trim(),pwd=(pwdIn||((p&&p.value)||'')).trim();
+  if(!acc||!pwd){toast('请输入账号与密码','warn');return;}
+  state.authed=true;state.h5Page='convs';state.authPage='login';
+  if(acc!=='linxiao')state.loginUser=acc;
+  renderH5();renderDesktop();flashSync();
+  toast('登录成功，正在同步离线消息…','ok');
+  setTimeout(function(){toast('已同步 6 个会话 · 云端漫游 180 天 · 3 端在线','ok');},900);
+}
+function doRegister(){
+  var nick=((document.getElementById('regNick')||{}).value||'').trim();
+  var phone=((document.getElementById('regPhone')||{}).value||'').trim();
+  var code=((document.getElementById('regCode')||{}).value||'').trim();
+  var pwd=((document.getElementById('regPwd')||{}).value||'').trim();
+  var pwd2=((document.getElementById('regPwd2')||{}).value||'').trim();
+  var agree=document.getElementById('regAgree');
+  if(!nick||!phone||!pwd){toast('请填写昵称、手机号与密码','warn');return;}
+  if(pwd.length<8){toast('密码至少 8 位','warn');return;}
+  if(pwd!==pwd2){toast('两次输入的密码不一致','warn');return;}
+  if(code&&code!=='123456'){toast('验证码不正确（演示环境：123456）','err');return;}
+  if(agree&&!agree.checked){toast('请先阅读并同意服务协议与隐私政策','warn');return;}
+  state.authed=true;state.h5Page='convs';state.authPage='login';state.loginUser=nick;
+  renderH5();renderDesktop();flashSync();
+  toast('注册成功，已自动登录并同步默认会话','ok');
+}
+function sendCode(){
+  var b=document.getElementById('codeBtn');
+  if(b&&!b.dataset.run){b.dataset.run='1';var n=60;b.textContent='60s 后重发';
+    var t=setInterval(function(){n--;if(b)b.textContent=n+'s 后重发';if(n<=0){clearInterval(t);if(b){b.dataset.run='';b.textContent='获取验证码';}}},1000);}
+  toast('验证码已发送（演示环境：123456）','ok');
+}
+function renderH5(){
+  if(!state.authed){
+    var pl=document.getElementById('h5PageList');
+    if(pl)pl.innerHTML=h5Pages.map(function(pg){return '<button data-act="h5-page" data-page="'+pg.k+'">'+ic(pg.i,16)+pg.n+'<span class="num">'+pg.no+'</span></button>';}).join('');
+    document.getElementById('h5Screen').innerHTML=authHtml();
+    document.getElementById('h5Tabbar').innerHTML='';
+    return;
+  }
+  if(state.h5Page==='call'&&!state.call.active)state.h5Page='convs';
+  renderH5Nav();
+  var s=document.getElementById('h5Screen'),html='',p=state.h5Page;
+  if(p==='convs'){
+    html=h5Head('消息','','<button class="icon-btn" data-act="h5-new">'+ic('plus',18)+'</button>')+
+      '<div class="h5-body scroll" style="padding:10px 10px"><div class="h5-search">'+ic('search',14)+'搜索会话 / 消息 / 用户</div>'+convListHtml(null)+'</div>';
+  }else if(p==='chat'){
+    var c=C[state.h5Conv||'c1'];
+    html='<div class="chat-head"><button class="icon-btn" data-act="h5-back">'+ic('back',18)+'</button>'+
+      '<div><div class="ch-name">'+esc(c.name)+'</div><div class="ch-sub"><i class="dot"></i>'+esc(c.online||'在线')+'</div></div><div class="sp" style="flex:1"></div>'+
+      '<button class="icon-btn" data-act="h5-call-audio" title="语音通话">'+ic('phoneIn',18)+'</button>'+
+      '<button class="icon-btn" data-act="h5-chat-more">'+ic('more',18)+'</button></div>'+
+      '<div class="chat-msgs scroll" id="h5Msgs">'+messagesHtml(c.id)+'</div>'+
+      (state.attach?'<div class="attach-panel">'+[['image','相册','image'],['video','视频','video'],['clip','文件','file'],['phoneIn','语音通话','call-audio'],['video','视频通话','call-video'],['smile','表情','emoji']].map(function(a){
+        return '<button data-act="attach" data-type="'+a[0]+'" data-kind="'+a[2]+'"><span class="at-icon">'+ic(a[0],20)+'</span>'+a[1]+'</button>';
+      }).join('')+'</div>':'')+
+      (state.mention==='h5'?mentionHtml():'')+
+      '<div class="composer"><button class="icon-btn" data-act="h5-attach">'+ic('plus',18)+'</button>'+
+      '<button class="icon-btn" data-act="h5-mention" title="@提及">'+ic('at',18)+'</button>'+
+      '<input id="h5Input" data-input="h5" placeholder="输入消息..." autocomplete="off">'+
+      '<button class="send-btn" data-act="h5-send">'+ic('send',17)+'</button></div>';
+  }else if(p==='call'){
+    html=vcallHtml();
+  }else if(p==='friends'){
+    var pend=friendApplies.filter(function(f){return f.status===0;}),done=friendApplies.filter(function(f){return f.status!==0;});
+    html='<div class="chat-head"><button class="icon-btn" data-act="h5-back">'+ic('back',18)+'</button>'+
+      '<div><div class="ch-name">新的朋友</div><div class="ch-sub">'+pend.length+' 条待处理</div></div></div>'+
+      '<div class="h5-body scroll" style="padding:12px 12px 70px">'+
+      '<div class="sec-title">待处理 · '+pend.length+'</div>'+
+      (pend.length?pend.map(function(f){
+        return '<div class="qentry">'+av(f.name,f.color)+
+          '<div style="flex:1;min-width:0"><div class="qe-t">'+esc(f.name)+'<span style="font-size:10px;color:#8a95aa;font-weight:400"> · 来自'+esc(f.source)+'</span></div>'+
+          '<div class="qe-s" style="white-space:normal">'+esc(f.msg)+'</div><div class="qe-s">'+esc(f.time)+'</div></div>'+
+          '<button class="btn sm ghost" data-act="fa-handle" data-id="'+f.id+'" data-r="ok">通过</button>'+
+          '<button class="btn sm" data-act="fa-handle" data-id="'+f.id+'" data-r="no">拒绝</button></div>';
+      }).join(''):'<div style="text-align:center;color:#8a95aa;font-size:12px;padding:24px">暂无待处理申请</div>')+
+      '<div class="sec-title">已处理</div>'+
+      done.map(function(f){
+        return '<div class="qentry">'+av(f.name,f.color)+
+          '<div style="flex:1"><div class="qe-t">'+esc(f.name)+'<span style="font-size:10px;color:#8a95aa;font-weight:400"> · '+esc(f.source)+'</span></div>'+
+          '<div class="qe-s" style="white-space:normal">'+esc(f.msg)+'</div></div>'+
+          '<span class="state '+(f.status===1?'ok':'off')+'">'+(f.status===1?'已同意':'已拒绝')+'</span></div>';
+      }).join('')+'</div>';
+  }else if(p==='addFriend'){
+    html='<div class="chat-head"><button class="icon-btn" data-act="h5-back">'+ic('back',18)+'</button>'+
+      '<div><div class="ch-name">添加朋友</div><div class="ch-sub">手机号 / 昵称 / 部门</div></div></div>'+
+      '<div class="h5-body scroll" style="padding:12px"><div class="h5-search" style="margin-bottom:6px">'+ic('search',14)+
+      '<input id="friendSearch" data-input="friend" placeholder="输入手机号或昵称搜索" style="border:0;background:none;padding:0;flex:1;font-size:12px"></div>'+
+      '<div class="sec-title">推荐 / 搜索结果</div><div id="friendRows">'+friendRowsHtml('')+'</div></div>';
+  }else if(p==='createGroup'){
+    var picked=state.groupPicked;
+    html='<div class="chat-head"><button class="icon-btn" data-act="h5-back">'+ic('back',18)+'</button>'+
+      '<div><div class="ch-name">发起群聊</div><div class="ch-sub">已选 '+picked.length+' 人</div></div><div style="flex:1"></div>'+
+      '<button class="btn sm primary" data-act="group-create">完成</button></div>'+
+      '<div class="h5-body scroll" style="padding:12px">'+
+      '<div class="picked-row">'+(picked.length?picked.map(function(id){var u=groupCandidates.filter(function(x){return x.id===id;})[0];return u?av(u.name,u.color,'sm'):'';}).join(''):'<span style="font-size:11px;color:#8a95aa;padding:8px 0">勾选联系人后点击完成</span>')+'</div>'+
+      '<div class="sec-title">选择联系人</div>'+
+      groupCandidates.map(function(u){
+        return '<label class="contact-pick"><input type="checkbox" data-act="gp-toggle" data-id="'+u.id+'" '+(picked.indexOf(u.id)>=0?'checked':'')+'>'+
+          av(u.name,u.color,'sm')+'<div><div style="font-weight:600">'+esc(u.name)+'</div><div style="font-size:10px;color:#8a95aa">'+esc(u.dept)+'</div></div></label>';
+      }).join('')+'</div>';
+  }else if(p==='contacts'){
+    html=h5Head('通讯录','','<button class="icon-btn" data-act="h5-new">'+ic('plus',18)+'</button>')+
+      '<div class="h5-body scroll"><div class="h5-search">'+ic('search',14)+'搜索姓名 / 拼音 / 部门</div>'+
+      [['新的朋友','3 条待处理','#f2994a','contacts'],['群聊','我加入的 8 个群','#4f9ee8','users'],['组织架构','总部 / 5 个一级部门','#12a594','dept']].map(function(q){
+        return '<button class="qentry" data-act="h5-qentry" data-name="'+q[0]+'">'+av(q[0],'linear-gradient(135deg,'+q[2]+',#7b61ff)','sm')+
+          '<div><div class="qe-t">'+q[0]+'</div><div class="qe-s">'+q[1]+'</div></div><span style="margin-left:auto;color:#aab3c4">'+ic('chev',14)+'</span></button>';
+      }).join('')+
+      '<div class="sec-title">研发中心 · 12 人</div>'+
+      [['张伟','后端研发 / 在线','#3ba7d8'],['赵琳','前端研发 / 在线','#e9834a'],['李工','架构师 / 忙碌','#3ba58c'],['陈静','产品经理 / 离线','#a05ce6']].map(function(u){
+        return '<button class="qentry" data-act="h5-contact" data-name="'+u[0]+'">'+av(u[0],'linear-gradient(135deg,'+u[2]+',#4f6ef7)','sm')+
+          '<div><div class="qe-t">'+u[0]+'</div><div class="qe-s">'+u[1]+'</div></div><span style="margin-left:auto;color:#aab3c4">'+ic('chev',14)+'</span></button>';
+      }).join('')+'</div>';
+  }else if(p==='discover'){
+    html=h5Head('发现','','')+'<div class="h5-body scroll">'+
+      [['企业公告','周五版本发布与维护窗口','flag','#4f6ef7'],['待办与提醒','3 条 @我的消息','bell','#f2994a'],['文件助手','跨端文件临时存放','folder','#12a594'],['收藏','已收藏 12 条消息','pin','#a05ce6']].map(function(q){
+        return '<button class="qentry" data-act="h5-qentry" data-name="'+q[0]+'"><span style="color:'+q[3]+'">'+ic(q[2],20)+'</span>'+
+          '<div><div class="qe-t">'+q[0]+'</div><div class="qe-s">'+q[1]+'</div></div><span style="margin-left:auto;color:#aab3c4">'+ic('chev',14)+'</span></button>';
+      }).join('')+
+      '<div class="card" style="margin-top:14px"><h3>系统公告</h3><p class="csub" style="font-size:12px;line-height:1.8;color:#4a556b">V1.0 正式版将于本周五发布，新增三平台桌面客户端、完整 RBAC 权限与消息审计能力。发布期间消息服务不中断。</p></div></div>';
+  }else{
+    html=h5Head('我的','','<button class="icon-btn" data-act="h5-settings">'+ic('settings',18)+'</button>')+
+      '<div class="h5-body scroll"><div class="profile-card">'+av('林','rgba(255,255,255,.25)','lg')+
+      '<div><div class="pc-name">林晓 · 产品负责人</div><div class="pc-sub">研发中心 / 总部 &nbsp;·&nbsp; UID 10086</div></div></div>'+
+      '<div class="group-block"><div class="gb-row" style="background:#fafbfe;font-size:11px;color:#8a95aa">在线状态</div>'+
+      '<div style="padding:0 14px 12px"><div class="status-opts">'+['在线','忙碌','隐身'].map(function(x){
+        return '<button data-act="h5-status" data-s="'+x+'" class="'+(state.status===x?'on':'')+'">'+x+'</button>';
+      }).join('')+'</div></div></div>'+
+      '<div class="group-block"><div class="gb-row">'+ic('monitor',17)+'已登录设备<span class="gb-r">3 台 '+ic('chev',13)+'</span></div></div>'+
+      '<div class="group-block">'+
+      [['Windows 客户端','当前设备 · 上海','monitor'],['macOS 客户端','2 小时前活跃','monitor'],['H5 网页端','本设备 · 在线','phone']].map(function(d){
+        return '<div class="gb-row">'+ic(d[2],17)+esc(d[0])+'<span class="gb-r">'+esc(d[1])+'</span></div>';
+      }).join('')+'</div>'+
+      '<div class="group-block">'+
+      [['消息通知','已开启','bell'],['隐私与安全','','lock'],['通用设置','','settings']].map(function(d){
+        return '<button class="gb-row" data-act="h5-qentry" data-name="'+d[0]+'">'+ic(d[2],17)+d[0]+'<span class="gb-r">'+d[1]+ic('chev',13)+'</span></button>';
+      }).join('')+'</div>'+
+      '<button class="btn" style="width:100%;justify-content:center;color:#ef4b5b" data-act="h5-logout">'+ic('logout',16)+'退出登录</button></div>';
+  }
+  s.innerHTML=html;
+  if(p==='chat')scrollBottom(document.getElementById('h5Msgs'));
+}
+
+/* ==================== 桌面 ==================== */
+function renderDesktop(){
+  var c=C[state.deskConv];
+  var rail=[['msg','消息',true],['contacts','通讯录',false],['folder','文件',false],['chart','统计',false]];
+  document.getElementById('desktopFrame').innerHTML=
+  '<div class="titlebar"><div class="mac-dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>'+
+    '<div class="tb-title">NexIM · '+esc(c.name)+'</div><div class="tb-sync"><i class="dot"></i>已同步 · 延迟 23ms</div></div>'+
+  '<div class="desktop-body">'+
+    '<nav class="rail"><div class="r-logo">N</div>'+rail.map(function(r){
+      return '<button class="'+(r[2]?'on':'')+'" data-act="desk-rail" data-name="'+r[1]+'">'+ic(r[0],20)+'</button>';
+    }).join('')+'<div class="r-bottom"><button data-act="desk-bell">'+ic('bell',19)+'</button><button data-act="desk-shortcut">'+ic('settings',19)+'</button>'+
+      av('林','linear-gradient(135deg,#4f6ef7,#7b61ff)','sm')+'</div></nav>'+
+    '<section class="conv-col"><div class="cc-head"><div class="h5-search" style="margin:0">'+ic('search',14)+'搜索会话 / 用户 / 消息</div>'+
+      '<div class="conv-filters"><button class="'+(state.filter==='all'?'on':'')+'" data-act="desk-filter" data-f="all">全部</button>'+
+      '<button class="'+(state.filter==='unread'?'on':'')+'" data-act="desk-filter" data-f="unread">未读 '+convOrder.reduce(function(s,i){return s+C[i].unread;},0)+'</button>'+
+      '<button class="'+(state.filter==='group'?'on':'')+'" data-act="desk-filter" data-f="group">群聊</button>'+
+      '<button data-act="read-all" title="FR-MSG-25">'+ic('check',13)+'全部已读</button>'+
+      '<button data-act="reminds" title="FR-MSG-26">'+ic('bell',13)+'提醒我</button></div></div>'+
+      '<div class="conv-scroll scroll">'+convListHtml(state.deskConv)+'</div></section>'+
+    '<section class="chat-col"><div class="chat-top">'+av(c.name,c.color,'sm')+
+      '<div><div class="ct-name">'+esc(c.name)+'</div><div class="ct-sub">'+esc(c.online||'在线')+' · 消息已云端同步 180 天</div></div><div style="flex:1"></div>'+
+      '<button class="icon-btn" data-act="desk-search">'+ic('search',17)+'</button>'+
+      '<button class="icon-btn" data-act="desk-call-audio" title="语音通话">'+ic('phoneIn',17)+'</button>'+
+      '<button class="icon-btn" data-act="desk-call-video" title="视频通话">'+ic('video',17)+'</button>'+
+      '<button class="icon-btn" data-act="desk-members">'+ic('users',17)+'</button>'+
+      '<button class="icon-btn">'+ic('more',17)+'</button></div>'+
+      '<div class="chat-msgs scroll" id="deskMsgs">'+messagesHtml(c.id)+'</div>'+
+      (state.memberPanel&&c.type==='group'?'<div class="member-panel"><h4>群成员 · '+c.members+'</h4>'+
+        [['林晓','群主'],['李工','管理员'],['王敏','成员'],['赵琳','成员'],['张伟','成员'],['陈静','成员']].map(function(m,i){
+          var cols=['#4f6ef7','#e9834a','#3ba58c','#f2994a','#3ba7d8','#a05ce6'];
+          return '<div class="mp-row">'+av(m[0],cols[i],'sm')+'<span>'+m[0]+'</span><span style="margin-left:auto;color:#8a95aa;font-size:10px">'+m[1]+'</span></div>';
+        }).join('')+'<button class="btn sm" style="width:100%;justify-content:center;margin-top:12px" data-act="desk-invite">'+ic('plus',13)+'邀请成员</button></div>':'')+
+      (state.mention==='desk'?mentionHtml():'')+
+      '<div class="composer"><div class="composer-tools">'+
+        [['smile','表情'],['image','图片'],['clip','文件'],['at','@提及'],['flag','截图']].map(function(t){
+          return '<button data-act="desk-tool" data-name="'+t[1]+'" title="'+t[1]+'">'+ic(t[0],17)+'</button>';
+        }).join('')+'</div>'+
+        '<input id="deskInput" data-input="desk" placeholder="输入消息，Enter 发送..." autocomplete="off">'+
+        '<button class="btn primary" data-act="desk-send">发送 '+ic('send',14)+'</button></div>'+
+      '<div class="tip-line"><span><kbd>Ctrl</kbd>+<kbd>K</kbd> 全局搜索</span><span><kbd>Enter</kbd> 发送消息</span><span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd> 截图</span><span>支持拖拽文件到窗口</span></div>'+
+    '</section></div>'+
+    (!state.authed?'<div class="vcall" style="align-items:center;justify-content:center"><div style="text-align:center;padding:24px"><div style="font-size:15px;font-weight:700">未登录</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin:8px 0 18px;line-height:1.7">请在 H5 端登录或注册，<br>桌面端将自动同步相同账号的消息</div><button class="btn primary" data-act="auth-demo">使用演示账号一键登录</button></div></div>':'')+(state.call.active&&!state.call.ringing?vcallHtml():'')+(state.call.ringing?incomingHtml():'')+
+    '<div class="desk-status"><span class="ds-ok"><i class="dot"></i>长连接正常 (wss://im.nex.com/ws)</span><span>设备：Windows 客户端</span><span>本地缓存：已加密 · 1.2 GB</span><button class="btn sm" data-act="sim-incoming">'+ic('phoneIn',13)+'模拟来电</button><span style="margin-left:auto">v1.0.0 · 自动更新已开启</span></div>';
+  scrollBottom(document.getElementById('deskMsgs'));
+}
+
+/* ==================== 管理后台 ==================== */
+const adminMenus=[
+  {g:'概览',items:[['dashboard','工作台','grid']]},
+  {g:'用户与组织',items:[['users','用户管理','users'],['depts','组织架构','dept'],['groups','群组管理','hash'],['loginLogs','登录日志','monitor']]},
+  {g:'权限治理',items:[['roles','角色权限','shield'],['permPreview','权限预览','key'],['logs','操作日志','audit']]},
+  {g:'内容与安全',items:[['audit','消息审计','eye'],['sensitive','内容安全','flag'],['notices','公告管理','bell']]},
+  {g:'音视频',items:[['calls','通话记录','phoneIn'],['rtcQuality','质量监控','activity']]},
+  {g:'系统',items:[['settings','系统设置','settings']]}
+];
+const pageTitle={dashboard:'工作台',users:'用户管理',depts:'组织架构',groups:'群组管理',loginLogs:'登录日志',roles:'角色权限',permPreview:'权限预览',logs:'操作日志',audit:'消息审计',sensitive:'内容安全',notices:'公告管理',calls:'通话记录',rtcQuality:'质量监控',settings:'系统设置'};
+const notices=[
+  {id:'n1',title:'V1.4 版本发布与维护窗口公告',scope:'全员',status:'已发布',publish:'2026-11-14 18:00',read:'92%',top:true},
+  {id:'n2',title:'信息安全意识培训通知（附课件）',scope:'研发中心',status:'定时中',publish:'2026-11-16 09:00',read:'—',top:false},
+  {id:'n3',title:'供暖季办公楼空调使用说明',scope:'总部园区',status:'已发布',publish:'2026-11-10 08:30',read:'78%',top:false},
+  {id:'n4',title:'国庆假期值班安排',scope:'客服部',status:'已下线',publish:'2026-09-28 14:00',read:'100%',top:false}
+];
+const users=[
+  {id:'u1',name:'林晓',account:'linxiao',dept:'研发中心 / 产品组',role:'超级管理员',status:'正常',last:'2026-11-15 09:12',color:'#4f6ef7'},
+  {id:'u2',name:'张伟',account:'zhangwei',dept:'研发中心 / 后端组',role:'普通成员',status:'正常',last:'2026-11-15 09:40',color:'#3ba7d8'},
+  {id:'u3',name:'赵琳',account:'zhaolin',dept:'研发中心 / 前端组',role:'运营管理员',status:'正常',last:'2026-11-15 08:55',color:'#e9834a'},
+  {id:'u4',name:'李工',account:'ligong',dept:'研发中心 / 架构组',role:'普通成员',status:'正常',last:'2026-11-14 21:03',color:'#3ba58c'},
+  {id:'u5',name:'陈静',account:'chenjing',dept:'市场部 / 品牌组',role:'部门管理员',status:'禁用',last:'2026-11-10 14:22',color:'#a05ce6'},
+  {id:'u6',name:'王敏',account:'wangmin',dept:'审计部',role:'审计员',status:'正常',last:'2026-11-15 07:48',color:'#f2994a'},
+  {id:'u7',name:'周涛',account:'zhoutao',dept:'客服部',role:'客服主管',status:'正常',last:'2026-11-15 09:02',color:'#12a594'},
+  {id:'u8',name:'何雨',account:'heyu',dept:'市场部 / 渠道组',role:'普通成员',status:'正常',last:'2026-11-13 18:31',color:'#e26ab4'}
+];
+const roles=[
+  {id:'r1',code:'SUPER_ADMIN',name:'超级管理员',count:2,builtin:true,scope:'1',perms:'*'},
+  {id:'r2',code:'OPS_ADMIN',name:'运营管理员',count:6,builtin:true,scope:'1',perms:['dashboard:view','user:list','user:edit','user:disable','dept:edit','group:list','group:freeze','group:dissolve','audit:message:list','sensitive:config','menu:settings','rtc:record:list','rtc:quality:view','rtc:force-end']},
+  {id:'r3',code:'AUDITOR',name:'审计员',count:3,builtin:true,scope:'1',perms:['dashboard:view','audit:message:list','audit:message:export','log:list','log:export','menu:settings','rtc:record:list','rtc:record:playback','rtc:quality:view']},
+  {id:'r4',code:'DEPT_ADMIN',name:'部门管理员',count:12,builtin:false,scope:'2',perms:['dashboard:view','user:list','user:edit','group:list','group:freeze','menu:settings']},
+  {id:'r5',code:'SUPPORT',name:'客服主管',count:8,builtin:false,scope:'3',perms:['dashboard:view','audit:message:list','report:handle','menu:settings']}
+];
+const permGroups=[
+  {t:'菜单与目录权限',hint:'控制动态路由与侧边栏可见性',nodes:[['工作台','dashboard:view','菜单'],['用户管理','menu:users','菜单'],['组织架构','menu:depts','菜单'],['角色权限','menu:roles','菜单'],['消息审计','menu:audit','菜单'],['系统设置','menu:settings','菜单']]},
+  {t:'接口权限',hint:'服务端网关中间件强制校验（URL + Method）',nodes:[['用户列表','user:list','GET /api/v1/users'],['编辑用户','user:edit','PUT /api/v1/users/{id}'],['启停账号','user:disable','PATCH /api/v1/users/{id}/status'],['组织编辑','dept:edit','POST /api/v1/depts'],['群组冻结','group:freeze','PATCH /api/v1/groups/{id}'],['群组解散','group:dissolve','DELETE /api/v1/groups/{id}'],['授权变更','rbac:role:grant','PUT /api/v1/admin/roles/{id}/permissions'],['通话记录查看','rtc:record:list','GET /api/v1/rtc/records'],['录制回放','rtc:record:playback','GET /api/v1/rtc/records/{id}/playback'],['质量监控','rtc:quality:view','GET /api/v1/rtc/quality'],['强制挂断','rtc:force-end','POST /api/v1/rtc/force-end']]},
+  {t:'按钮 / 操作点权限',hint:'v-permission 指令控制显隐，服务端仍二次校验',nodes:[['新增用户','user:create','按钮'],['重置密码','user:reset-pwd','按钮'],['导出用户','user:export','按钮'],['导出审计消息','audit:message:export','按钮'],['导出操作日志','log:export','按钮'],['配置敏感词','sensitive:config','按钮'],['处理举报','report:handle','按钮']]}
+];
+const scopes=[['1','全部数据'],['2','本部门及下级'],['3','本部门'],['4','仅本人'],['5','自定义部门']];
+const groups=[
+  {id:'g1',name:'产品评审群',owner:'林晓',members:12,msgs:'1,284',status:'正常',created:'2026-08-12'},
+  {id:'g2',name:'前端研发组',owner:'赵琳',members:8,msgs:'8,932',status:'正常',created:'2026-03-02'},
+  {id:'g3',name:'全员公告群',owner:'系统',members:486,msgs:'326',status:'正常',created:'2026-01-05'},
+  {id:'g4',name:'外部协作群',owner:'周涛',members:32,msgs:'1,103',status:'已冻结',created:'2026-09-20'},
+  {id:'g5',name:'运维值班群',owner:'李工',members:6,msgs:'4,521',status:'正常',created:'2026-05-18'}
+];
+const auditRows=[
+  {t:'09:41:22',conv:'产品评审群',from:'李工',type:'文件',text:'02-技术架构文档.md（文件消息）',tag:'正常'},
+  {t:'09:32:08',conv:'张伟 ↔ 林晓',from:'张伟',type:'文本',text:'那我们十点先对齐一下接口',tag:'正常'},
+  {t:'09:18:45',conv:'外部协作群',from:'访客_3021',type:'文本',text:'[已脱敏] 含敏感词内容，已按策略拦截',tag:'命中'},
+  {t:'08:57:13',conv:'前端研发组',from:'赵琳',type:'文本',text:'动态路由已经跑通，菜单按权限码过滤了',tag:'正常'},
+  {t:'08:12:30',conv:'系统通知',from:'系统',type:'通知',text:'安全提醒：检测到异地登录尝试',tag:'正常'},
+  {t:'昨日 21:04',conv:'陈静 ↔ 林晓',from:'陈静',type:'文本',text:'权限树那块建议加半选状态',tag:'正常'}
+];
+const logRows=[
+  {u:'林晓',m:'角色权限',a:'更新角色 OPS_ADMIN 权限集合',ip:'10.20.3.18',t:'2026-11-15 09:38',r:'成功'},
+  {u:'王敏',m:'消息审计',a:'导出审计结果（320 条）',ip:'10.20.5.44',t:'2026-11-15 09:21',r:'成功'},
+  {u:'赵琳',m:'用户管理',a:'禁用账号 chenjing',ip:'10.20.3.77',t:'2026-11-15 08:46',r:'成功'},
+  {u:'未知',m:'认证',a:'登录失败 5 次触发锁定',ip:'203.0.113.42',t:'2026-11-15 07:12',r:'失败'},
+  {u:'林晓',m:'系统设置',a:'修改消息保留天数 180 → 180',ip:'10.20.3.18',t:'2026-11-14 18:02',r:'成功'},
+  {u:'周涛',m:'内容安全',a:'新增敏感词 3 条',ip:'10.20.6.12',t:'2026-11-14 16:33',r:'成功'}
+];
+function renderAdminMenu(){
+  document.getElementById('adminMenu').innerHTML=adminMenus.map(function(g){
+    return '<div class="as-group">'+g.g+'</div>'+g.items.map(function(it){
+      return '<button data-act="admin-page" data-page="'+it[0]+'" class="'+(state.adminPage===it[0]?'on':'')+'" title="'+it[1]+'">'+ic(it[2],17)+'<span>'+it[1]+'</span></button>';
+    }).join('');
+  }).join('');
+  document.getElementById('adminCrumb').textContent=pageTitle[state.adminPage];
+  document.getElementById('atSearchIcon').innerHTML=ic('search',14);
+  document.getElementById('btnBell').innerHTML=ic('bell',17);
+}
+function hint(text,extra){return '<div class="proto-hint">'+ic('shield',15)+esc(text)+'<span class="ph-r">'+esc(extra||'交互原型 · 数据为演示数据')+'</span></div>';}
+function kpi(t,v,d,ico,down){return '<div class="card kpi"><div class="k-t">'+esc(t)+'</div><div class="k-v">'+esc(v)+'</div><div class="k-d '+(down?'down':'')+'">'+esc(d)+'</div><div class="k-ico">'+ic(ico,19)+'</div></div>';}
+function pageDashboard(){
+  var pts1='0,145 55,120 110,132 165,82 220,96 275,52 330,70 385,28 440,42 495,16';
+  var pts2='0,160 55,148 110,152 165,126 220,134 275,110 330,120 385,92 440,104 495,84';
+  return hint('工作台指标来自消息链路埋点与聚合任务，支持近 7 / 30 天切换。','FR-ADMIN-01')+
+  '<div class="toolbar"><div class="sp"></div><button class="btn sm" data-act="dash-range" data-r="7">近 7 天</button><button class="btn sm" data-act="dash-range" data-r="30">近 30 天</button><button class="btn sm" data-act="dash-refresh">'+ic('refresh',13)+'刷新</button></div>'+
+  '<div class="grid4">'+
+    kpi('当前在线用户','8,642','较昨日 +12.4% · 峰值 9,180','users')+
+    kpi('今日消息量','1,284,309','峰值 4,820 QPS · 群聊占 38%','msg')+
+    kpi('活跃用户（DAU）','9,127','较昨日 +5.1%','user')+
+    kpi('活跃群组','3,486','今日有消息的会话数','hash')+
+  '</div>'+
+  '<div class="grid2"><div class="card"><h3>消息量趋势</h3><div class="csub">按小时聚合 · 单聊 / 群聊总量</div>'+
+    '<div class="chart-wrap"><svg viewBox="0 0 500 200" width="100%" height="200" preserveAspectRatio="none">'+
+      [40,80,120,160].map(function(y){return '<line x1="0" y1="'+y+'" x2="500" y2="'+y+'" stroke="#eef1f7" stroke-width="1"/>';}).join('')+
+      '<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f6ef7" stop-opacity=".28"/><stop offset="1" stop-color="#4f6ef7" stop-opacity="0"/></linearGradient></defs>'+
+      '<polygon points="'+pts1+' 495,200 0,200" fill="url(#ga)"/>'+
+      '<polyline points="'+pts2+'" fill="none" stroke="#c8cfdf" stroke-width="2" stroke-dasharray="5 5"/>'+
+      '<polyline points="'+pts1+'" fill="none" stroke="#4f6ef7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '</svg></div><div class="legend"><span><i style="background:#4f6ef7"></i>今日</span><span><i style="background:#c8cfdf"></i>昨日</span><span style="margin-left:auto">00:00 — 24:00</span></div></div>'+
+    '<div class="card"><h3>消息类型分布</h3><div class="csub">今日各类型消息占比</div>'+
+    [['文本',72],['图片',14],['文件',8],['语音',4],['系统',2]].map(function(b){
+      return '<div class="bar-row"><span class="bl">'+b[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+b[1]+'%"></div></div><span class="bv">'+b[1]+'%</span></div>';
+    }).join('')+'</div>'+
+    '<div class="card" style="margin-top:14px"><h3>客户端分布（登录分布）</h3><div class="csub">按最后活跃端统计的登录占比</div>'+
+    [['Windows',34],['H5 移动端',32],['macOS',24],['Linux',10]].map(function(b){
+      return '<div class="bar-row"><span class="bl">'+b[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+b[1]+'%"></div></div><span class="bv">'+b[1]+'%</span></div>';
+    }).join('')+'</div></div>'+
+  '<div class="grid2"><div class="card"><h3>最近后台操作</h3><div class="csub">全部写操作自动记录审计日志</div>'+
+    logRows.slice(0,4).map(function(l){return '<div class="timeline-item"><i class="tl-dot"></i><div><b>'+esc(l.u)+'</b> · '+esc(l.a)+'</div><span class="tl-time">'+esc(l.t)+'</span></div>';}).join('')+
+    '</div><div class="card"><h3>系统健康度</h3><div class="csub">核心链路实时状态</div>'+
+    [['Gateway 集群','3 / 3 节点正常','ok'],['消息到达率','99.993%','ok'],['Kafka 消费 lag','1,204 条','warn'],['待处理告警','2 条 · 内容安全 / 异常登录','warn'],['MySQL 主从','正常 · 延迟 0.3s','ok'],['对象存储','可用率 100%','ok']].map(function(r){
+      return '<div class="switch-row"><div>'+r[0]+'<div class="sr-desc">'+r[1]+'</div></div><span class="state '+r[2]+'">'+(r[2]==='ok'?'正常':'关注')+'</span></div>';
+    }).join('')+'</div></div>';
+}
+function userRowsHtml(){
+  var q=(document.getElementById('userQuery')?document.getElementById('userQuery').value:'').trim();
+  var st=document.getElementById('userStatus')?document.getElementById('userStatus').value:'';
+  var list=users.filter(function(u){return (!q||u.name.indexOf(q)>=0||u.account.indexOf(q)>=0||u.dept.indexOf(q)>=0)&&(!st||u.status===st);});
+  if(!list.length)return '<tr><td colspan="7" style="text-align:center;color:#8a95aa;padding:36px">未找到匹配的用户</td></tr>';
+  return list.map(function(u){
+    return '<tr><td><div class="u-cell">'+av(u.name,u.color,'sm')+'<div>'+esc(u.name)+'<small>@'+esc(u.account)+'</small></div></div></td>'+
+      '<td>'+esc(u.dept)+'</td><td><span class="code">'+esc(u.role)+'</span></td>'+
+      '<td><span class="state '+(u.status==='正常'?'ok':'off')+'"><i class="dot"></i>'+esc(u.status)+'</span></td>'+
+      '<td>'+esc(u.last)+'</td><td><span class="state info">已认证</span></td>'+
+      '<td style="white-space:nowrap"><button class="btn sm" data-act="user-edit" data-id="'+u.id+'">编辑</button> '+
+      '<button class="btn sm '+(u.status==='正常'?'danger':'ghost')+'" data-act="user-toggle" data-id="'+u.id+'">'+(u.status==='正常'?'禁用':'启用')+'</button></td></tr>';
+  }).join('');
+}
+function pageUsers(){
+  return hint('列表按当前角色的数据范围自动过滤；启停账号会同步断开该用户全部长连接。','FR-ADMIN-02 / FR-RBAC-05')+
+  '<div class="card"><div class="toolbar"><input id="userQuery" data-input="search" placeholder="姓名 / 账号 / 部门" style="width:210px">'+
+    '<select id="userStatus" data-input="status"><option value="">全部状态</option><option>正常</option><option>禁用</option></select>'+
+    '<select><option>全部部门</option><option>研发中心</option><option>市场部</option><option>审计部</option></select>'+
+    '<button class="btn" data-act="user-search">'+ic('search',14)+'查询</button><button class="btn" data-act="user-reset">重置</button><div class="sp"></div>'+
+    '<button class="btn" data-act="user-export">'+ic('download',14)+'导出</button><button class="btn primary" data-act="user-add">'+ic('plus',14)+'新增用户</button></div>'+
+    '<table class="tbl"><thead><tr><th>用户</th><th>部门</th><th>角色</th><th>状态</th><th>最后登录</th><th>认证</th><th>操作</th></tr></thead><tbody id="userRows">'+userRowsHtml()+'</tbody></table>'+
+    '<div class="pager">共 '+users.length+' 条 <button>‹</button><button class="on">1</button><button>2</button><button>›</button></div></div>';
+}
+function pageDepts(){
+  var depts=[['总部','1,248'],['研发中心','386'],['产品组','42'],['后端组','86'],['前端组','54'],['架构组','18'],['市场部','212'],['审计部','16'],['客服部','96']];
+  return hint('组织架构变更在 60 秒内同步到 H5 与桌面端通讯录，并影响 RBAC 数据范围。','FR-CONTACT-01 / FR-ADMIN-03')+
+  '<div class="split"><div class="card"><h3>部门树</h3><div class="csub">支持拖拽调整层级</div>'+
+    depts.map(function(d,i){return '<div class="tree-row '+(i===1?'on':'')+'" data-act="dept-select" data-name="'+d[0]+'">'+ic(i<2?'folder':'chev',14)+esc(d[0])+'<span class="tr-c">'+d[1]+' 人</span></div>';}).join('')+
+    '<button class="btn primary sm" style="width:100%;justify-content:center;margin-top:12px" data-act="dept-add">'+ic('plus',13)+'新增部门</button></div>'+
+  '<div><div class="card" style="margin-bottom:14px"><h3>研发中心 · 成员</h3><div class="csub">当前选中部门，共 386 人</div>'+
+    '<table class="tbl"><thead><tr><th>姓名</th><th>岗位</th><th>手机号（已脱敏）</th><th>状态</th></tr></thead><tbody>'+
+    [['林晓','产品负责人','138****0086','正常'],['张伟','Go 后端工程师','139****2214','正常'],['赵琳','前端工程师','137****8890','正常'],['李工','架构师','136****4412','正常']].map(function(u){
+      return '<tr><td><div class="u-cell">'+av(u[0],'#4f6ef7','sm')+u[0]+'</div></td><td>'+u[1]+'</td><td><span class="code">'+u[2]+'</span></td><td><span class="state ok">'+u[3]+'</span></td></tr>';
+    }).join('')+'</tbody></table></div>'+
+    '<div class="card"><h3>数据范围示例</h3><div class="csub">部门物化路径 /1/3/ 用于自动注入 SQL 过滤条件</div>'+
+    '<p style="font-size:12px;line-height:1.9;color:#4a556b">选择「部门管理员」角色后，部门树中仅「本部门及下级」可见；列表查询由 ORM 中间件自动追加 <span class="code">dept.path LIKE &#39;/1/3/%&#39;</span> 条件，业务代码无需手写，避免遗漏导致越权。</p></div></div></div>';
+}
+function pageGroups(){
+  return hint('冻结 / 解散属于敏感操作，需二次确认并写入审计日志（含操作人与 IP）。','FR-GROUP-08 / FR-SEC-01')+
+  '<div class="card"><div class="toolbar"><input placeholder="群名称 / 群主" style="width:210px"><select><option>全部状态</option><option>正常</option><option>已冻结</option></select>'+
+    '<button class="btn">'+ic('search',14)+'查询</button><div class="sp"></div><button class="btn" data-act="group-export">'+ic('download',14)+'导出</button></div>'+
+    '<table class="tbl"><thead><tr><th>群组</th><th>群主</th><th>成员数</th><th>消息量</th><th>创建时间</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
+    groups.map(function(g){
+      return '<tr><td><div class="u-cell">'+av(g.name,'#5f72f6','sm')+esc(g.name)+'</div></td><td>'+esc(g.owner)+'</td><td>'+g.members+'</td><td>'+esc(g.msgs)+'</td><td>'+esc(g.created)+'</td>'+
+        '<td><span class="state '+(g.status==='正常'?'ok':'warn')+'">'+esc(g.status)+'</span></td>'+
+        '<td style="white-space:nowrap"><button class="btn sm" data-act="group-view" data-id="'+g.id+'">查看</button> '+
+        '<button class="btn sm '+(g.status==='正常'?'':'ghost')+'" data-act="group-freeze" data-id="'+g.id+'">'+(g.status==='正常'?'冻结':'解冻')+'</button> '+
+        '<button class="btn sm danger" data-act="group-dissolve" data-id="'+g.id+'">解散</button></td></tr>';
+    }).join('')+'</tbody></table></div>';
+}
+function currentRole(){return roles.filter(function(r){return r.id===state.role;})[0];}
+function hasPerm(code){var r=currentRole();return r.perms==='*'||r.perms.indexOf(code)>=0;}
+function pageRoles(){
+  var r=currentRole();
+  return hint('用户 → 角色 → 权限（菜单 / 接口 / 按钮）+ 数据范围；服务端网关强制校验，前端仅控制展示。','FR-RBAC-01 ~ 11')+
+  '<div class="role-split"><div class="card"><h3>角色列表</h3><div class="csub">共 '+roles.length+' 个角色 · 支持角色继承</div>'+
+    roles.map(function(x){
+      return '<div class="role-item '+(state.role===x.id?'on':'')+'" data-act="role-select" data-id="'+x.id+'">'+ic(x.builtin?'lock':'shield',16)+
+        '<span>'+esc(x.name)+'</span><span class="ri-c">'+x.count+'</span></div>';
+    }).join('')+'<button class="btn primary sm" style="width:100%;justify-content:center;margin-top:12px" data-act="role-add">'+ic('plus',13)+'新建角色</button></div>'+
+  '<div><div class="card" style="margin-bottom:14px"><div class="perm-head"><div><h3>'+esc(r.name)+' · 权限配置</h3><div class="csub" style="margin:4px 0 0">角色编码 <span class="code">'+esc(r.code)+'</span> · 权限版本 v12</div></div><div class="sp"></div>'+
+    '<button class="btn sm" data-act="perm-all">全选</button><button class="btn sm" data-act="perm-none">清空</button>'+
+    '<button class="btn primary sm" data-act="role-save">'+ic('check',13)+'保存并生效</button></div>'+
+    permGroups.map(function(g,gi){
+      return '<div class="perm-group"><div class="pg-title">'+ic('key',15)+esc(g.t)+'<span class="pg-txt">'+esc(g.hint)+'</span></div><div class="pg-body">'+
+        '<div class="perm-node"><label><input type="checkbox" data-group-check="'+gi+'" id="pg-'+gi+'"><b>全选该组</b></label><span class="pn-code">'+g.nodes.length+' 项</span></div>'+
+        g.nodes.map(function(n){
+          return '<div class="perm-node child"><label><input type="checkbox" data-group="'+gi+'" data-code="'+n[1]+'" '+(hasPerm(n[1])?'checked':'')+'>'+esc(n[0])+'</label>'+
+            '<span class="pn-type">'+esc(n[2].split(' ')[0])+'</span><span class="pn-code">'+esc(n[1])+'</span></div>';
+        }).join('')+'</div></div>';
+    }).join('')+
+    '</div><div class="card"><h3>数据范围</h3><div class="csub">列表查询自动注入范围条件，取多角色中的最宽范围</div>'+
+    '<div class="scope-list">'+scopes.map(function(s){
+      return '<label class="'+(r.scope===s[0]?'on':'')+'"><input type="radio" name="scope" value="'+s[0]+'" '+(r.scope===s[0]?'checked':'')+' data-act="scope-change">'+s[1]+'</label>';
+    }).join('')+'</div>'+
+    '<p style="font-size:11.5px;color:#8a95aa;margin-top:12px">提示：勾选权限树后点击「保存并生效」，角色版本号 +1，Redis 权限缓存即刻失效。</p></div></div></div>';
+}
+function pageLogs(){
+  return hint('审计日志仅追加写入，应用账号无 UPDATE / DELETE 权限，保留 ≥ 180 天。','FR-SEC-01 / FR-ADMIN-08')+
+  '<div class="card"><div class="toolbar"><input placeholder="操作人 / IP / 关键词" style="width:210px"><select><option>全部模块</option><option>用户管理</option><option>角色权限</option><option>消息审计</option></select>'+
+    '<input type="date" value="2026-11-15"><button class="btn">'+ic('search',14)+'查询</button><div class="sp"></div>'+
+    '<button class="btn" data-act="log-export">'+ic('download',14)+'导出日志</button></div>'+
+    '<table class="tbl"><thead><tr><th>时间</th><th>操作人</th><th>模块</th><th>操作内容</th><th>来源 IP</th><th>结果</th></tr></thead><tbody>'+
+    logRows.map(function(l){
+      return '<tr><td>'+esc(l.t)+'</td><td>'+esc(l.u)+'</td><td><span class="code">'+esc(l.m)+'</span></td><td>'+esc(l.a)+'</td><td>'+esc(l.ip)+'</td>'+
+        '<td><span class="state '+(l.r==='成功'?'ok':'danger')+'">'+esc(l.r)+'</span></td></tr>';
+    }).join('')+'</tbody></table><div class="pager">共 1,284 条 <button>‹</button><button class="on">1</button><button>2</button><button>3</button><button>›</button></div></div>';
+}
+function pageAudit(){
+  return hint('消息审计受权限码 audit:message:list 控制，导出需 MFA 二次验证且操作本身留痕。','FR-ADMIN-06 / FR-SEC-03')+
+  '<div class="card" style="margin-bottom:14px"><h3>审计检索</h3><div class="csub">支持按用户 / 会话 / 时间范围 / 关键字组合检索</div>'+
+    '<div class="toolbar"><input placeholder="关键字" style="width:190px"><input placeholder="发送人 UID" style="width:150px">'+
+    '<select><option>全部会话类型</option><option>单聊</option><option>群聊</option><option>系统通知</option></select>'+
+    '<input type="date" value="2026-11-15"><button class="btn primary">'+ic('search',14)+'检索</button></div></div>'+
+  '<div class="card"><div class="toolbar"><h3 style="font-size:13px">检索结果 <span style="color:#8a95aa;font-weight:400">· 6 条</span></h3><div class="sp"></div>'+
+    '<button class="btn" data-act="audit-export">'+ic('download',14)+'导出结果</button></div>'+
+    '<table class="tbl"><thead><tr><th>时间</th><th>会话</th><th>发送人</th><th>类型</th><th>内容（脱敏）</th><th>检测结果</th></tr></thead><tbody>'+
+    auditRows.map(function(a){
+      return '<tr><td>'+esc(a.t)+'</td><td>'+esc(a.conv)+'</td><td>'+esc(a.from)+'</td><td><span class="state info">'+esc(a.type)+'</span></td><td>'+esc(a.text)+'</td>'+
+        '<td><span class="state '+(a.tag==='正常'?'ok':'danger')+'">'+esc(a.tag)+'</span></td></tr>';
+    }).join('')+'</tbody></table></div>';
+}
+var words=['博彩','代开发票','内部资料外传','竞品报价','身份证号批量导出'];
+function pageSensitive(){
+  return hint('敏感词基于 DFA/AC 自动机匹配，词库版本号变更 1 分钟内全节点热生效。','FR-MSG-22 / FR-ADMIN-07')+
+  '<div class="grid2" style="grid-template-columns:1fr 1fr"><div class="card"><h3>敏感词库</h3><div class="csub">当前词库 v8 · 共 '+words.length+' 条演示词</div>'+
+    '<div class="word-cloud">'+words.map(function(w){return '<span class="word">'+esc(w)+'<button data-act="word-del" data-w="'+esc(w)+'">'+ic('x',12)+'</button></span>';}).join('')+'</div>'+
+    '<div class="toolbar"><input id="wordInput" data-input="word" placeholder="输入新敏感词" style="flex:1"><button class="btn primary" data-act="word-add">'+ic('plus',14)+'添加</button>'+
+    '<button class="btn">导入词库</button></div></div>'+
+  '<div class="card"><h3>命中策略</h3><div class="csub">策略修改后无需重启服务</div>'+
+    [['拦截并提示发送方','命中后拒绝发送，返回错误码 4005','block'],['替换为 * ','消息正常投递，敏感内容脱敏','replace'],['仅告警留痕','消息正常投递并生成审计记录','alert']].map(function(s,i){
+      return '<div class="switch-row"><div>'+esc(s[0])+'<div class="sr-desc">'+esc(s[1])+'</div></div><div class="switch '+(i===0?'on':'')+'" data-act="strategy" data-name="'+esc(s[0])+'"></div></div>';
+    }).join('')+'</div></div>'+
+  '<div class="card"><h3>最近命中记录</h3><div class="csub">命中内容进入内容安全工单，可关联举报处理</div>'+
+    '<table class="tbl"><thead><tr><th>时间</th><th>发送人</th><th>会话</th><th>命中词</th><th>处理动作</th><th>状态</th></tr></thead><tbody>'+
+    [['09:18:45','访客_3021','外部协作群','内部资料外传','拦截','已处理'],['08:42:10','u_2044','单聊','代开发票','拦截','已处理'],['昨日 19:33','u_1890','市场交流群','竞品报价','告警','待处理']].map(function(a){
+      return '<tr><td>'+a[0]+'</td><td>'+a[1]+'</td><td>'+a[2]+'</td><td><span class="state danger">'+a[3]+'</span></td><td>'+a[4]+'</td><td><span class="state '+(a[5]==='已处理'?'ok':'warn')+'">'+a[5]+'</span></td></tr>';
+    }).join('')+'</tbody></table></div>';
+}
+function pageSettings(){
+  return hint('全部关键参数配置化，修改后热生效；变更写入操作日志并可回滚。','FR-ADMIN-10 / NFR-MNT-01')+
+  '<div class="grid2" style="grid-template-columns:1.4fr 1fr"><div class="card"><h3>消息与文件</h3><div class="csub">影响服务端行为的核心参数</div>'+
+    '<div class="form-grid">'+
+    '<div class="field"><label>消息云端保留天数</label><input id="cfgRetain" type="number" value="180"><div class="fh">到期归档至对象存储后从热库删除</div></div>'+
+    '<div class="field"><label>单文件上限（MB）</label><input type="number" value="100"><div class="fh">超过前置拦截，返回 5002</div></div>'+
+    '<div class="field"><label>群成员上限</label><input type="number" value="2000"><div class="fh">默认建群 500 人，超大群走读扩散</div></div>'+
+    '<div class="field"><label>撤回时间窗口（分钟）</label><input type="number" value="2"><div class="fh">群主 / 管理员可撤回成员消息</div></div>'+
+    '<div class="field"><label>心跳间隔（秒）</label><input type="number" value="30"><div class="fh">90 秒无心跳判定离线</div></div>'+
+    '<div class="field"><label>下载签名 URL 有效期</label><input value="15m"><div class="fh">过期返回 403</div></div>'+
+    '</div></div>'+
+  '<div class="card"><h3>安全策略</h3><div class="csub">管理员强制开启 MFA</div>'+
+    [['管理员登录 MFA 二次验证',true,'开启后超级管理员登录需邮箱验证码'],['登录失败锁定',true,'连续 5 次失败锁定 10 分钟'],['异地登录告警',true,'异常 IP 触发安全通知与日志'],['导出消息需 MFA',true,'敏感操作二次确认'],['外部联系人消息审计',false,'对外部会话启用更严格留痕']].map(function(s){
+      return '<div class="switch-row"><div>'+esc(s[0])+'<div class="sr-desc">'+esc(s[2])+'</div></div><div class="switch '+(s[1]?'on':'')+'" data-act="switch" data-name="'+esc(s[0])+'"></div></div>';
+    }).join('')+'</div></div>'+
+  '<div class="toolbar" style="margin-top:16px"><div class="sp"></div><button class="btn" data-act="settings-reset">恢复默认</button><button class="btn primary" data-act="settings-save">'+ic('check',14)+'保存配置</button></div>';
+}
+const callRows=[
+  {t:'今天 09:41',type:'1v1 视频',from:'林晓',peer:'张伟',members:2,dur:'12:36',mode:'P2P',q:'良好',rec:'已录制'},
+  {t:'今天 09:12',type:'1v1 语音',from:'张伟',peer:'林晓',members:2,dur:'03:08',mode:'P2P',q:'良好',rec:'—'},
+  {t:'今天 08:47',type:'群组视频',from:'赵琳',peer:'前端研发组',members:7,dur:'28:15',mode:'SFU',q:'一般',rec:'已录制'},
+  {t:'昨天 20:03',type:'1v1 视频',from:'陈静',peer:'林晓',members:2,dur:'00:00',mode:'P2P',q:'未接',rec:'—'},
+  {t:'昨天 17:32',type:'群组语音',from:'李工',peer:'运维值班群',members:5,dur:'16:44',mode:'SFU',q:'良好',rec:'—'},
+  {t:'昨天 15:20',type:'1v1 语音',from:'周涛',peer:'外部客户',members:2,dur:'05:51',mode:'TURN',q:'一般',rec:'已录制'}
+];
+function pageCalls(){
+  return hint('通话记录来自 rtc 服务落库，回放受 rtc:record:playback 权限与 MFA 保护，强制挂断写入审计。','FR-RTC-09/10/14')+
+  '<div class="card"><div class="toolbar"><input placeholder="发起人 / 对端 / 房间号" style="width:210px">'+
+    '<select><option>全部类型</option><option>1v1 语音</option><option>1v1 视频</option><option>群组语音</option><option>群组视频</option></select>'+
+    '<select><option>全部结果</option><option>已接</option><option>未接</option><option>强制挂断</option></select>'+
+    '<input type="date" value="2026-11-15"><button class="btn primary">'+ic('search',14)+'检索</button><div class="sp"></div>'+
+    '<button class="btn" data-act="call-export">'+ic('download',14)+'导出</button></div>'+
+    '<table class="tbl"><thead><tr><th>时间</th><th>类型</th><th>发起人</th><th>对端 / 群</th><th>成员数</th><th>时长</th><th>模式</th><th>质量</th><th>录制</th><th>操作</th></tr></thead><tbody>'+
+    callRows.map(function(r){
+      return '<tr><td>'+esc(r.t)+'</td><td><span class="state info">'+esc(r.type)+'</span></td><td>'+esc(r.from)+'</td><td>'+esc(r.peer)+'</td><td>'+r.members+'</td><td>'+esc(r.dur)+'</td>'+
+        '<td><span class="code">'+esc(r.mode)+'</span></td><td><span class="state '+(r.q==='良好'?'ok':(r.q==='未接'?'off':'warn'))+'">'+esc(r.q)+'</span></td>'+
+        '<td>'+(r.rec==='已录制'?'<span class="state ok">已录制</span>':'—')+'</td>'+
+        '<td style="white-space:nowrap"><button class="btn sm" data-act="call-play" data-t="'+esc(r.t)+'">回放</button> '+
+        '<button class="btn sm danger" data-act="call-force" data-t="'+esc(r.t)+'">强制挂断</button></td></tr>';
+    }).join('')+'</tbody></table><div class="pager">共 3,286 条 <button>‹</button><button class="on">1</button><button>2</button><button>3</button><button>›</button></div></div>';
+}
+function pageRtcQuality(){
+  return hint('质量数据来自客户端 RTC_QUALITY 周期上报，异常自动触发告警并推送运维。','FR-RTC-11 / NFR-RTC-01~04')+
+  '<div class="grid4">'+
+    kpi('当前并发通话','126','峰值 214 · 1v1 占比 68%','phoneIn')+
+    kpi('接通率','94.8%','未接 41 · 拒接 27','phoneIn')+
+    kpi('平均通话时长','07:24','P95 21:08','clock')+
+    kpi('平均 MOS','4.21','低于 3.8 占比 2.1%','activity')+
+  '</div>'+
+  '<div class="grid2"><div class="card"><h3>MOS 分布</h3><div class="csub">按通话结束时客户端自评 + 服务端探针综合计算</div>'+
+    [['4.5~5.0',62],['4.0~4.5',26],['3.5~4.0',8],['3.0~3.5',3],['低于 3.0',1]].map(function(b){
+      return '<div class="bar-row"><span class="bl">'+b[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+b[1]+'%"></div></div><span class="bv">'+b[1]+'%</span></div>';
+    }).join('')+'<div class="legend"><span>丢包率 &lt; 1%：68%</span><span>卡顿率 0.6%</span><span>音频时延 P99 312ms</span></div></div>'+
+  '<div class="card"><h3>通话告警</h3><div class="csub">近 24 小时音视频相关告警</div>'+
+    [['10:12','周涛 的通话 MOS 降至 3.4（TURN 中继高丢包）','warn','待处理'],['08:31','外部客户通话连续 2 次未接','warn','已通知客服'],['昨天 22:40','SFU 节点 sfu-2 CPU 85%','warn','已自动扩容'],['昨天 19:05','群组视频 9 路上行带宽不足，已降层','ok','已自动处理']].map(function(a){
+      return '<div class="timeline-item"><i class="tl-dot" style="background:'+(a[2]==='warn'?'#f59e0b':'#12b886')+'"></i><div>'+esc(a[1])+'</div><span class="tl-time">'+a[0]+' · '+a[3]+'</span></div>';
+    }).join('')+'</div></div>';
+}
+function pageNotices(){
+  return hint('公告到达客户端系统通知会话，已读率按 HyperLogLog 估算（误差 < 1%），下线后不可再送达。','FR-ADMIN-13')+
+  '<div class="card"><div class="toolbar"><input placeholder="标题 / 范围" style="width:200px"><select><option>全部状态</option><option>已发布</option><option>定时中</option><option>已下线</option></select>'+
+    '<button class="btn primary">'+ic('search',14)+'查询</button><div class="sp"></div>'+
+    '<button class="btn primary" data-act="notice-new">'+ic('plus',14)+'新建公告</button></div>'+
+    '<table class="tbl"><thead><tr><th>标题</th><th>定向范围</th><th>状态</th><th>发布时间</th><th>已读率</th><th>操作</th></tr></thead><tbody>'+
+    notices.map(function(n){
+      return '<tr><td><div class="u-cell">'+(n.top?'<span style="color:#f59e0b">'+ic('pin',14)+'</span>':'')+esc(n.title)+(n.top?'<small>置顶</small>':'')+'</div></td>'+
+        '<td><span class="code">'+esc(n.scope)+'</span></td>'+
+        '<td><span class="state '+(n.status==='已发布'?'ok':(n.status==='定时中'?'info':'off'))+'">'+esc(n.status)+'</span></td>'+
+        '<td>'+esc(n.publish)+'</td><td>'+esc(n.read)+'</td>'+
+        '<td style="white-space:nowrap"><button class="btn sm" data-act="notice-edit" data-id="'+n.id+'">编辑</button> '+
+        (n.status!=='已下线'?'<button class="btn sm danger" data-act="notice-offline" data-id="'+n.id+'">下线</button>':'—')+'</td></tr>';
+    }).join('')+'</tbody></table></div>';
+}
+function pageLoginLogs(){
+  var rows=[
+    ['2026-11-15 09:12','林晓','10.20.3.18','上海','Windows 客户端','成功','正常'],
+    ['2026-11-15 08:46','赵琳','10.20.3.77','上海','macOS 客户端','成功','正常'],
+    ['2026-11-15 07:12','未知','203.0.113.42','海外','Web','失败 5 次','异常登录'],
+    ['2026-11-15 06:58','王敏','10.20.5.44','北京','H5 网页端','成功','正常'],
+    ['2026-11-14 22:31','陈静','10.20.8.12','广州','Windows 客户端','成功','异地登录'],
+    ['2026-11-14 20:05','张伟','10.20.3.9','上海','Windows 客户端','成功','正常']
+  ];
+  return hint('登录日志全量留存，异地 / 高频失败自动告警，异常 IP 可一键封禁。','FR-ADMIN-09 / FR-AUTH-06')+
+  '<div class="card"><div class="toolbar"><input placeholder="用户 / IP" style="width:190px"><select><option>全部结果</option><option>成功</option><option>失败</option></select>'+
+    '<select><option>全部风险</option><option>异常登录</option><option>异地登录</option></select>'+
+    '<input type="date" value="2026-11-15"><button class="btn primary">'+ic('search',14)+'查询</button><div class="sp"></div>'+
+    '<button class="btn" data-act="login-export">'+ic('download',14)+'导出</button></div>'+
+    '<table class="tbl"><thead><tr><th>时间</th><th>用户</th><th>来源 IP</th><th>地点</th><th>设备</th><th>结果</th><th>风险</th><th>操作</th></tr></thead><tbody>'+
+    rows.map(function(r){
+      return '<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td><span class="code">'+esc(r[2])+'</span></td><td>'+esc(r[3])+'</td><td>'+esc(r[4])+'</td>'+
+        '<td><span class="state '+(r[5].indexOf('成功')>=0?'ok':'danger')+'">'+esc(r[5])+'</span></td>'+
+        '<td><span class="state '+(r[6]==='正常'?'info':(r[6]==='异常登录'?'danger':'warn'))+'">'+esc(r[6])+'</span></td>'+
+        '<td>'+(r[6]!=='正常'?'<button class="btn sm danger" data-act="ban-ip" data-ip="'+esc(r[2])+'">封禁 IP</button>':'—')+'</td></tr>';
+    }).join('')+'</tbody></table><div class="pager">共 12,480 条 <button>‹</button><button class="on">1</button><button>2</button><button>›</button></div></div>';
+}
+function pagePermPreview(){
+  var rows=[
+    ['林晓','SUPER_ADMIN','全部','菜单 5 · 接口 40 · 按钮 12','内置角色（跳过校验，仍审计）'],
+    ['赵琳','OPS_ADMIN','全部','菜单 6 · 接口 18 · 按钮 8','运营管理全量'],
+    ['王敏','AUDITOR','全部','菜单 3 · 接口 6 · 按钮 2','仅审计只读 + 导出'],
+    ['陈静','DEPT_ADMIN','本部门及下级','菜单 3 · 接口 8 · 按钮 4','受数据范围约束']
+  ];
+  return hint('选择用户查看其最终权限 = 多角色权限并集，数据范围取最宽集合；冲突项给出来源说明。','FR-RBAC-12')+
+  '<div class="card" style="margin-bottom:14px"><div class="toolbar"><span>选择用户：</span>'+
+    '<select id="ppUser" style="width:220px">'+rows.map(function(r){return '<option>'+r[0]+'</option>';}).join('')+'</select>'+
+    '<button class="btn primary" data-act="pp-view">'+ic('eye',14)+'查看权限</button><div class="sp"></div>'+
+    '<span style="font-size:11px;color:#8a95aa">权限码由 /auth/permissions 实时下发，角色变更 5 秒内生效</span></div></div>'+
+  '<div class="card"><table class="tbl"><thead><tr><th>用户</th><th>绑定角色</th><th>数据范围</th><th>权限统计</th><th>来源说明</th></tr></thead><tbody>'+
+    rows.map(function(r){
+      return '<tr><td><div class="u-cell">'+av(r[0],'#4f6ef7','sm')+r[0]+'</div></td>'+
+        '<td><span class="code">'+r[1]+'</span></td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td></tr>';
+    }).join('')+'</tbody></table>'+
+  '<div style="margin-top:14px;font-size:12px;color:#4a556b;line-height:1.9">示例：用户同时绑定「部门管理员（本部门及下级）」与「审计员（全部）」两个角色时，数据范围取最宽的「全部」，接口权限取并集；若两个角色对同一资源授权冲突，按「允许优先」处理并在审计中留痕。</div></div>';
+}
+function renderAdmin(){
+  renderAdminMenu();
+  var f={dashboard:pageDashboard,users:pageUsers,depts:pageDepts,groups:pageGroups,loginLogs:pageLoginLogs,roles:pageRoles,permPreview:pagePermPreview,logs:pageLogs,audit:pageAudit,sensitive:pageSensitive,notices:pageNotices,calls:pageCalls,rtcQuality:pageRtcQuality,settings:pageSettings}[state.adminPage];
+  document.getElementById('adminContent').innerHTML=f();
+  if(state.adminPage==='roles')updateGroupChecks();
+}
+function updateGroupChecks(){
+  permGroups.forEach(function(g,gi){
+    var boxes=Array.prototype.slice.call(document.querySelectorAll('input[data-group="'+gi+'"]'));
+    var checked=boxes.filter(function(b){return b.checked;}).length;
+    var head=document.getElementById('pg-'+gi);
+    if(head){head.checked=checked===boxes.length&&boxes.length>0;head.indeterminate=checked>0&&checked<boxes.length;}
+  });
+}
+
+/* ==================== 动作 ==================== */
+function openConv(id,target){
+  state.mention=null;
+  if(target==='h5'){state.h5Conv=id;state.h5Page='chat';C[id].unread=0;
+    var idx=convOrder.indexOf(id);C[id].last='刚刚 · 已同步';renderH5();}
+  else{state.deskConv=id;C[id].unread=0;renderDesktop();}
+  toast('会话已打开，未读清零并同步到其他端','ok');
+}
+function sendMsg(target){
+  state.mention=null;
+  var inp=document.getElementById(target==='h5'?'h5Input':'deskInput');
+  if(!inp)return;
+  var text=inp.value.trim();
+  if(!text){toast('请输入消息内容','warn');return;}
+  var id=target==='h5'?(state.h5Conv||'c1'):state.deskConv;
+  var now=new Date(),time=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+  C[id].messages.push({mine:true,sender:'我',text:text,time:time,read:false});
+  C[id].last='我：'+text;C[id].time='刚刚';
+  inp.value='';
+  if(target==='h5'){document.getElementById('h5Msgs').innerHTML=messagesHtml(id);scrollBottom(document.getElementById('h5Msgs'));}
+  else{document.getElementById('deskMsgs').innerHTML=messagesHtml(id);scrollBottom(document.getElementById('deskMsgs'));}
+  flashSync();
+  toast('消息已发送 · 已同步到 H5 / 桌面 / 其他在线设备','ok');
+  setTimeout(function(){
+    var m=C[id].messages[C[id].messages.length-1];if(m&&m.mine)m.read=true;
+    if(state.view==='h5'&&state.h5Page==='chat'&&(state.h5Conv||'c1')===id){var e=document.getElementById('h5Msgs');if(e){e.innerHTML=messagesHtml(id);scrollBottom(e);}}
+    if(state.view==='desktop'&&state.deskConv===id){var e2=document.getElementById('deskMsgs');if(e2){e2.innerHTML=messagesHtml(id);scrollBottom(e2);}}
+  },1200);
+}
+function switchView(v){
+  state.view=v;
+  ['h5','desktop','admin'].forEach(function(x){document.getElementById('view-'+x).classList.toggle('hide',x!==v);});
+  document.querySelectorAll('#viewTabs button').forEach(function(b){b.classList.toggle('on',b.dataset.view===v);});
+  if(v==='h5')renderH5();if(v==='desktop')renderDesktop();if(v==='admin')renderAdmin();
+}
+
+document.addEventListener('click',function(e){
+  if(!(e.target.closest&&e.target.closest('#msgMenu')))closeMsgMenu();
+  var t=e.target.closest('[data-act]');if(!t)return;
+  var a=t.dataset.act,id=t.dataset.id;
+  switch(a){
+    case 'switch-view':switchView(t.dataset.view);break;
+    case 'h5-page':state.h5Page=t.dataset.page;if(t.dataset.page==='chat'&&!state.h5Conv)state.h5Conv='c1';renderH5();break;
+    case 'h5-back':state.h5Page='convs';state.attach=false;renderH5();break;
+    case 'auth-login':doLogin();break;
+    case 'auth-demo':doLogin('linxiao','123456');break;
+    case 'auth-register':state.authPage='register';renderH5();break;
+    case 'auth-back':state.authPage='login';renderH5();break;
+    case 'auth-register-submit':doRegister();break;
+    case 'auth-send-code':sendCode();break;
+    case 'auth-sso':toast('跳转企业 SSO（OAuth2 / LDAP，后台可配置）','ok');break;
+    case 'auth-code':toast('验证码登录：输入手机号获取验证码（演示环境 123456）');break;
+    case 'auth-forgot':toast('找回密码：验证手机号后重置（原型演示略）');break;
+    case 'h5-new':modal('发起','<div style="display:flex;flex-direction:column;gap:8px">'+
+      '<button class="btn" style="justify-content:flex-start" data-act="go-create-group">'+ic('users',16)+'发起群聊</button>'+
+      '<button class="btn" style="justify-content:flex-start" data-act="go-add-friend">'+ic('user',16)+'添加朋友</button>'+
+      '<button class="btn" style="justify-content:flex-start" data-act="scan-qr">'+ic('search',16)+'扫一扫</button></div>',null,'取消');break;
+    case 'go-add-friend':closeModal();state.h5Page='addFriend';renderH5();break;
+    case 'go-create-group':closeModal();state.groupPicked=[];state.h5Page='createGroup';renderH5();break;
+    case 'scan-qr':closeModal();toast('调用摄像头扫码（H5 降级为相册选图识别）');break;
+    case 'add-friend':{
+      var au=searchUsers.filter(function(x){return x.id===t.dataset.id;})[0];if(!au)break;
+      modal('添加好友','<div class="field"><label>发送申请</label><input id="afMsg" value="你好，我是'+esc(state.loginUser)+'，申请添加你为好友" style="width:100%"></div>'+
+        '<div class="field"><label>备注名（可选）</label><input id="afRemark" placeholder="如：周涛-客服部" style="width:100%"></div>'+
+        '<div style="font-size:11px;color:#8a95aa">对方通过后自动建立双向好友关系，可立即发起会话</div>',
+        function(){au.added=true;closeModal();
+          var fs=document.getElementById('friendSearch'),rows=document.getElementById('friendRows');
+          if(rows)rows.innerHTML=friendRowsHtml(fs?fs.value:'');
+          toast('好友申请已发送给 '+au.name+'，等待对方通过','ok');},'发送');break;}
+    case 'gp-toggle':{
+      var gid=t.dataset.id,pos=state.groupPicked.indexOf(gid);
+      if(pos>=0)state.groupPicked.splice(pos,1);else state.groupPicked.push(gid);
+      renderH5();break;}
+    case 'group-create':{
+      if(!state.groupPicked.length){toast('请至少选择 1 位联系人','warn');break;}
+      var gnames=state.groupPicked.map(function(id){var u=groupCandidates.filter(function(x){return x.id===id;})[0];return u?u.name:'';}).filter(Boolean);
+      modal('创建群聊','<div class="field"><label>群名称</label><input id="newGroupName" placeholder="如：架构评审临时群" style="width:100%"></div>'+
+        '<div class="field"><label>群成员（'+gnames.length+' 人）</label><div style="font-size:12px;color:#4a556b;line-height:1.7">'+esc(gnames.join('、'))+'</div></div>'+
+        '<div style="font-size:11px;color:#8a95aa">创建后将自动生成群会话并发送一条系统消息，成员可立即收发消息</div>',
+        function(){
+          var nm=((document.getElementById('newGroupName')||{}).value||'').trim()||'新建群聊';
+          var nid='g_'+Date.now();
+          C[nid]={id:nid,name:nm,type:'group',color:'linear-gradient(135deg,#5f72f6,#8b5cf6)',short:nm.slice(0,1),unread:0,pinned:false,muted:false,time:'刚刚',
+            last:'你创建了群聊，邀请 '+gnames.length+' 位成员',online:(gnames.length+1)+' 人在线',members:gnames.length+1,
+            messages:[{mine:false,sender:'系统',text:'你创建了群聊「'+nm+'」，'+gnames.join('、')+' 已加入',time:nowTime(),color:'#64748b'}]};
+          convOrder.unshift(nid);state.h5Conv=nid;state.h5Page='chat';state.groupPicked=[];
+          closeModal();renderH5();flashSync();toast('群聊「'+nm+'」已创建，消息将实时同步到各端','ok');
+        },'创建');break;}
+    case 'pick-media':{
+      var pi=parseInt(t.dataset.i,10),pk=t.dataset.kind,item=(mediaItems[pk]||[])[pi];
+      closeModal();if(item)sendMedia(pk,item);break;}
+    case 'view-media':openMedia(parseInt(t.dataset.idx,10));break;
+    case 'h5-chat-more':toast('会话设置：置顶 / 免打扰 / 群公告 / 成员管理');break;
+    case 'h5-attach':state.attach=!state.attach;renderH5();break;
+    case 'attach':{
+      var ak=t.dataset.kind;
+      if(ak==='call-audio'){state.attach=false;startCall(state.h5Conv||'c1','audio');break;}
+      if(ak==='call-video'){state.attach=false;startCall(state.h5Conv||'c1','video');break;}
+      if(ak==='image'||ak==='video'||ak==='file'){state.attach=false;openPicker(ak);break;}
+      toast('表情面板（原型演示）');break;}
+    case 'h5-send':sendMsg('h5');break;
+    case 'h5-qentry':if(t.dataset.name==='新的朋友'){state.h5Page='friends';renderH5();break;}toast(t.dataset.name+' · 功能入口（详见业务需求文档）');break;
+    case 'h5-contact':openConv('c2','h5');break;
+    case 'h5-status':state.status=t.dataset.s;renderH5();toast('状态已设为「'+t.dataset.s+'」，已广播给好友','ok');break;
+    case 'h5-settings':toast('设置：通知 / 隐私 / 通用');break;
+    case 'h5-logout':modal('退出登录','确认退出当前账号？本地缓存的加密消息将被清除，重新登录后从云端增量同步。',function(){
+      closeModal();state.authed=false;state.h5Page='convs';state.authPage='login';
+      renderH5();renderDesktop();toast('已退出登录，所有长连接已断开','ok');},'退出',true);break;
+    case 'msg-revoke':{
+      var cid=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv,mi=parseInt(t.dataset.idx,10);
+      modal('撤回消息','确认撤回这条消息？撤回后消息正文将从服务端与各端缓存中移除，并广播 REVOKE_PUSH 同步展示撤回提示（仅 2 分钟内可撤回）。',function(){
+        C[cid].messages.splice(mi,1);closeModal();
+        if(state.view==='h5')renderH5();else renderDesktop();
+        toast('消息已撤回，H5 / 桌面 / 其他在线设备已同步','ok');
+      },'确认撤回',true);break;}
+    case 'open-conv':openConv(id,state.view==='h5'?'h5':'desktop');break;
+    case 'desk-send':sendMsg('desktop');break;
+    case 'h5-call-audio':startCall(state.h5Conv||'c1','audio');break;
+    case 'desk-call-audio':startCall(state.deskConv,'audio');break;
+    case 'desk-call-video':startCall(state.deskConv,'video');break;
+    case 'call-toggle':callToggle(t.dataset.key);break;
+    case 'call-end':endCall('通话结束');break;
+    case 'call-min':if(state.view==='h5'){state.h5Page='chat';renderH5();}toast('通话已最小化，仍在进行中（桌面端悬浮窗示意）');break;
+    case 'sim-incoming':simulateIncoming();break;
+    case 'call-answer':answerCall();break;
+    case 'call-decline':declineCall();break;
+    case 'desk-filter':state.filter=t.dataset.f;
+      if(state.filter==='unread'){var ids=convOrder.filter(function(i){return C[i].unread;});if(ids.length)state.deskConv=ids[0];}
+      renderDesktop();toast('筛选：'+({all:'全部会话',unread:'仅未读',group:'群聊'}[state.filter]));break;
+    case 'desk-members':state.memberPanel=!state.memberPanel;renderDesktop();break;
+    case 'desk-invite':toast('邀请成员：链接 / 扫码 / 从组织架构选择');break;
+    case 'desk-tool':{
+      var dn=t.dataset.name;
+      if(dn==='@提及'){toggleMention();break;}
+      if(dn==='图片'){openPicker('image');break;}
+      if(dn==='文件'){openPicker('file');break;}
+      if(dn==='截图'){sendMedia('image',{label:'屏幕截图',bg:'linear-gradient(135deg,#4f6ef7,#7b61ff)'});break;}
+      if(dn==='表情'){toast('表情面板（原型演示）');break;}
+      toast(dn+'：调用桌面原生适配层');break;}
+    case 'desk-search':toast('全局搜索：消息 / 用户 / 文件（ES 检索）');break;
+    case 'desk-rail':toast('导航：'+t.dataset.name);break;
+    case 'desk-bell':case 'desk-tray-demo':showNotify();break;
+    case 'desk-shortcut':toast('快捷键：Ctrl+K 搜索 · Ctrl+Shift+A 截图 · Ctrl+Enter 发送');break;
+    case 'desk-file':toast('拖拽文件到窗口即发送；截图后 Ctrl+V 粘贴发送');break;
+    case 'desk-update':toast('检测到新版本 v1.0.1，差分更新包 12.4 MB，签名校验通过');break;
+    case 'notify-close':var n=document.getElementById('sysNotify');if(n)n.remove();break;
+    case 'admin-page':state.adminPage=t.dataset.page;renderAdmin();document.querySelector('.admin-main').scrollTop=0;break;
+    case 'admin-bell':toast('2 条待处理告警：内容安全命中 · 异常登录');break;
+    case 'dash-range':toast('已切换至近 '+t.dataset.r+' 天趋势');break;
+    case 'dash-refresh':renderAdmin();toast('指标已刷新','ok');break;
+    case 'user-search':document.getElementById('userRows').innerHTML=userRowsHtml();toast('查询完成');break;
+    case 'user-reset':document.getElementById('userQuery').value='';document.getElementById('userStatus').value='';document.getElementById('userRows').innerHTML=userRowsHtml();break;
+    case 'user-toggle':{
+      var u=users.filter(function(x){return x.id===id;})[0];
+      u.status=u.status==='正常'?'禁用':'正常';
+      document.getElementById('userRows').innerHTML=userRowsHtml();
+      toast('已'+(u.status==='禁用'?'禁用':'启用')+'账号 '+u.name+'，长连接已'+(u.status==='禁用'?'断开':'允许')+'，操作已记审计','ok');
+      break;}
+    case 'user-edit':{
+      var u2=users.filter(function(x){return x.id===id;})[0];
+      modal('编辑用户 · '+u2.name,'<div class="field"><label>姓名</label><input id="edName" value="'+esc(u2.name)+'"></div>'+
+        '<div class="field"><label>所属部门</label><input id="edDept" value="'+esc(u2.dept)+'"></div>'+
+        '<div class="field"><label>绑定角色</label><select id="edRole" style="width:100%">'+roles.map(function(r){return '<option '+(r.name===u2.role?'selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select></div>',
+        function(){u2.name=document.getElementById('edName').value||u2.name;u2.dept=document.getElementById('edDept').value||u2.dept;u2.role=document.getElementById('edRole').value;
+          closeModal();document.getElementById('userRows').innerHTML=userRowsHtml();toast('用户信息已保存并写入审计日志','ok');},'保存');
+      break;}
+    case 'user-add':modal('新增用户','<div class="field"><label>姓名</label><input id="nuName" placeholder="请输入姓名"></div>'+
+      '<div class="field"><label>登录账号</label><input id="nuAcc" placeholder="字母 / 数字"></div>'+
+      '<div class="field"><label>初始角色</label><select id="nuRole" style="width:100%">'+roles.map(function(r){return '<option>'+esc(r.name)+'</option>';}).join('')+'</select></div>',
+      function(){var n=document.getElementById('nuName').value.trim();if(!n){toast('请填写姓名','warn');return;}
+        users.unshift({id:'u'+(users.length+1),name:n,account:document.getElementById('nuAcc').value||'user'+(users.length+1),dept:'未分配',role:document.getElementById('nuRole').value,status:'正常',last:'—',color:'#64748b'});
+        closeModal();document.getElementById('userRows').innerHTML=userRowsHtml();toast('用户已创建，初始密码已发送至邮箱','ok');},'创建');break;
+    case 'user-export':case 'group-export':case 'log-export':case 'call-export':toast('导出任务已提交，完成后通过站内通知下载（导出行为已记审计）','ok');break;
+    case 'call-play':modal('回放通话录制','回放「'+esc(t.dataset.t)+'」的通话录像需要 MFA 二次验证。<br><br>验证码已发送至管理员邮箱（演示环境：123456）。<br><input id="mfa2" placeholder="请输入 6 位验证码" style="margin-top:12px;width:100%">',
+      function(){if(document.getElementById('mfa2').value!=='123456'){toast('验证码不正确','err');return;}
+        closeModal();toast('MFA 验证通过，正在加载录像（MP4 · H.264）','ok');},'验证并回放');break;
+    case 'call-force':modal('强制挂断通话','确认强制结束「'+esc(t.dataset.t)+'」的通话？双方将收到 CALL_FORCE_END 通知，通话记录标记为「强制挂断」。<br><br>该操作会写入审计日志（操作人、IP、时间）。',function(){
+      closeModal();toast('已强制挂断，双方已收到通知并记录审计','ok');},'确认挂断',true);break;
+    case 'dept-select':document.querySelectorAll('.tree-row').forEach(function(x){x.classList.remove('on');});t.classList.add('on');toast('已选中部门：'+t.dataset.name);break;
+    case 'dept-add':toast('新增部门：填写名称与上级部门后保存');break;
+    case 'group-view':toast('群详情：成员列表 / 群公告 / 消息量统计');break;
+    case 'group-freeze':{
+      var g=groups.filter(function(x){return x.id===id;})[0];
+      modal('确认'+(g.status==='正常'?'冻结':'解冻')+'群组','群组「'+esc(g.name)+'」'+(g.status==='正常'?'冻结后将禁止发送新消息，历史消息保留并可审计。':'解冻后恢复正常收发。')+'<br><br>该操作会写入审计日志（操作人、IP、时间）。',function(){
+        g.status=g.status==='正常'?'已冻结':'正常';closeModal();renderAdmin();toast('群组状态已更新，操作已记审计','ok');},'确认',g.status==='正常');break;}
+    case 'group-dissolve':{
+      var g2=groups.filter(function(x){return x.id===id;})[0];
+      modal('确认解散群组','此操作不可撤销：群组「'+esc(g2.name)+'」及其 '+g2.members+' 名成员关系将被移除，消息按留存策略归档。<br><br>请输入管理员密码并已完成 MFA 验证。',function(){
+        closeModal();toast('群组已解散，通知已推送给全部成员','ok');},'确认解散',true);break;}
+    case 'role-select':state.role=id;renderAdmin();break;
+    case 'role-add':modal('新建角色','<div class="field"><label>角色名称</label><input id="nrName" placeholder="如：内容审核员"></div>'+
+      '<div class="field"><label>角色编码</label><input id="nrCode" placeholder="如：CONTENT_REVIEWER"></div>'+
+      '<div class="field"><label>继承父角色（可选）</label><select style="width:100%"><option>不继承</option>'+roles.map(function(r){return '<option>'+esc(r.name)+'</option>';}).join('')+'</select></div>',
+      function(){var n=document.getElementById('nrName').value.trim();if(!n){toast('请填写角色名称','warn');return;}
+        roles.push({id:'r'+(roles.length+1),code:document.getElementById('nrCode').value||'CUSTOM',name:n,count:0,builtin:false,scope:'4',perms:['dashboard:view']});
+        state.role='r'+roles.length;closeModal();renderAdmin();toast('角色已创建，请为其勾选权限','ok');},'创建');break;
+    case 'perm-all':document.querySelectorAll('input[data-group]').forEach(function(b){b.checked=true;});updateGroupChecks();break;
+    case 'perm-none':document.querySelectorAll('input[data-group]').forEach(function(b){b.checked=false;});updateGroupChecks();break;
+    case 'role-save':{
+      var codes=Array.prototype.slice.call(document.querySelectorAll('input[data-group]:checked')).map(function(b){return b.dataset.code;});
+      var r=currentRole();r.perms=r.perms==='*'?'*':codes;
+      toast('权限已保存：'+r.name+' 共 '+codes.length+' 项 · 权限版本 v13 · Redis 缓存已失效','ok');break;}
+    case 'scope-change':{
+      var inp=t.tagName==='INPUT'?t:t.querySelector('input'),v=inp.value;currentRole().scope=v;
+      document.querySelectorAll('.scope-list label').forEach(function(l){l.classList.toggle('on',l.querySelector('input').value===v);});
+      toast('数据范围已设为「'+scopes.filter(function(s){return s[0]===v;})[0][1]+'」');break;}
+    case 'audit-export':modal('导出审计结果','导出消息正文属于敏感操作，需完成 MFA 二次验证。<br><br>验证码已发送至管理员邮箱（演示环境：123456）。<br><input id="mfa" placeholder="请输入 6 位验证码" style="margin-top:12px;width:100%">',
+      function(){if(document.getElementById('mfa').value!=='123456'){toast('验证码不正确','err');return;}
+        closeModal();toast('MFA 验证通过，导出任务已创建并写入审计日志','ok');},'验证并导出');break;
+    case 'word-add':{
+      var wi=document.getElementById('wordInput');if(!wi||!wi.value.trim()){toast('请输入敏感词','warn');break;}
+      words.push(wi.value.trim());renderAdmin();toast('敏感词已添加，词库版本 v9 已热更新','ok');break;}
+    case 'word-del':words=words.filter(function(w){return w!==t.dataset.w;});renderAdmin();toast('敏感词已移除');break;
+    case 'strategy':document.querySelectorAll('[data-act="strategy"]').forEach(function(s){s.classList.remove('on');});t.classList.add('on');toast('命中策略已切换为「'+t.dataset.name+'」');break;
+    case 'switch':t.classList.toggle('on');toast('配置已切换：'+t.dataset.name);break;
+    case 'settings-save':toast('系统配置已保存并热生效，变更已写入操作日志','ok');break;
+    case 'settings-reset':renderAdmin();toast('已恢复默认配置');break;
+    case 'toggle-theme':toggleTheme();break;
+    case 'cm':convAction(t.dataset.k,t.dataset.id);break;
+    case 'fwd':{
+      var fc=C[t.dataset.from],fi=parseInt(t.dataset.idx,10),fm=fc.messages[fi];
+      if(fm){C[t.dataset.id].messages.push({mine:true,sender:'我',text:(fm.text||'['+(fm.fileName||'消息')+']'),time:nowTime(),read:false});
+        C[t.dataset.id].last='我：[转发] '+(fm.text||fm.fileName||'消息');C[t.dataset.id].time='刚刚';}
+      closeModal();toast('已转发给 '+C[t.dataset.id].name+'（保留原发送者署名）','ok');break;}
+    case 'read-all':convOrder.forEach(function(i){C[i].unread=0;});renderDesktop();toast('全部会话已标记已读，已按会话上报最大已读 seq','ok');break;
+    case 'reminds':modal('提醒我','最近 @我 与引用我的消息（保留 30 天，点击定位）：<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">'+
+      [['李工 在 产品评审群 @我','架构文档已更新到 v1.4','今天 09:42','c1'],['张伟 在单聊 @我','十点对齐接口','09:18','c2'],['赵琳 在 前端研发组 引用我','动态路由已经跑通','昨天 17:20','c3']].map(function(r){
+        return '<button class="btn" style="justify-content:flex-start;text-align:left" data-act="remind-loc" data-id="'+r[3]+'">'+ic('at',15)+'<div><div style="font-weight:600">'+esc(r[0])+'</div><div style="font-size:11px;color:#8a95aa">'+esc(r[1])+' · '+esc(r[2])+'</div></div></button>';
+      }).join('')+'</div>',null,'关闭');break;
+    case 'remind-loc':closeModal();openConv(t.dataset.id,state.view==='h5'?'h5':'desktop');break;
+    case 'fa-handle':{
+      var fa=friendApplies.filter(function(x){return x.id===t.dataset.id;})[0];if(!fa)break;
+      fa.status=t.dataset.r==='ok'?1:2;renderH5();
+      toast(t.dataset.r==='ok'?'已同意 '+fa.name+' 的好友申请，可立即发起会话':'已拒绝 '+fa.name+' 的申请','ok');break;}
+    case 'notice-new':modal('新建公告','<div class="field"><label>标题</label><input id="ntTitle" placeholder="公告标题"></div>'+
+      '<div class="field"><label>定向范围</label><select id="ntScope" style="width:100%"><option>全员</option><option>研发中心</option><option>市场部</option><option>客服部</option><option>按角色：运营管理员</option></select></div>'+
+      '<div class="field"><label>定时发布（可选）</label><input id="ntTime" type="datetime-local"></div>'+
+      '<div class="field"><label>正文</label><textarea id="ntBody" rows="4" style="width:100%" placeholder="支持富文本与附件"></textarea></div>',
+      function(){var ti=document.getElementById('ntTitle').value.trim();if(!ti){toast('请填写公告标题','warn');return;}
+        var tm=document.getElementById('ntTime').value;
+        notices.unshift({id:'n'+(notices.length+1),title:ti,scope:document.getElementById('ntScope').value,status:tm?'定时中':'已发布',publish:tm?tm.replace('T',' '):'立即',read:'—',top:false});
+        closeModal();renderAdmin();toast(tm?'公告已创建，将定时发布':'公告已创建并推送到系统通知会话','ok');},'发布');
+      break;
+    case 'notice-edit':toast('编辑公告：内容与定向范围可修改，已读数据保留');break;
+    case 'notice-offline':{
+      var nn=notices.filter(function(x){return x.id===t.dataset.id;})[0];if(!nn)break;
+      modal('下线公告','确认下线「'+esc(nn.title)+'」？已送达用户仍可查看历史，未送达用户不再推送；已读率统计冻结。',function(){
+        nn.status='已下线';closeModal();renderAdmin();toast('公告已下线，操作已记审计','ok');},'确认下线',true);break;}
+    case 'cmd-conv':closeCmd();openConv(t.dataset.id,state.view==='h5'?'h5':'desktop');break;
+    case 'cmd-user':closeCmd();openConv('c2',state.view==='h5'?'h5':'desktop');break;
+    case 'cmd-page':closeCmd();switchView('admin');state.adminPage=t.dataset.id;renderAdmin();break;
+    case 'cmd-theme':toggleTheme();break;
+    case 'cmd-call':closeCmd();startCall(state.view==='h5'?(state.h5Conv||'c1'):state.deskConv,t.dataset.id==='video'?'video':'audio');break;
+    case 'mm':mmAction(t.dataset.k,parseInt(t.dataset.idx,10));break;
+    case 'mention-pick':{
+      var inp=document.getElementById(state.view==='h5'?'h5Input':'deskInput');
+      if(inp)inp.value=(inp.value||'')+t.dataset.name+' ';
+      state.mention=null;if(state.view==='h5')renderH5();else renderDesktop();
+      toast('已 @ '+t.dataset.name);break;}
+    case 'h5-mention':toggleMention();break;
+    case 'pp-view':toast('已查询「'+(document.getElementById('ppUser')?document.getElementById('ppUser').value:'')+'」的权限：多角色并集 + 数据范围取最宽','ok');break;
+    case 'login-export':toast('登录日志导出任务已提交','ok');break;
+    case 'ban-ip':modal('封禁 IP','确认封禁 '+esc(t.dataset.ip)+'？该 IP 的登录与消息请求将被拒绝，并加入风险名单。',function(){closeModal();toast('IP 已封禁，操作已记审计','ok');},'确认封禁',true);break;
+    case 'modal-close':closeModal();break;
+    case 'modal-confirm':if(window.__modalOk)window.__modalOk();else closeModal();break;
+  }
+});
+function showNotify(){
+  var old=document.getElementById('sysNotify');if(old)old.remove();
+  var d=document.createElement('div');d.className='toast-notify';d.id='sysNotify';
+  d.innerHTML=av('张','linear-gradient(135deg,#3ba7d8,#3f6fe8)','sm')+
+    '<div><div class="tn-t">张伟 · 新消息</div><div class="tn-s">协议帧结构定稿了吗？客户端这边准备接入了。</div></div>'+
+    '<button class="tn-x" data-act="notify-close">'+ic('x',14)+'</button>';
+  document.body.appendChild(d);
+  setTimeout(function(){if(d.parentNode)d.remove();},5000);
+}
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.dataset.groupCheck!==undefined){
+    var gi=t.dataset.groupCheck;
+    document.querySelectorAll('input[data-group="'+gi+'"]').forEach(function(b){b.checked=t.checked;});
+    updateGroupChecks();
+  }else if(t.dataset.group!==undefined){updateGroupChecks();}
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    if(e.target.dataset.input==='h5'){e.preventDefault();sendMsg('h5');}
+    else if(e.target.dataset.input==='desk'){e.preventDefault();sendMsg('desktop');}
+    else if(e.target.dataset.input==='search'){document.getElementById('userRows').innerHTML=userRowsHtml();}
+    else if(e.target.dataset.input==='word'){document.querySelector('[data-act="word-add"]').click();}
+  }
+  if((e.ctrlKey||e.metaKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();openCmd();}
+  if(e.key==='Escape'){closeModal();closeCmd();closeMsgMenu();}
+});
+document.addEventListener('contextmenu',function(e){
+  var row=e.target.closest?e.target.closest('.msg-row'):null;
+  var conv=e.target.closest?e.target.closest('.conv-item'):null;
+  if(row){openMsgMenu(e,row);}
+  else if(conv){openConvMenu(e,conv);}
+  else{closeMsgMenu();}
+});
+document.addEventListener('input',function(e){
+  if(e.target.dataset&&e.target.dataset.input==='cmd')cmdRender(e.target.value);
+  if(e.target.dataset&&e.target.dataset.input==='friend'){var rows=document.getElementById('friendRows');if(rows)rows.innerHTML=friendRowsHtml(e.target.value);}
+});
+document.addEventListener('click',function(e){
+  if(e.target.classList&&e.target.classList.contains('modal-mask'))closeModal();
+  if(e.target.classList&&e.target.classList.contains('cmd-mask'))closeCmd();
+});
+
+/* 初始渲染 */
+renderH5();renderDesktop();renderAdmin();applyTheme();
+</script>
+</body>
+</html>
