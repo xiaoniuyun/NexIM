@@ -86,6 +86,31 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0
 .badge.grey{background:#c9d1e0}
 .tag-pin{font-size:9px;padding:2px 5px;border-radius:5px;background:#fff0dc;color:#c47a08;font-weight:700}
 .sec-title{font-size:11px;color:var(--muted);font-weight:700;padding:8px 10px 5px;letter-spacing:.6px}
+/* ---------- 消息首页增强 ---------- */
+.av-wrap{position:relative;flex:none}
+.av-st{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid #fff;display:grid;place-items:center;box-shadow:0 0 0 1px rgba(20,30,60,.05)}
+.av-st.av-on{background:#22c55e}
+.av-st.av-off{background:#c3cbd9}
+.av-st.av-sys,.av-st.av-grp{width:16px;height:16px;background:var(--brand);color:#fff;border-color:#fff}
+.last-ico{color:var(--muted);display:inline-flex;vertical-align:-2px;margin-right:3px}
+.msg-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.msg-quick button{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:10px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;transition:.16s}
+.msg-quick button:hover{border-color:var(--brand);transform:translateY(-1px)}
+.msg-quick .mq-ico{width:38px;height:38px;border-radius:12px;display:grid;place-items:center}
+.msg-quick .mq-t{font-size:11px;font-weight:600;color:var(--ink2)}
+.msg-quick .mq-b{position:absolute;top:6px;right:9px;min-width:15px;height:15px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;display:grid;place-items:center}
+.msg-tabs{display:flex;align-items:center;gap:4px;background:#f0f2f8;border-radius:10px;padding:3px;margin-bottom:10px}
+.msg-tabs button{flex:1;font-size:11.5px;padding:6px 4px;border-radius:8px;color:var(--ink2);font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px}
+.msg-tabs button.on{background:var(--card);color:var(--brand);box-shadow:0 1px 4px rgba(28,42,80,.08)}
+.msg-tabs .tab-badge{font-style:normal;font-size:9px;background:var(--danger);color:#fff;border-radius:99px;padding:1px 5px}
+.msg-tabs .tab-read{flex:none;width:30px;margin-left:2px;background:transparent}
+.msg-summary{flex:none;display:flex;align-items:center;gap:8px;padding:9px 16px 0;background:#fff;font-size:11px;color:var(--muted)}
+.msg-summary b{font-size:12px;color:var(--ink)}
+.msg-summary .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);margin-left:auto}
+body.dark .msg-summary{background:#151d2f}
+.h5-head .icon-btn{position:relative}
+.hd-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:1.5px solid #fff}
+.h5-head .icon-btn .avatar{width:26px;height:26px;border-radius:9px;font-size:10px}
 .tabbar{flex:none;height:62px;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:6px}
 .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9aa5b8;font-size:10px;position:relative}
 .tabbar button.on{color:var(--brand);font-weight:700}
@@ -382,8 +407,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0
 .msg-menu button.danger:hover{background:var(--danger-soft)}
 .msg-menu .mm-sep{height:1px;background:var(--line);margin:5px 4px}
 
-/* ---------- @提及面板 ---------- */
-.mention-panel{position:absolute;left:14px;right:14px;bottom:64px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);max-height:220px;overflow:auto;padding:6px;z-index:15}
+/* ---------- @提及 / 表情面板 ---------- */
+.composer-wrap{position:relative}
+.mention-panel{position:absolute;left:0;right:0;bottom:calc(100% + 8px);background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);max-height:220px;overflow:auto;padding:6px;z-index:15}
 .mention-panel .mp-head{font-size:10.5px;color:var(--muted);padding:6px 8px 4px;font-weight:700}
 .mention-panel button{display:flex;align-items:center;gap:9px;width:100%;padding:8px 9px;border-radius:8px;font-size:12.5px;text-align:left}
 .mention-panel button:hover{background:var(--brand-soft)}
@@ -430,6 +456,63 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0
 .picked-row{display:flex;gap:6px;padding:10px 0;overflow:auto}
 .picked-row .avatar{flex:none;box-shadow:0 0 0 2px #fff}
 
+/* ---------- 安卓 / 苹果原生风格 ---------- */
+.phone.app-android{position:relative;border-radius:26px}
+.phone.app-android .h5-head{box-shadow:0 1px 3px rgba(20,30,60,.08)}
+.phone.app-android .h5-head .icon-btn[data-act="h5-new"]{display:none}
+.phone.app-android .tabbar button{position:relative;color:#7d8799}
+.phone.app-android .tabbar button.on{color:var(--brand);font-weight:700}
+.phone.app-android .tabbar button.on:before{content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);width:26px;height:3px;border-radius:3px;background:var(--brand)}
+.phone.app-android .fab{position:absolute;right:16px;bottom:78px;width:52px;height:52px;border-radius:17px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:grid;place-items:center;box-shadow:0 8px 20px rgba(79,110,247,.4);z-index:12}
+.phone.app-android .conv-item .ci-time{font-size:10px}
+.phone.app-ios{border-radius:44px;border-width:6px}
+.phone.app-ios .statusbar{font-weight:600;font-size:11px;letter-spacing:.2px}
+.phone.app-ios .tabbar{background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-top:.5px solid rgba(0,0,0,.12)}
+.phone.app-ios .tabbar button{flex-direction:column;gap:2px;font-size:9.5px}
+.phone.app-ios .tabbar button.on{color:var(--brand)}
+.phone.app-ios .h5-head h2{font-size:19px;font-weight:800;letter-spacing:-.3px}
+.phone.app-ios .switch{background:#e3e5ea}
+.phone.app-ios .switch.on{background:#34c759}
+.phone.app-ios .group-block{background:rgba(120,120,128,.09);border-radius:12px;padding:2px 12px;margin:10px 12px}
+.phone.app-ios .group-block .gb-row{padding:12px 2px;background:none}
+.phone.app-ios .qentry{border-radius:0;padding:11px 2px;background:none}
+.phone.app-ios .btn.primary{background:#0a84ff}
+.phone.app-ios .send-btn{background:#0a84ff;box-shadow:none}
+.phone.app-ios .sec-title{padding-left:16px}
+
+/* ---------- 平板 / 横屏布局（NFR-COMP-03） ---------- */
+.phone.wide{width:min(720px,92vw);height:440px}
+.phone.wide .conv-scroll{column-count:2;column-gap:10px}
+.phone.wide .conv-wrap{break-inside:avoid;margin-bottom:2px}
+.phone.wide .sec-title{column-span:all}
+.phone.wide .chat-col,.phone.wide .h5-body{min-width:0}
+
+/* ---------- 移动端手势（左滑操作 / 下拉刷新，FR-APP-08） ---------- */
+.conv-wrap{position:relative;overflow:hidden;border-radius:12px}
+.conv-actions{position:absolute;top:0;right:0;bottom:0;display:flex}
+.conv-actions button{width:62px;border:0;color:#fff;font-size:10.5px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center}
+.conv-actions .ca-pin{background:#4f6ef7}
+.conv-actions .ca-mute{background:#f0a23c}
+.conv-actions .ca-del{background:#ef4b5b}
+.conv-item{touch-action:pan-y}
+.ptr-ind{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;overflow:hidden;transition:height .12s}
+/* ---------- 锁屏来电（FR-APP-07） ---------- */
+.lock-call{position:absolute;inset:0;z-index:30;background:rgba(10,14,26,.92);backdrop-filter:blur(10px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff}
+.lock-call .lc-av{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font-size:26px;font-weight:700;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.lock-call .lc-name{font-size:19px;font-weight:700}
+.lock-call .lc-sub{font-size:11px;opacity:.7;padding:0 30px;text-align:center;line-height:1.7}
+.lock-call .lc-btns{display:flex;gap:60px;margin-top:26px}
+.lock-call .lc-btn{width:64px;height:64px;border-radius:50%;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-size:10px;gap:2px}
+.lock-call .lc-accept{background:#2ea44f}
+.lock-call .lc-decline{background:#e5484d}
+/* ---------- iOS 状态栏刘海 / 深色适配 ---------- */
+.phone.app-ios .statusbar{position:relative;z-index:1}
+.phone.app-ios .statusbar:before{content:'';position:absolute;top:5px;left:50%;transform:translateX(-50%);width:88px;height:20px;border-radius:11px;background:#10151f}
+body.dark .phone.app-ios .tabbar{background:rgba(24,31,49,.94);border-top-color:rgba(255,255,255,.1)}
+body.dark .phone.app-android .tabbar{background:#151c2d}
+body.dark .phone.app-ios .group-block{background:rgba(255,255,255,.06)}
+body.dark .phone.app-ios .qentry{background:none}
+
 /* ---------- 深色主题 ---------- */
 body.dark{--bg:#0e1320;--card:#181f31;--ink:#e6eaf4;--ink2:#aeb8cd;--muted:#7e89a0;--line:#2a3348;--brand-soft:#1e2a4a}
 body.dark .topbar,body.dark .admin-top,body.dark .titlebar,body.dark .desk-status{background:#151c2d;border-color:#2a3348}
@@ -443,6 +526,11 @@ body.dark .statusbar,body.dark .h5-head,body.dark .chat-head,body.dark .composer
 body.dark .h5-body,body.dark .chat-msgs{background:#101726}
 body.dark .bubble{background:#232c42;color:#e6eaf4;box-shadow:none}
 body.dark .h5-search,body.dark .composer input,body.dark .desktop .composer input{background:#20293d;color:#e6eaf4}
+body.dark .msg-tabs{background:#20293d}
+body.dark .msg-tabs button.on{background:#2b3550;color:#8fa6ff}
+body.dark .msg-quick button{background:#181f31;border-color:#2a3348}
+body.dark .av-st{border-color:#151d2f;box-shadow:none}
+body.dark .hd-dot{border-color:#151d2f}
 body.dark .desktop-body{background:#0f1524}
 body.dark .conv-col{background:#131b2c;border-color:#2a3348}
 body.dark .rail{background:#161c2e}
@@ -476,12 +564,14 @@ body.dark .contact-pick{border-color:#232c42}
   </div>
   <div class="seg" id="viewTabs">
     <button data-act="switch-view" data-view="h5" class="on">H5 移动端</button>
+    <button data-act="switch-view" data-view="android">安卓原生</button>
+    <button data-act="switch-view" data-view="ios">苹果原生</button>
     <button data-act="switch-view" data-view="desktop">桌面客户端</button>
     <button data-act="switch-view" data-view="admin">Vue 管理后台</button>
   </div>
   <div class="top-right">
-    <span class="pill" id="syncPill"><i class="dot"></i>已同步 · 3 端在线</span>
-    <span class="pill blue">交互原型 v1.3</span>
+    <span class="pill" id="syncPill"><i class="dot"></i>已同步 · 5 端在线</span>
+    <span class="pill blue">交互原型 v1.9</span>
     <button class="icon-btn" id="themeBtn" data-act="toggle-theme" title="切换深浅色主题"></button>
   </div>
 </header>
@@ -549,6 +639,78 @@ body.dark .contact-pick{border-color:#232c42}
     </div>
   </section>
 
+  <!-- ========== 安卓原生 ========== -->
+  <section class="view hide" id="view-android">
+    <div class="layout">
+      <aside class="panel">
+        <h3>安卓原生能力</h3>
+        <p class="sub">Android 8.0+，Kotlin + Jetpack Compose，Material Design 风格。业务页面与 H5 共用，原生层负责推送 / 通话 / 手势。</p>
+        <div class="page-list" id="andPageList"></div>
+        <div class="page-list" style="margin-top:12px">
+          <button data-act="app-demo" data-k="push">系统级推送（厂商通道 + FCM）<span class="num">FR-APP-02</span></button>
+          <button data-act="app-demo" data-k="badge">角标与锁屏通知<span class="num">FR-APP-03</span></button>
+          <button data-act="app-demo" data-k="perm">权限申请与降级<span class="num">FR-APP-04</span></button>
+          <button data-act="app-demo" data-k="update">应用内更新<span class="num">FR-APP-06</span></button>
+          <button data-act="app-demo" data-k="gesture">左滑操作 / 下拉刷新<span class="num">FR-APP-08</span></button>
+          <button data-act="lock-call">锁屏来电演示（系统来电）<span class="num">FR-APP-07</span></button>
+          <button data-act="wide-toggle">横屏 / 平板布局<span class="num">NFR-COMP-03</span></button>
+        </div>
+        <div class="chips"><span class="chip b">Kotlin</span><span class="chip">Jetpack Compose</span><span class="chip">Room</span><span class="chip">厂商推送</span></div>
+      </aside>
+      <div class="center-wrap"><div class="phone app-android">
+        <div class="statusbar"><span>9:41</span><span class="sb-r">5G &nbsp;▮▮▮ &nbsp;78%</span></div>
+        <div id="andScreen" class="h5-body" style="flex:1;display:flex;flex-direction:column;padding:0"></div>
+        <div class="tabbar" id="andTabbar"></div>
+        <div class="home-bar"></div>
+      </div></div>
+      <aside class="panel">
+        <h3>设计与实现要点</h3>
+        <p class="sub">安卓端复用 IM SDK 状态机与多端同步协议，仅替换原生适配层。</p>
+        <div class="note-item"><b>FR-APP-01</b><span>原生 App 与桌面 / H5 消息实时互通，同账号多端同步。</span></div>
+        <div class="note-item"><b>FR-APP-02</b><span>App 被杀后由厂商通道 / FCM 拉起，点击推送直达对应会话。</span></div>
+        <div class="note-item"><b>FR-APP-05</b><span>切后台短时保活；被回收后自动登录并增量同步（≤3s）。</span></div>
+        <div class="note-item"><b>FR-APP-07</b><span>锁屏接听、来电振动铃声、通话中画中画小窗、蓝牙耳机切换。</span></div>
+        <div class="note-item"><b>FR-APP-08</b><span>下拉刷新、左滑会话置顶 / 免打扰 / 删除、长按消息菜单、深色跟随系统。</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ========== 苹果原生 ========== -->
+  <section class="view hide" id="view-ios">
+    <div class="layout">
+      <aside class="panel">
+        <h3>苹果原生能力</h3>
+        <p class="sub">iOS 14+，Swift + SwiftUI，遵循人机界面指南（大标题 / 分组列表 / 画中画 / CallKit）。</p>
+        <div class="page-list" id="iosPageList"></div>
+        <div class="page-list" style="margin-top:12px">
+          <button data-act="app-demo" data-k="push">APNs 推送与通知分组<span class="num">FR-APP-02</span></button>
+          <button data-act="app-demo" data-k="badge">角标与锁屏预览<span class="num">FR-APP-03</span></button>
+          <button data-act="app-demo" data-k="perm">权限申请与降级<span class="num">FR-APP-04</span></button>
+          <button data-act="app-demo" data-k="pip">通话画中画 / 锁屏接听<span class="num">FR-APP-07</span></button>
+          <button data-act="app-demo" data-k="gesture">左滑操作 / 下拉刷新<span class="num">FR-APP-08</span></button>
+          <button data-act="lock-call">锁屏来电演示（CallKit）<span class="num">FR-APP-07</span></button>
+          <button data-act="wide-toggle">横屏 / 平板布局<span class="num">NFR-COMP-03</span></button>
+        </div>
+        <div class="chips"><span class="chip b">Swift</span><span class="chip">SwiftUI</span><span class="chip">APNs</span><span class="chip">CallKit</span></div>
+      </aside>
+      <div class="center-wrap"><div class="phone app-ios">
+        <div class="statusbar"><span>9:41</span><span class="sb-r">5G &nbsp;▮▮▮ &nbsp;78%</span></div>
+        <div id="iosScreen" class="h5-body" style="flex:1;display:flex;flex-direction:column;padding:0"></div>
+        <div class="tabbar" id="iosTabbar"></div>
+        <div class="home-bar"></div>
+      </div></div>
+      <aside class="panel">
+        <h3>设计与实现要点</h3>
+        <p class="sub">iOS 端复用 IM SDK 状态机与多端同步协议，仅替换原生适配层。</p>
+        <div class="note-item"><b>FR-APP-01</b><span>原生 App 与桌面 / H5 消息实时互通，同账号多端同步。</span></div>
+        <div class="note-item"><b>FR-APP-02</b><span>APNs 离线推送，通知按会话分组，点击直达对应会话。</span></div>
+        <div class="note-item"><b>FR-APP-03</b><span>桌面角标与服务端未读数一致，锁屏预览支持隐私模式。</span></div>
+        <div class="note-item"><b>FR-APP-07</b><span>CallKit 锁屏来电、画中画小窗、AirPods / 扬声器切换。</span></div>
+        <div class="note-item"><b>FR-APP-08</b><span>下拉刷新、左滑操作、长按消息菜单、深色模式跟随系统。</span></div>
+      </aside>
+    </div>
+  </section>
+
   <!-- ========== 管理后台 ========== -->
   <section class="view hide" id="view-admin">
     <div class="admin">
@@ -564,7 +726,7 @@ body.dark .contact-pick{border-color:#232c42}
         <div class="admin-top">
           <div class="crumb">控制台 / <b id="adminCrumb">工作台</b></div>
           <div class="at-right">
-            <div class="at-search"><span id="atSearchIcon"></span>全局搜索用户 / 消息</div>
+            <div class="at-search" data-act="admin-search" style="cursor:pointer" title="全局搜索（Ctrl+K）"><span id="atSearchIcon"></span>全局搜索用户 / 消息</div>
             <button class="icon-btn" data-act="admin-bell" id="btnBell"></button>
             <div class="admin-user"><div class="avatar sm" style="background:linear-gradient(135deg,#3c4b8f,#7b61ff)">超</div>超级管理员</div>
           </div>
@@ -632,7 +794,13 @@ const P={
   phoneIn:'<path d="M5 3h4l2 5-2.5 1.5a12 12 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/>',
   activity:'<path d="M22 12h-4l-3 8-4-16-3 8H2"/>',
   volume:'<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/>',
-  minimize:'<path d="M5 12h14"/>'
+  minimize:'<path d="M5 12h14"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  at:'<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.9 7.9"/>',
+  reply:'<path d="M9 17l-5-5 5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  forward:'<path d="M15 17l5-5-5-5"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/>'
 };
 function ic(n,s){s=s||18;return '<svg class="ic" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(P[n]||'')+'</svg>';}
 function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -709,8 +877,34 @@ const mediaItems={
   video:[{label:'架构评审录屏',duration:'02:18',bg:'linear-gradient(135deg,#2b3556,#4a3a6e)'},{label:'原型演示视频',duration:'00:46',bg:'linear-gradient(135deg,#3b2f56,#6b3a6e)'}],
   file:[{label:'02-技术架构文档.md',size:'38 KB'},{label:'需求评审纪要.docx',size:'1.2 MB'},{label:'接口清单.xlsx',size:'86 KB'}]
 };
-const state={view:'h5',h5Page:'convs',h5Conv:null,deskConv:'c1',adminPage:'dashboard',role:'r1',status:'在线',attach:false,memberPanel:true,  filter:'all',theme:'light',mention:null,msgMenuIdx:null,authed:false,authPage:'login',loginUser:'林晓',groupPicked:[],
+const state={view:'h5',h5Page:'convs',h5Conv:null,deskConv:'c1',deskView:'msg',adminPage:'dashboard',role:'r1',status:'在线',attach:false,memberPanel:true,filter:'all',mFilter:'all',theme:'light',mention:null,emojiFor:null,draft:'',settingsTab:'notify',deptSel:'研发中心',dashRange:'7',msgMenuIdx:null,authed:false,authPage:'login',loginUser:'林晓',groupPicked:[],
   call:{active:false,convId:null,type:'audio',phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:false}};
+/* 组织架构 / 收藏 / 设备 / 表情 演示数据 */
+const orgDepts=[['总部',1248],['研发中心',386],['产品组',42],['后端组',86],['前端组',54],['架构组',18],['市场部',212],['审计部',16],['客服部',96]];
+const orgMembers=[
+  {n:'林晓',p:'产品负责人',dept:'研发中心',s:'在线',c:'#4f6ef7',ph:'138****0086',em:'linxiao@nex.com'},
+  {n:'张伟',p:'Go 后端工程师',dept:'研发中心',s:'在线',c:'#3ba7d8',ph:'139****2214',em:'zhangwei@nex.com'},
+  {n:'赵琳',p:'前端工程师',dept:'研发中心',s:'在线',c:'#e9834a',ph:'137****8890',em:'zhaolin@nex.com'},
+  {n:'李工',p:'架构师',dept:'研发中心',s:'忙碌',c:'#3ba58c',ph:'136****4412',em:'ligong@nex.com'},
+  {n:'陈静',p:'产品经理',dept:'产品组',s:'离线',c:'#a05ce6',ph:'135****3366',em:'chenjing@nex.com'},
+  {n:'何雨',p:'渠道经理',dept:'市场部',s:'在线',c:'#e26ab4',ph:'139****1122',em:'heyu@nex.com'},
+  {n:'王敏',p:'审计专员',dept:'审计部',s:'在线',c:'#f2994a',ph:'137****5566',em:'wangmin@nex.com'},
+  {n:'周涛',p:'客服主管',dept:'客服部',s:'在线',c:'#12a594',ph:'138****7788',em:'zhoutao@nex.com'}
+];
+const favItems=[
+  {t:'text',title:'架构文档已更新到 v1.0，增加了大群读扩散和 Kafka 分区保序。',from:'产品评审群 · 李工',time:'今天 09:42'},
+  {t:'image',title:'架构图（2048×1366 · 2.4 MB）',from:'张伟',time:'昨天 15:20'},
+  {t:'file',title:'02-技术架构文档.md · 38 KB',from:'产品评审群 · 李工',time:'今天 09:42'},
+  {t:'text',title:'RBAC 那块我补充了数据范围的四种策略。',from:'我',time:'今天 09:30'}
+];
+const emojis=['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','😅','😢','😡','👍','👏','🙏','💪','🎉','🔥','❤️','⭐','✅','❌','📌','📎','📷','📁','🚀','💡'];
+const deviceList=[
+  {name:'Windows 客户端',loc:'上海 · 10.20.3.18',last:'当前在线',cur:true},
+  {name:'macOS 客户端',loc:'上海 · 10.20.3.52',last:'2 小时前活跃',cur:false},
+  {name:'H5 网页端',loc:'北京 · 10.20.5.44',last:'在线',cur:false}
+];
+const fileRows=[['02-技术架构文档.md','38 KB','产品评审群 · 李工','今天 09:42'],['需求评审纪要.docx','1.2 MB','张伟','昨天 15:20'],['接口清单.xlsx','86 KB','前端研发组','周三 11:02'],['屏幕截图.png','2.4 MB','我','今天 10:05']];
+var deptData=[['总部','1,248'],['研发中心','386'],['产品组','42'],['后端组','86'],['前端组','54'],['架构组','18'],['市场部','212'],['审计部','16'],['客服部','96']];
 
 function bubbleHtml(m,idx,group){
   var body;
@@ -728,28 +922,57 @@ function bubbleHtml(m,idx,group){
     var readTxt=group?(m.read?'已读 5/12':'已读 1/12'):(m.read?'已读':'已送达');
     meta='<span>'+esc(m.time)+'</span><span>'+readTxt+'</span>';
   }else{meta='<span>'+esc(m.time)+'</span>';}
+  var fwd=m.fromName?'<div style="font-size:10px;color:#8a95aa;margin:1px 0 3px">转发自 '+esc(m.fromName)+(m.fwdNote?' · 留言：'+esc(m.fwdNote):'')+'</div>':'';
   return '<div class="msg-row '+(m.mine?'mine':'')+'" data-idx="'+idx+'" '+(m.mine?'data-act="msg-revoke" title="点击撤回消息"':'')+'>'+
     (m.mine?'':av(m.sender,m.color||'#94a3b8','sm'))+
-    '<div class="m-wrap">'+(m.mine?'':'<div class="msg-sender">'+esc(m.sender)+'</div>')+body+'<div class="msg-meta">'+meta+'</div></div></div>';
+    '<div class="m-wrap">'+(m.mine?'':'<div class="msg-sender">'+esc(m.sender)+'</div>')+fwd+body+'<div class="msg-meta">'+meta+'</div></div></div>';
 }
 function messagesHtml(id){
   var isGroup=C[id].type==='group';
   return '<div class="time-sep">今天 09:20</div>'+C[id].messages.map(function(m,i){return bubbleHtml(m,i,isGroup);}).join('');
 }
+function convAv(c){
+  var st=c.type==='system'?'<span class="av-st av-sys">'+ic('shield',9)+'</span>'
+        :c.type==='group'?'<span class="av-st av-grp">'+ic('users',9)+'</span>'
+        :'<span class="av-st '+(c.online==='在线'?'av-on':'av-off')+'"></span>';
+  return '<span class="av-wrap">'+av(c.name,c.color)+st+'</span>';
+}
+function lastPrefix(m){
+  if(!m)return '';
+  var map={image:['image','[图片]'],video:['video','[视频]'],file:['file','[文件]'],call:['phoneIn','[通话]']};
+  var x=map[m.type];
+  return x?'<span class="last-ico">'+ic(x[0],12)+'</span>'+x[1]+' ':'';
+}
 function convItemHtml(id,active){
-  var c=C[id];
-  return '<button class="conv-item '+(active===id?'on':'')+'" data-act="open-conv" data-id="'+id+'">'+
-    av(c.name,c.color)+
+  var c=C[id],msgs=c.messages||[];
+  return '<div class="conv-wrap">'+
+    '<div class="conv-actions">'+
+      '<button class="ca-pin" data-act="cm" data-k="pin" data-id="'+id+'">'+ic('pin',15)+'<span>置顶</span></button>'+
+      '<button class="ca-mute" data-act="cm" data-k="mute" data-id="'+id+'">'+ic('bell',15)+'<span>'+(c.muted?'提醒':'免打扰')+'</span></button>'+
+      '<button class="ca-del" data-act="cm" data-k="del" data-id="'+id+'">'+ic('trash',15)+'<span>删除</span></button>'+
+    '</div>'+
+    '<button class="conv-item '+(active===id?'on':'')+'" data-act="open-conv" data-id="'+id+'">'+
+    convAv(c)+
     '<div class="ci-main"><div class="ci-top"><span class="ci-name">'+esc(c.name)+'</span>'+
     (c.pinned?'<span class="tag-pin">置顶</span>':'')+(c.muted?'<span style="color:#aab3c4">'+ic('bell',11)+'</span>':'')+
     '<span class="ci-time">'+esc(c.time)+'</span></div>'+
-    '<div class="ci-last">'+esc(c.last)+'</div></div>'+
-    (c.unread?'<span class="badge">'+c.unread+'</span>':'')+'</button>';
+    '<div class="ci-last">'+lastPrefix(msgs[msgs.length-1])+esc(c.last)+'</div></div>'+
+    (c.unread?'<span class="badge'+(c.muted?' grey':'')+'">'+c.unread+'</span>':'')+'</button></div>';
 }
-function convListHtml(active){
-  var pinned=convOrder.filter(function(i){return C[i].pinned;}),rest=convOrder.filter(function(i){return !C[i].pinned;});
-  return '<div class="sec-title">置顶会话</div>'+pinned.map(function(i){return convItemHtml(i,active);}).join('')+
-         '<div class="sec-title">全部会话</div>'+rest.map(function(i){return convItemHtml(i,active);}).join('');
+function convListHtml(active,q,filter){
+  q=(q||'').trim().toLowerCase();
+  filter=filter||state.filter||'all';
+  var match=function(i){
+    var c=C[i];
+    if(q&&c.name.toLowerCase().indexOf(q)<0&&((c.last||'').toLowerCase().indexOf(q)<0))return false;
+    if(filter==='unread'&&!c.unread)return false;
+    if(filter==='group'&&c.type!=='group')return false;
+    return true;
+  };
+  var pinned=convOrder.filter(function(i){return C[i].pinned&&match(i);}),rest=convOrder.filter(function(i){return !C[i].pinned&&match(i);});
+  if(!pinned.length&&!rest.length)return '<div style="text-align:center;color:#8a95aa;font-size:12px;padding:26px">'+(q?'未找到匹配会话':(filter==='unread'?'暂无未读会话':(filter==='group'?'暂无群聊会话':'暂无会话')))+'</div>';
+  return (pinned.length?'<div class="sec-title">置顶会话</div>'+pinned.map(function(i){return convItemHtml(i,active);}).join(''):'')+
+         (rest.length?'<div class="sec-title">'+(filter==='unread'?'未读会话':(filter==='group'?'群聊会话':'全部会话'))+'</div>'+rest.map(function(i){return convItemHtml(i,active);}).join(''):'');
 }
 function scrollBottom(el){if(el)setTimeout(function(){el.scrollTop=el.scrollHeight;},10);}
 function nowTime(){var n=new Date();return ('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2);}
@@ -757,15 +980,21 @@ function fmtDur(s){var m=Math.floor(s/60),x=s%60;return ('0'+m).slice(-2)+':'+('
 
 /* ==================== 音视频通话 ==================== */
 function startCall(convId,type){
-  if(state.call.active){toast('已在通话中，请先结束当前通话','warn');return;}
+  if(state.call.active){
+    if(state.call.convId===convId){
+      if(isMobile()){state.h5Page='call';renderCur();}else{renderDesktop();}
+      toast('已返回通话界面');
+    }else{toast('已在通话中，请先结束当前通话','warn');}
+    return;
+  }
   state.call={active:true,convId:convId,type:type,phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:false};
-  if(state.view==='h5'){state.h5Page='call';renderH5();}else{renderDesktop();}
+  if(isMobile()){state.h5Page='call';renderCur();}else{renderDesktop();}
   toast('正在呼叫 '+C[convId].name+'（'+(type==='video'?'视频通话':'语音通话')+'）...');
   setTimeout(function(){
     if(!state.call.active||state.call.convId!==convId||state.call.phase!=='ringing')return;
     state.call.phase='connected';
     state.call.timer=setInterval(callTick,1000);
-    if(state.view==='h5'&&state.h5Page==='call')renderH5();
+    if(isMobile()&&state.h5Page==='call')renderCur();
     if(state.view==='desktop')renderDesktop();
     toast('通话已接通 · SRTP 加密 · 延迟 38ms','ok');
   },2400);
@@ -777,7 +1006,7 @@ function callToggle(key){
   if(key==='cam')k.cam=!k.cam;
   if(key==='share')k.share=!k.share;
   if(key==='speaker')k.speaker=!k.speaker;
-  if(state.view==='h5')renderH5();else renderDesktop();
+  renderCur();
   toast({mute:k.muted?'麦克风已静音':'麦克风已开启',cam:k.cam?'摄像头已开启':'摄像头已关闭',share:k.share?'屏幕共享已开始':'屏幕共享已停止',speaker:k.speaker?'已切换免提':'已切换听筒'}[key]);
 }
 function endCall(reason){
@@ -788,7 +1017,7 @@ function endCall(reason){
   c.last='['+(k.type==='video'?'视频通话':'语音通话')+'] '+dur;c.time='刚刚';
   var back=k.convId;
   state.call={active:false,convId:null,type:'audio',phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:false};
-  if(state.view==='h5'){state.h5Page='chat';state.h5Conv=back;renderH5();}
+  if(isMobile()){state.h5Page='chat';state.h5Conv=back;renderCur();}
   else{state.deskConv=back;renderDesktop();}
   toast('通话已结束（'+dur+'），通话卡片已同步到会话与其他端','ok');
 }
@@ -801,7 +1030,7 @@ function simulateIncoming(){
 }
 function answerCall(){
   var k=state.call;k.ringing=false;k.phase='connected';k.timer=setInterval(callTick,1000);
-  if(state.view==='h5')renderH5();else renderDesktop();
+  renderCur();
   toast('已接听 · 媒体面建立（SRTP）','ok');
 }
 function declineCall(){endCall('已拒接');}
@@ -861,11 +1090,11 @@ function mmAction(k,idx){
   if(k==='copy'){var txt=m.text||(m.fileName||'');
     if(typeof navigator!=='undefined'&&navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt);}
     toast('已复制到剪贴板','ok');}
-  else if(k==='reply'){var inp=document.getElementById(state.view==='h5'?'h5Input':'deskInput');
-    if(inp)inp.value='引用 '+esc(m.text||'').slice(0,40)+' — ';toast('已引用该消息，可输入回复');}
+  else if(k==='reply'){var inp=document.getElementById(isMobile()?'h5Input':'deskInput');
+    if(inp)inp.value='引用 '+String(m.text||m.fileName||'消息').slice(0,40)+' — ';toast('已引用该消息，可输入回复');}
   else if(k==='forward'){forwardModal(idx);}
-  else if(k==='revoke'){modal('撤回消息','确认撤回？撤回后各端同步移除该消息。',function(){C[cid].messages.splice(idx,1);closeModal();if(state.view==='h5')renderH5();else renderDesktop();toast('消息已撤回','ok');},'撤回',true);}
-  else if(k==='delete'){C[cid].messages.splice(idx,1);if(state.view==='h5')renderH5();else renderDesktop();toast('消息已删除（仅自己可见）','ok');}
+  else if(k==='revoke'){modal('撤回消息','确认撤回？撤回后各端同步移除该消息。',function(){C[cid].messages.splice(idx,1);closeModal();renderCur();toast('消息已撤回','ok');},'撤回',true);}
+  else if(k==='delete'){C[cid].messages.splice(idx,1);renderCur();toast('消息已删除（仅自己可见）','ok');}
 }
 
 /* ==================== 会话右键/长按菜单 ==================== */
@@ -889,14 +1118,22 @@ function convAction(k,id){
   if(k==='pin'){c.pinned=!c.pinned;toast(c.pinned?'已置顶「'+c.name+'」':'已取消置顶','ok');}
   else if(k==='mute'){c.muted=!c.muted;toast(c.muted?'「'+c.name+'」已开启免打扰':'「'+c.name+'」已恢复提醒','ok');}
   else if(k==='read'){c.unread=0;toast('已标记「'+c.name+'」为已读','ok');}
+  else if(k==='del'){
+    modal('删除会话','确认删除与「'+esc(c.name)+'」的会话？仅从本端会话列表移除，云端漫游仍可恢复，不影响对方。',function(){
+      var dix=convOrder.indexOf(id);if(dix>=0)convOrder.splice(dix,1);
+      if(state.h5Conv===id)state.h5Conv=null;
+      if(state.deskConv===id)state.deskConv=convOrder[0]||null;
+      closeModal();renderCur();
+      toast('会话已删除（本地移除，云端漫游保留）','ok');
+    },'删除',true);}
   else if(k==='clear'){
     modal('清空聊天记录','确认清空与「'+esc(c.name)+'」的本地聊天记录？云端漫游仍可按会话拉取（FR-MSG-24），该操作不影响对方。',function(){
       c.messages=[];c.last='';closeModal();
-      if(state.view==='h5')renderH5();else renderDesktop();
+      renderCur();
       toast('本地记录已清空，云端漫游保留','ok');
     },'清空',true);return;
   }
-  if(state.view==='h5')renderH5();else renderDesktop();
+  renderCur();
 }
 
 /* ==================== 富媒体消息 ==================== */
@@ -918,9 +1155,9 @@ function sendMedia(kind,item){
   C[cid].messages.push(msg);
   C[cid].last='我：['+({image:'图片',video:'视频',file:'文件'}[kind])+'] '+(item.label||'');
   C[cid].time='刚刚';
-  if(state.view==='h5')renderH5();else renderDesktop();
+  renderCur();
   flashSync();
-  toast(({image:'图片',video:'视频',file:'文件'}[kind])+'已发送 · 已同步到 H5 / 桌面其他端','ok');
+  toast(({image:'图片',video:'视频',file:'文件'}[kind])+'已发送 · 已同步到全部在线端','ok');
 }
 function openMedia(idx){
   var cid=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv;
@@ -938,10 +1175,26 @@ function openMedia(idx){
 function forwardModal(idx){
   var from=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv;
   var m=C[from].messages[idx];if(!m)return;
-  modal('转发消息','转发到（保留原始类型与发送者署名，可附留言）：<div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto">'+
+  var preview=m.text||(m.type==='image'?'[图片] '+(m.label||''):(m.type==='video'?'[视频] '+(m.label||''):(m.type==='call'?'[通话卡片]':'[文件] '+(m.fileName||''))));
+  modal('转发消息','<div class="csub">原消息 · '+esc(m.sender||'我')+'：'+esc(String(preview).slice(0,40))+'</div>'+
+    '<div class="field" style="margin-top:10px"><label>附留言（可选）</label><input id="fwdNote" placeholder="附一句话说明" style="width:100%"></div>'+
+    '<div class="csub" style="margin:10px 0 6px">转发到（保留原始类型与发送者署名）：</div><div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto">'+
     convOrder.filter(function(i){return i!==from;}).map(function(i){
       return '<button class="btn" style="justify-content:flex-start" data-act="fwd" data-id="'+i+'" data-idx="'+idx+'" data-from="'+from+'">'+av(C[i].name,C[i].color,'sm')+C[i].name+'<span style="margin-left:auto;color:#8a95aa;font-size:11px">'+esc(C[i].last||'')+'</span></button>';
     }).join('')+'</div>',null,'取消');
+}
+
+/* ==================== 提醒我 / 企业公告（FR-MSG-26 / FR-ADMIN-11） ==================== */
+function openReminds(){
+  modal('提醒我','最近 @我 与引用我的消息（保留 30 天，点击定位到原会话）：<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">'+
+    [['李工 在 产品评审群 @我','架构文档已更新到 v1.4','今天 09:42','c1'],['张伟 在单聊 @我','十点对齐接口','09:18','c2'],['赵琳 在 前端研发组 引用我','动态路由已经跑通','昨天 17:20','c3']].map(function(r){
+      return '<button class="btn" style="justify-content:flex-start;text-align:left" data-act="remind-loc" data-id="'+r[3]+'">'+ic('at',15)+'<div><div style="font-weight:600">'+esc(r[0])+'</div><div style="font-size:11px;color:#8a95aa">'+esc(r[1])+' · '+esc(r[2])+'</div></div></button>';
+    }).join('')+'</div>',null,'关闭');
+}
+function openNoticeBoard(){
+  modal('企业公告','<div style="font-weight:700;margin-bottom:6px">V1.0 正式版发布与维护窗口</div>'+
+    '<div style="font-size:12px;color:#4a556b;line-height:1.9">V1.0 正式版将于本周五发布，新增三平台桌面客户端、Android / iOS 原生客户端、完整 RBAC 权限与消息审计能力。发布期间消息服务不中断。</div>'+
+    '<div style="margin-top:10px;font-size:11px;color:#8a95aa">定向范围：全员 · 已读率 92% · 来自后台「公告管理」，到达系统通知会话（FR-ADMIN-11）</div>',null,'知道了');
 }
 
 /* ==================== @提及 ==================== */
@@ -953,7 +1206,7 @@ function mentionList(){
 }
 function toggleMention(){
   state.mention=state.mention?null:(state.view==='h5'?'h5':'desk');
-  if(state.view==='h5')renderH5();else renderDesktop();
+  renderCur();
 }
 function mentionHtml(){
   return '<div class="mention-panel"><div class="mp-head">选择要 @ 的人</div>'+
@@ -972,7 +1225,7 @@ function flashSync(){
   var p=document.getElementById('syncPill');if(!p)return;
   p.innerHTML='<i class="dot"></i>同步中…';
   p.style.background='#fff5e5';p.style.color='#c47a08';
-  setTimeout(function(){p.innerHTML='<i class="dot"></i>已同步 · 3 端在线';p.style.background='';p.style.color='';},900);
+  setTimeout(function(){p.innerHTML='<i class="dot"></i>已同步 · 5 端在线';p.style.background='';p.style.color='';},900);
 }
 function vcallHtml(){
   var k=state.call,c=C[k.convId];
@@ -1001,15 +1254,20 @@ function incomingHtml(){
 }
 
 /* ==================== H5 ==================== */
-const h5Pages=[{k:'convs',n:'消息 / 会话列表',i:'msg',no:'FR-MSG-01'},{k:'chat',n:'聊天页',i:'msg',no:'FR-MSG-02'},{k:'call',n:'音视频通话页',i:'phoneIn',no:'FR-RTC-01'},{k:'addFriend',n:'添加朋友',i:'user',no:'FR-CONTACT-08'},{k:'createGroup',n:'发起群聊',i:'users',no:'FR-GROUP-09'},{k:'contacts',n:'通讯录 / 组织架构',i:'contacts',no:'FR-CONTACT-01'},{k:'friends',n:'好友申请（新的朋友）',i:'contacts',no:'FR-CONTACT-07'},{k:'discover',n:'发现',i:'compass',no:'FR-H5-02'},{k:'mine',n:'我的 / 设备与设置',i:'user',no:'FR-AUTH-07'}];
+const h5Pages=[{k:'convs',n:'消息 / 会话列表',i:'msg',no:'FR-MSG-01'},{k:'chat',n:'聊天页',i:'msg',no:'FR-MSG-02'},{k:'call',n:'音视频通话页',i:'phoneIn',no:'FR-RTC-01'},{k:'addFriend',n:'添加朋友',i:'user',no:'FR-CONTACT-08'},{k:'createGroup',n:'发起群聊',i:'users',no:'FR-GROUP-09'},{k:'contacts',n:'通讯录 / 入口',i:'contacts',no:'FR-CONTACT-01'},{k:'dept',n:'组织架构页',i:'dept',no:'FR-CONTACT-01'},{k:'groups',n:'群聊列表',i:'users',no:'FR-MSG-04'},{k:'friends',n:'好友申请（新的朋友）',i:'contacts',no:'FR-CONTACT-07'},{k:'discover',n:'发现',i:'compass',no:'FR-H5-02'},{k:'files',n:'文件助手',i:'folder',no:'FR-FILE-04'},{k:'favorites',n:'收藏',i:'pin',no:'FR-MSG-09'},{k:'mine',n:'我的 / 设备与设置',i:'user',no:'FR-AUTH-07'},{k:'settings',n:'设置（通知/隐私/通用）',i:'settings',no:'NFR-MNT-01'}];
 function renderH5Nav(){
-  document.getElementById('h5PageList').innerHTML=h5Pages.map(function(p){
+  var listHtml=h5Pages.map(function(p){
     return '<button data-act="h5-page" data-page="'+p.k+'" class="'+(state.h5Page===p.k?'on':'')+'">'+ic(p.i,16)+p.n+'<span class="num">'+p.no+'</span></button>';
   }).join('');
+  ['h5PageList','andPageList','iosPageList'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=listHtml;});
   var tabs=[{k:'convs',n:'消息',i:'msg'},{k:'contacts',n:'通讯录',i:'contacts'},{k:'discover',n:'发现',i:'compass'},{k:'mine',n:'我的',i:'user'}];
   var total=convOrder.reduce(function(s,i){return s+C[i].unread;},0);
-  document.getElementById('h5Tabbar').innerHTML=state.h5Page==='call'?'':tabs.map(function(t){
-    var on=(state.h5Page==='chat'&&t.k==='convs')||state.h5Page===t.k||(state.h5Page==='friends'&&t.k==='contacts');
+  var tbar=mobileTabbar();
+  if(tbar)tbar.innerHTML=state.h5Page==='call'?'':tabs.map(function(t){
+    var on=(state.h5Page==='chat'&&t.k==='convs')||state.h5Page===t.k||(state.h5Page==='friends'&&t.k==='contacts')||
+      (['groups','dept'].indexOf(state.h5Page)>=0&&t.k==='contacts')||
+      (['files','favorites'].indexOf(state.h5Page)>=0&&t.k==='discover')||
+      (state.h5Page==='settings'&&t.k==='mine');
     return '<button data-act="h5-page" data-page="'+t.k+'" class="'+(on?'on':'')+'">'+ic(t.i,20)+
       (t.k==='convs'&&total?'<span class="tb-badge">'+total+'</span>':'')+'<span>'+t.n+'</span></button>';
   }).join('');
@@ -1027,6 +1285,114 @@ function friendRowsHtml(q){
       '<div class="qe-s">'+esc(u.phone)+'</div></div>'+
       (u.added?'<span class="state info">已申请</span>':'<button class="btn sm primary" data-act="add-friend" data-id="'+u.id+'">添加</button>')+'</div>';
   }).join('');
+}
+/* ---- 表情面板（H5 / 安卓 / 苹果 / 桌面共用） ---- */
+function emojiPanelHtml(target){
+  return '<div class="mention-panel"><div class="mp-head">表情 · 点击插入输入框</div><div style="display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px 12px">'+
+    emojis.map(function(e){return '<button data-act="emoji-pick" data-t="'+target+'" data-e="'+e+'" style="width:32px;height:32px;font-size:19px;border:0;background:none;cursor:pointer;border-radius:8px">'+e+'</button>';}).join('')+'</div></div>';
+}
+/* ---- 人员卡片（FR-CONTACT-02） ---- */
+function personCard(name){
+  var u=null;
+  orgMembers.forEach(function(m){if(m.n===name)u=m;});
+  if(!u)u={n:name,p:'成员',dept:'研发中心',s:'在线',c:'#4f6ef7',ph:'138****0086',em:'—'};
+  modal('人员卡片','<div style="display:flex;gap:12px;align-items:center">'+av(u.n,u.c,'lg')+
+    '<div><div style="font-weight:700">'+esc(u.n)+' <span class="state '+(u.s==='在线'?'ok':'off')+'">'+esc(u.s)+'</span></div>'+
+    '<div style="font-size:11px;color:#8a95aa;margin-top:4px">'+esc(u.dept)+' · '+esc(u.p)+'</div>'+
+    '<div style="font-size:11px;color:#8a95aa">'+esc(u.ph)+' · '+esc(u.em)+'</div></div></div>'+
+    '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'+
+    '<button class="btn primary" data-act="pc-msg" data-n="'+esc(u.n)+'" data-c="'+esc(u.c)+'">'+ic('msg',14)+'发消息</button>'+
+    '<button class="btn" data-act="pc-call" data-n="'+esc(u.n)+'" data-c="'+esc(u.c)+'" data-t="audio">'+ic('phoneIn',14)+'语音通话</button>'+
+    '<button class="btn" data-act="pc-call" data-n="'+esc(u.n)+'" data-c="'+esc(u.c)+'" data-t="video">'+ic('video',14)+'视频通话</button>'+
+    '<button class="btn" data-act="pc-add" data-n="'+esc(u.n)+'">'+ic('user',14)+'加好友</button></div>',null,'关闭');
+}
+/* ---- 设备管理（FR-AUTH-07） ---- */
+function deviceModal(){
+  modal('已登录设备','<div class="csub">展示设备类型、IP 与最后活跃时间，可远程下线（FR-AUTH-07）</div><div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">'+
+    deviceList.map(function(d,i){
+      return '<div class="qentry">'+ic(d.name.indexOf('H5')>=0?'phone':'monitor',18)+'<div style="flex:1"><div class="qe-t">'+esc(d.name)+(d.cur?' <span class="state info">当前设备</span>':'')+'</div><div class="qe-s">'+esc(d.loc)+' · '+esc(d.last)+'</div></div>'+
+        (d.cur?'':'<button class="btn sm danger" data-act="device-kick" data-i="'+i+'">远程下线</button>')+'</div>';
+    }).join('')+'</div>',null,'关闭');
+}
+/* ---- 按姓名取/建单聊会话 ---- */
+function ensureSingleConv(name,color){
+  var found=null;
+  convOrder.forEach(function(i){if(C[i].type==='single'&&C[i].name===name)found=i;});
+  if(found)return found;
+  var nid='s_'+Date.now();
+  C[nid]={id:nid,name:name,type:'single',color:color||'linear-gradient(135deg,#4f6ef7,#7b61ff)',short:name.slice(0,1),unread:0,pinned:false,muted:false,time:'刚刚',last:'',online:'在线',messages:[]};
+  convOrder.unshift(nid);
+  return nid;
+}
+/* ---- H5 新增页面 ---- */
+function h5SettingsHtml(){
+  var tab=state.settingsTab||'notify';
+  var tabs=[['notify','消息通知','bell'],['privacy','隐私与安全','lock'],['general','通用设置','settings']];
+  var body='';
+  if(tab==='notify'){
+    body=[['接收新消息通知',1],['通知显示消息详情',1],['通知声音',1],['震动',0],['免打扰时段 22:00 - 08:00',0]].map(function(s){
+      return '<div class="switch-row"><div>'+esc(s[0])+'</div><div class="switch '+(s[1]?'on':'')+'" data-act="switch" data-name="'+esc(s[0])+'"></div></div>';
+    }).join('');
+  }else if(tab==='privacy'){
+    body=[['加我为好友需要验证',1],['允许通过手机号搜索到我',1],['向好友展示在线状态',1]].map(function(s){
+      return '<div class="switch-row"><div>'+esc(s[0])+'</div><div class="switch '+(s[1]?'on':'')+'" data-act="switch" data-name="'+esc(s[0])+'"></div></div>';
+    }).join('')+
+      '<button class="gb-row" data-act="h5-devices" style="width:100%">'+ic('monitor',17)+'登录设备管理<span class="gb-r">'+deviceList.length+' 台'+ic('chev',13)+'</span></button>'+
+      '<button class="gb-row" data-act="h5-blacklist" style="width:100%">'+ic('shield',17)+'黑名单<span class="gb-r">2 人'+ic('chev',13)+'</span></button>';
+  }else{
+    body='<div class="switch-row"><div>深色主题</div><div class="switch '+(state.theme==='dark'?'on':'')+'" data-act="toggle-theme"></div></div>'+
+      '<div class="switch-row"><div>多语言<div class="sr-desc">当前：简体中文（NFR-I18N-01 结构预留）</div></div><span class="state info">中文</span></div>'+
+      '<div class="switch-row"><div>字体大小<div class="sr-desc">标准</div></div><span class="state info">标准</span></div>'+
+      '<button class="gb-row" data-act="h5-clear-cache" style="width:100%">'+ic('trash',17)+'清空本地缓存<span class="gb-r">1.2 GB'+ic('chev',13)+'</span></button>'+
+      '<button class="gb-row" data-act="auth-terms" style="width:100%">'+ic('file',17)+'服务协议与隐私政策<span class="gb-r">'+ic('chev',13)+'</span></button>'+
+      '<div class="switch-row"><div>关于 NexIM<div class="sr-desc">交互原型 v1.9 · 对应 BRD v1.9 / 架构 v1.11</div></div><span class="state info">v1.9</span></div>';
+  }
+  return h5Head('设置','','')+'<div class="h5-body scroll" style="padding:12px">'+
+    '<div style="display:flex;gap:6px;margin-bottom:12px">'+tabs.map(function(x){
+      return '<button class="btn sm '+(tab===x[0]?'primary':'')+'" data-act="settings-tab" data-t="'+x[0]+'">'+ic(x[2],13)+esc(x[1])+'</button>';
+    }).join('')+'</div>'+body+'</div>';
+}
+function h5DeptHtml(){
+  var sel=state.deptSel||'研发中心';
+  var mem=orgMembers.filter(function(m){return sel==='总部'||m.dept===sel;});
+  return h5Head('组织架构','','')+'<div class="h5-body scroll" style="padding:12px">'+
+    '<div class="sec-title">部门树 · 物化路径用于数据范围过滤</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'+orgDepts.map(function(d){
+      return '<button class="btn sm '+(sel===d[0]?'primary':'')+'" data-act="dept-pick-h5" data-n="'+esc(d[0])+'">'+esc(d[0])+' · '+d[1]+'</button>';
+    }).join('')+'</div>'+
+    '<div class="sec-title">'+esc(sel)+' · '+mem.length+' 人</div>'+
+    (mem.length?mem.map(function(m){
+      return '<button class="qentry" data-act="h5-person" data-n="'+esc(m.n)+'">'+av(m.n,m.c,'sm')+
+        '<div style="flex:1"><div class="qe-t">'+esc(m.n)+'</div><div class="qe-s">'+esc(m.p)+' · '+(m.s==='在线'?'<span style="color:#12b886">在线</span>':esc(m.s))+'</div></div>'+
+        '<span style="margin-left:auto;color:#aab3c4">'+ic('chev',14)+'</span></button>';
+    }).join(''):'<div style="text-align:center;color:#8a95aa;font-size:12px;padding:20px">该部门暂无演示成员</div>')+'</div>';
+}
+function h5GroupsHtml(){
+  var gs=convOrder.filter(function(i){return C[i].type==='group';});
+  return h5Head('我的群聊','','')+'<div class="h5-body scroll" style="padding:12px">'+
+    '<div class="sec-title">'+gs.length+' 个群聊（FR-MSG-04）</div>'+
+    gs.map(function(i){var c=C[i];
+      return '<button class="qentry" data-act="group-open" data-id="'+i+'">'+av(c.name,c.color,'sm')+
+        '<div style="flex:1"><div class="qe-t">'+esc(c.name)+'</div><div class="qe-s">'+(c.members||0)+' 人 · '+esc(c.last||'暂无消息')+'</div></div>'+
+        (c.unread?'<span class="badge">'+c.unread+'</span>':'<span style="margin-left:auto;color:#aab3c4">'+ic('chev',14)+'</span>')+'</button>';
+    }).join('')+'</div>';
+}
+function h5FilesHtml(){
+  return h5Head('文件助手','','')+'<div class="h5-body scroll" style="padding:12px">'+
+    '<div class="csub">跨端文件临时存放，云端保留 180 天；下载走预签名 URL（FR-FILE-04）</div>'+
+    fileRows.map(function(r){
+      return '<div class="qentry">'+ic('file',18)+'<div style="flex:1"><div class="qe-t">'+esc(r[0])+'</div><div class="qe-s">'+esc(r[1])+' · '+esc(r[2])+' · '+esc(r[3])+'</div></div>'+
+        '<button class="btn sm" data-act="file-dl" data-n="'+esc(r[0])+'">下载</button></div>';
+    }).join('')+'</div>';
+}
+function h5FavHtml(){
+  return h5Head('收藏','','')+'<div class="h5-body scroll" style="padding:12px">'+
+    '<div class="sec-title">'+favItems.length+' 条收藏（FR-MSG-09）</div>'+
+    (favItems.length?favItems.map(function(f,i){
+      return '<div class="qentry" style="align-items:flex-start">'+ic(f.t==='image'?'image':(f.t==='file'?'file':'msg'),18)+
+        '<div style="flex:1"><div class="qe-t" style="white-space:normal">'+esc(f.title)+'</div><div class="qe-s">'+esc(f.from)+' · '+esc(f.time)+'</div></div>'+
+        '<button class="btn sm" data-act="fav-del" data-i="'+i+'">取消</button></div>';
+    }).join(''):'<div style="text-align:center;color:#8a95aa;font-size:12px;padding:24px">暂无收藏</div>')+'</div>';
 }
 function authHtml(){
   if(state.authPage==='register'){
@@ -1051,7 +1417,8 @@ function authHtml(){
     '<div class="a-alt">其他登录方式</div>'+
     '<div class="a-others"><button data-act="auth-sso">'+ic('shield',14)+'企业 SSO</button><button data-act="auth-code">'+ic('phone',14)+'验证码登录</button></div>'+
     '<div class="a-demo">演示账号 linxiao / 123456<button data-act="auth-demo">一键登录</button></div>'+
-    '<div class="a-foot">还没有账号？<a data-act="auth-register">立即注册</a></div></div>';
+    '<div class="a-foot">还没有账号？<a data-act="auth-register">立即注册</a></div>'+
+    '<div class="a-foot" style="margin-top:8px">登录即代表同意<a data-act="auth-terms">《服务协议》</a>与<a data-act="auth-terms">《隐私政策》</a></div></div>';
 }
 function doLogin(accIn,pwdIn){
   var a=document.getElementById('loginAcc'),p=document.getElementById('loginPwd');
@@ -1059,9 +1426,9 @@ function doLogin(accIn,pwdIn){
   if(!acc||!pwd){toast('请输入账号与密码','warn');return;}
   state.authed=true;state.h5Page='convs';state.authPage='login';
   if(acc!=='linxiao')state.loginUser=acc;
-  renderH5();renderDesktop();flashSync();
+  renderCur();renderDesktop();flashSync();
   toast('登录成功，正在同步离线消息…','ok');
-  setTimeout(function(){toast('已同步 6 个会话 · 云端漫游 180 天 · 3 端在线','ok');},900);
+  setTimeout(function(){toast('已同步 6 个会话 · 云端漫游 180 天 · 5 端在线','ok');},900);
 }
 function doRegister(){
   var nick=((document.getElementById('regNick')||{}).value||'').trim();
@@ -1071,34 +1438,79 @@ function doRegister(){
   var pwd2=((document.getElementById('regPwd2')||{}).value||'').trim();
   var agree=document.getElementById('regAgree');
   if(!nick||!phone||!pwd){toast('请填写昵称、手机号与密码','warn');return;}
-  if(pwd.length<8){toast('密码至少 8 位','warn');return;}
+  if(!/^1\d{10}$/.test(phone)){toast('请输入 11 位手机号','warn');return;}
+  if(pwd.length<8||pwd.length>20){toast('密码需 8~20 位','warn');return;}
+  if(!/[A-Za-z]/.test(pwd)||!/\d/.test(pwd)){toast('密码需同时包含字母与数字','warn');return;}
   if(pwd!==pwd2){toast('两次输入的密码不一致','warn');return;}
-  if(code&&code!=='123456'){toast('验证码不正确（演示环境：123456）','err');return;}
+  if(!code){toast('请输入 6 位验证码','warn');return;}
+  if(code!=='123456'){toast('验证码不正确（演示环境：123456）','err');return;}
   if(agree&&!agree.checked){toast('请先阅读并同意服务协议与隐私政策','warn');return;}
   state.authed=true;state.h5Page='convs';state.authPage='login';state.loginUser=nick;
-  renderH5();renderDesktop();flashSync();
+  renderCur();renderDesktop();flashSync();
   toast('注册成功，已自动登录并同步默认会话','ok');
 }
-function sendCode(){
-  var b=document.getElementById('codeBtn');
+function sendCode(btn){
+  var b=btn||document.getElementById('codeBtn');
   if(b&&!b.dataset.run){b.dataset.run='1';var n=60;b.textContent='60s 后重发';
     var t=setInterval(function(){n--;if(b)b.textContent=n+'s 后重发';if(n<=0){clearInterval(t);if(b){b.dataset.run='';b.textContent='获取验证码';}}},1000);}
   toast('验证码已发送（演示环境：123456）','ok');
 }
+function isMobile(){return ['h5','android','ios'].indexOf(state.view)>=0;}
+function mobileScreen(){return document.getElementById(state.view==='android'?'andScreen':(state.view==='ios'?'iosScreen':'h5Screen'));}
+function mobileTabbar(){return document.getElementById(state.view==='android'?'andTabbar':(state.view==='ios'?'iosTabbar':'h5Tabbar'));}
+function activePhone(){return document.querySelector(state.view==='android'?'#view-android .phone':(state.view==='ios'?'#view-ios .phone':'.phone'));}
+function renderCur(){
+  var actS=mobileScreen(),actT=mobileTabbar();
+  ['h5Screen','andScreen','iosScreen','h5Tabbar','andTabbar','iosTabbar'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&el!==actS&&el!==actT)el.innerHTML='';
+  });
+  if(state.view==='desktop')renderDesktop();
+  else if(state.view==='admin')return;
+  else renderH5();
+}
+function saveDraft(){var i=document.getElementById(isMobile()?'h5Input':'deskInput');if(i)state.draft=i.value;}
+function restoreDraft(){var i=document.getElementById(isMobile()?'h5Input':'deskInput');if(i&&state.draft)i.value=state.draft;}
 function renderH5(){
+  saveDraft();
   if(!state.authed){
-    var pl=document.getElementById('h5PageList');
-    if(pl)pl.innerHTML=h5Pages.map(function(pg){return '<button data-act="h5-page" data-page="'+pg.k+'">'+ic(pg.i,16)+pg.n+'<span class="num">'+pg.no+'</span></button>';}).join('');
-    document.getElementById('h5Screen').innerHTML=authHtml();
-    document.getElementById('h5Tabbar').innerHTML='';
+    renderH5Nav();
+    mobileTabbar().innerHTML='';
+    mobileScreen().innerHTML=authHtml();
     return;
   }
   if(state.h5Page==='call'&&!state.call.active)state.h5Page='convs';
   renderH5Nav();
-  var s=document.getElementById('h5Screen'),html='',p=state.h5Page;
+  var s=mobileScreen(),html='',p=state.h5Page;
   if(p==='convs'){
-    html=h5Head('消息','','<button class="icon-btn" data-act="h5-new">'+ic('plus',18)+'</button>')+
-      '<div class="h5-body scroll" style="padding:10px 10px"><div class="h5-search">'+ic('search',14)+'搜索会话 / 消息 / 用户</div>'+convListHtml(null)+'</div>';
+    var totalUnread=convOrder.reduce(function(s,i){return s+C[i].unread;},0);
+    var quickEntries=[
+      {n:'待办与提醒',s:'3 条 @我',i:'bell',c:'#f2994a',bg:'#fff5e5',act:'reminds',b:3},
+      {n:'文件助手',s:'跨端文件',i:'folder',c:'#12a594',bg:'#e6f8f2',act:'h5-page',page:'files'},
+      {n:'群聊',s:'3 个群',i:'users',c:'#5f72f6',bg:'#eef1ff',act:'h5-page',page:'groups'},
+      {n:'收藏',s:'12 条',i:'pin',c:'#a05ce6',bg:'#f3eaff',act:'h5-page',page:'favorites'}
+    ];
+    var quickHtml=quickEntries.map(function(q){
+      var ad='data-act="'+q.act+'"'+(q.page?' data-page="'+q.page+'"':'');
+      return '<button '+ad+'><span class="mq-ico" style="color:'+q.c+';background:'+q.bg+'">'+ic(q.i,20)+'</span>'+
+        '<span class="mq-t">'+q.n+'</span>'+(q.b?'<span class="mq-b">'+q.b+'</span>':'')+'</button>';
+    }).join('');
+    var mf=state.mFilter||'all';
+    var cntUnread=convOrder.filter(function(i){return C[i].unread;}).length;
+    var filterHtml='<div class="msg-tabs">'+
+      '<button class="'+(mf==='all'?'on':'')+'" data-act="msg-filter" data-f="all">全部</button>'+
+      '<button class="'+(mf==='unread'?'on':'')+'" data-act="msg-filter" data-f="unread">未读'+(cntUnread?'<i class="tab-badge">'+cntUnread+'</i>':'')+'</button>'+
+      '<button class="'+(mf==='group'?'on':'')+'" data-act="msg-filter" data-f="group">群聊</button>'+
+      '<button class="tab-read" data-act="read-all-h5" title="全部已读">'+ic('check',15)+'</button></div>';
+    html=h5Head('消息',
+        '<button class="icon-btn" data-act="h5-page" data-page="mine" title="我的">'+av(state.loginUser||'林晓','linear-gradient(135deg,#4f6ef7,#7b61ff)','sm')+'</button>',
+        '<button class="icon-btn" data-act="reminds" title="待办与提醒">'+ic('bell',18)+'<i class="hd-dot"></i></button>'+
+        '<button class="icon-btn" data-act="h5-new" title="发起会话">'+ic('plus',18)+'</button>')+
+      '<div class="msg-summary"><b>'+esc(state.loginUser||'林晓')+'</b><span>'+(totalUnread?('有 '+totalUnread+' 条未读消息 · 云端已同步'):'消息已全部读完 · 云端已同步')+'</span><i class="dot"></i></div>'+
+      '<div class="h5-body scroll" style="padding:10px 10px"><div class="msg-quick">'+quickHtml+'</div>'+
+      '<div class="h5-search">'+ic('search',14)+'<input id="convSearch" data-input="convSearch" placeholder="搜索会话 / 消息 / 用户" style="border:0;background:none;padding:0;flex:1;font-size:12px"></div>'+
+      filterHtml+'<div id="convListWrap">'+convListHtml(null,null,mf)+'</div></div>'+
+      (state.view==='android'?'<button class="fab" data-act="h5-new" title="发起会话">'+ic('plus',22)+'</button>':'');
   }else if(p==='chat'){
     var c=C[state.h5Conv||'c1'];
     html='<div class="chat-head"><button class="icon-btn" data-act="h5-back">'+ic('back',18)+'</button>'+
@@ -1109,11 +1521,14 @@ function renderH5(){
       (state.attach?'<div class="attach-panel">'+[['image','相册','image'],['video','视频','video'],['clip','文件','file'],['phoneIn','语音通话','call-audio'],['video','视频通话','call-video'],['smile','表情','emoji']].map(function(a){
         return '<button data-act="attach" data-type="'+a[0]+'" data-kind="'+a[2]+'"><span class="at-icon">'+ic(a[0],20)+'</span>'+a[1]+'</button>';
       }).join('')+'</div>':'')+
+      '<div class="composer-wrap">'+
       (state.mention==='h5'?mentionHtml():'')+
+      (state.emojiFor==='h5'?emojiPanelHtml('h5'):'')+
       '<div class="composer"><button class="icon-btn" data-act="h5-attach">'+ic('plus',18)+'</button>'+
+      '<button class="icon-btn" data-act="emoji-toggle" data-t="h5" title="表情">'+ic('smile',18)+'</button>'+
       '<button class="icon-btn" data-act="h5-mention" title="@提及">'+ic('at',18)+'</button>'+
       '<input id="h5Input" data-input="h5" placeholder="输入消息..." autocomplete="off">'+
-      '<button class="send-btn" data-act="h5-send">'+ic('send',17)+'</button></div>';
+      '<button class="send-btn" data-act="h5-send">'+ic('send',17)+'</button></div></div>';
   }else if(p==='call'){
     html=vcallHtml();
   }else if(p==='friends'){
@@ -1156,7 +1571,7 @@ function renderH5(){
       }).join('')+'</div>';
   }else if(p==='contacts'){
     html=h5Head('通讯录','','<button class="icon-btn" data-act="h5-new">'+ic('plus',18)+'</button>')+
-      '<div class="h5-body scroll"><div class="h5-search">'+ic('search',14)+'搜索姓名 / 拼音 / 部门</div>'+
+      '<div class="h5-body scroll"><div class="h5-search">'+ic('search',14)+'<input data-input="contactSearch" placeholder="搜索姓名 / 拼音 / 部门" style="border:0;background:none;padding:0;flex:1;font-size:12px"></div>'+
       [['新的朋友','3 条待处理','#f2994a','contacts'],['群聊','我加入的 8 个群','#4f9ee8','users'],['组织架构','总部 / 5 个一级部门','#12a594','dept']].map(function(q){
         return '<button class="qentry" data-act="h5-qentry" data-name="'+q[0]+'">'+av(q[0],'linear-gradient(135deg,'+q[2]+',#7b61ff)','sm')+
           '<div><div class="qe-t">'+q[0]+'</div><div class="qe-s">'+q[1]+'</div></div><span style="margin-left:auto;color:#aab3c4">'+ic('chev',14)+'</span></button>';
@@ -1172,7 +1587,17 @@ function renderH5(){
         return '<button class="qentry" data-act="h5-qentry" data-name="'+q[0]+'"><span style="color:'+q[3]+'">'+ic(q[2],20)+'</span>'+
           '<div><div class="qe-t">'+q[0]+'</div><div class="qe-s">'+q[1]+'</div></div><span style="margin-left:auto;color:#aab3c4">'+ic('chev',14)+'</span></button>';
       }).join('')+
-      '<div class="card" style="margin-top:14px"><h3>系统公告</h3><p class="csub" style="font-size:12px;line-height:1.8;color:#4a556b">V1.0 正式版将于本周五发布，新增三平台桌面客户端、完整 RBAC 权限与消息审计能力。发布期间消息服务不中断。</p></div></div>';
+      '<div class="card" style="margin-top:14px"><h3>系统公告</h3><p class="csub" style="font-size:12px;line-height:1.8;color:#4a556b">V1.0 正式版将于本周五发布，新增三平台桌面客户端、Android / iOS 原生客户端、完整 RBAC 权限与消息审计能力。发布期间消息服务不中断。</p></div></div>';
+  }else if(p==='settings'){
+    html=h5SettingsHtml();
+  }else if(p==='dept'){
+    html=h5DeptHtml();
+  }else if(p==='groups'){
+    html=h5GroupsHtml();
+  }else if(p==='files'){
+    html=h5FilesHtml();
+  }else if(p==='favorites'){
+    html=h5FavHtml();
   }else{
     html=h5Head('我的','','<button class="icon-btn" data-act="h5-settings">'+ic('settings',18)+'</button>')+
       '<div class="h5-body scroll"><div class="profile-card">'+av('林','rgba(255,255,255,.25)','lg')+
@@ -1181,10 +1606,10 @@ function renderH5(){
       '<div style="padding:0 14px 12px"><div class="status-opts">'+['在线','忙碌','隐身'].map(function(x){
         return '<button data-act="h5-status" data-s="'+x+'" class="'+(state.status===x?'on':'')+'">'+x+'</button>';
       }).join('')+'</div></div></div>'+
-      '<div class="group-block"><div class="gb-row">'+ic('monitor',17)+'已登录设备<span class="gb-r">3 台 '+ic('chev',13)+'</span></div></div>'+
+      '<div class="group-block"><button class="gb-row" data-act="h5-devices" style="width:100%">'+ic('monitor',17)+'已登录设备<span class="gb-r">'+deviceList.length+' 台 '+ic('chev',13)+'</span></button></div>'+
       '<div class="group-block">'+
-      [['Windows 客户端','当前设备 · 上海','monitor'],['macOS 客户端','2 小时前活跃','monitor'],['H5 网页端','本设备 · 在线','phone']].map(function(d){
-        return '<div class="gb-row">'+ic(d[2],17)+esc(d[0])+'<span class="gb-r">'+esc(d[1])+'</span></div>';
+      deviceList.map(function(d){
+        return '<button class="gb-row" data-act="h5-devices" style="width:100%">'+ic(d.name.indexOf('H5')>=0?'phone':'monitor',17)+esc(d.name)+'<span class="gb-r">'+esc(d.last)+ic('chev',13)+'</span></button>';
       }).join('')+'</div>'+
       '<div class="group-block">'+
       [['消息通知','已开启','bell'],['隐私与安全','','lock'],['通用设置','','settings']].map(function(d){
@@ -1193,53 +1618,99 @@ function renderH5(){
       '<button class="btn" style="width:100%;justify-content:center;color:#ef4b5b" data-act="h5-logout">'+ic('logout',16)+'退出登录</button></div>';
   }
   s.innerHTML=html;
+  restoreDraft();
   if(p==='chat')scrollBottom(document.getElementById('h5Msgs'));
 }
 
 /* ==================== 桌面 ==================== */
 function renderDesktop(){
-  var c=C[state.deskConv];
-  var rail=[['msg','消息',true],['contacts','通讯录',false],['folder','文件',false],['chart','统计',false]];
-  document.getElementById('desktopFrame').innerHTML=
-  '<div class="titlebar"><div class="mac-dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>'+
-    '<div class="tb-title">NexIM · '+esc(c.name)+'</div><div class="tb-sync"><i class="dot"></i>已同步 · 延迟 23ms</div></div>'+
-  '<div class="desktop-body">'+
-    '<nav class="rail"><div class="r-logo">N</div>'+rail.map(function(r){
-      return '<button class="'+(r[2]?'on':'')+'" data-act="desk-rail" data-name="'+r[1]+'">'+ic(r[0],20)+'</button>';
-    }).join('')+'<div class="r-bottom"><button data-act="desk-bell">'+ic('bell',19)+'</button><button data-act="desk-shortcut">'+ic('settings',19)+'</button>'+
-      av('林','linear-gradient(135deg,#4f6ef7,#7b61ff)','sm')+'</div></nav>'+
-    '<section class="conv-col"><div class="cc-head"><div class="h5-search" style="margin:0">'+ic('search',14)+'搜索会话 / 用户 / 消息</div>'+
+  saveDraft();
+  var c=C[state.deskConv],dv=state.deskView||'msg';
+  var rail=[['msg','消息','msg'],['contacts','通讯录','contacts'],['folder','文件','files'],['chart','统计','stats']];
+  var main='';
+  if(dv==='msg'){
+    main=
+    '<section class="conv-col"><div class="cc-head"><div class="h5-search" style="margin:0">'+ic('search',14)+'<input id="deskConvSearch" data-input="deskConvSearch" placeholder="搜索会话 / 用户 / 消息" style="border:0;background:none;padding:0;flex:1;font-size:12px"></div>'+
       '<div class="conv-filters"><button class="'+(state.filter==='all'?'on':'')+'" data-act="desk-filter" data-f="all">全部</button>'+
       '<button class="'+(state.filter==='unread'?'on':'')+'" data-act="desk-filter" data-f="unread">未读 '+convOrder.reduce(function(s,i){return s+C[i].unread;},0)+'</button>'+
       '<button class="'+(state.filter==='group'?'on':'')+'" data-act="desk-filter" data-f="group">群聊</button>'+
       '<button data-act="read-all" title="FR-MSG-25">'+ic('check',13)+'全部已读</button>'+
       '<button data-act="reminds" title="FR-MSG-26">'+ic('bell',13)+'提醒我</button></div></div>'+
-      '<div class="conv-scroll scroll">'+convListHtml(state.deskConv)+'</div></section>'+
+      '<div class="conv-scroll scroll"><div id="deskConvWrap">'+convListHtml(state.deskConv)+'</div></div></section>'+
     '<section class="chat-col"><div class="chat-top">'+av(c.name,c.color,'sm')+
       '<div><div class="ct-name">'+esc(c.name)+'</div><div class="ct-sub">'+esc(c.online||'在线')+' · 消息已云端同步 180 天</div></div><div style="flex:1"></div>'+
-      '<button class="icon-btn" data-act="desk-search">'+ic('search',17)+'</button>'+
+      '<button class="icon-btn" data-act="desk-search" title="全局搜索">'+ic('search',17)+'</button>'+
       '<button class="icon-btn" data-act="desk-call-audio" title="语音通话">'+ic('phoneIn',17)+'</button>'+
       '<button class="icon-btn" data-act="desk-call-video" title="视频通话">'+ic('video',17)+'</button>'+
       '<button class="icon-btn" data-act="desk-members">'+ic('users',17)+'</button>'+
-      '<button class="icon-btn">'+ic('more',17)+'</button></div>'+
+      '<button class="icon-btn" data-act="conv-settings" title="会话设置">'+ic('more',17)+'</button></div>'+
       '<div class="chat-msgs scroll" id="deskMsgs">'+messagesHtml(c.id)+'</div>'+
       (state.memberPanel&&c.type==='group'?'<div class="member-panel"><h4>群成员 · '+c.members+'</h4>'+
         [['林晓','群主'],['李工','管理员'],['王敏','成员'],['赵琳','成员'],['张伟','成员'],['陈静','成员']].map(function(m,i){
           var cols=['#4f6ef7','#e9834a','#3ba58c','#f2994a','#3ba7d8','#a05ce6'];
           return '<div class="mp-row">'+av(m[0],cols[i],'sm')+'<span>'+m[0]+'</span><span style="margin-left:auto;color:#8a95aa;font-size:10px">'+m[1]+'</span></div>';
         }).join('')+'<button class="btn sm" style="width:100%;justify-content:center;margin-top:12px" data-act="desk-invite">'+ic('plus',13)+'邀请成员</button></div>':'')+
+      '<div class="composer-wrap">'+
       (state.mention==='desk'?mentionHtml():'')+
+      (state.emojiFor==='desk'?emojiPanelHtml('desk'):'')+
       '<div class="composer"><div class="composer-tools">'+
         [['smile','表情'],['image','图片'],['clip','文件'],['at','@提及'],['flag','截图']].map(function(t){
           return '<button data-act="desk-tool" data-name="'+t[1]+'" title="'+t[1]+'">'+ic(t[0],17)+'</button>';
         }).join('')+'</div>'+
         '<input id="deskInput" data-input="desk" placeholder="输入消息，Enter 发送..." autocomplete="off">'+
-        '<button class="btn primary" data-act="desk-send">发送 '+ic('send',14)+'</button></div>'+
+        '<button class="btn primary" data-act="desk-send">发送 '+ic('send',14)+'</button></div></div>'+
       '<div class="tip-line"><span><kbd>Ctrl</kbd>+<kbd>K</kbd> 全局搜索</span><span><kbd>Enter</kbd> 发送消息</span><span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd> 截图</span><span>支持拖拽文件到窗口</span></div>'+
-    '</section></div>'+
+    '</section>';
+  }else if(dv==='contacts'){
+    main='<section class="chat-col" style="flex:1"><div class="chat-top">'+ic('contacts',17)+
+      '<div><div class="ct-name">通讯录 · 组织架构</div><div class="ct-sub">企业组织树 + 人员卡片 + 发起会话（FR-CONTACT-01/02）</div></div></div>'+
+      '<div class="chat-msgs scroll" style="padding:16px"><div class="card"><h3>部门树</h3><div class="csub">点击部门筛选成员 · 物化路径自动注入数据范围</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px">'+orgDepts.map(function(d){
+        return '<button class="btn sm '+(state.deptSel===d[0]?'primary':'')+'" data-act="dept-pick-h5" data-n="'+esc(d[0])+'">'+esc(d[0])+' · '+d[1]+'</button>';
+      }).join('')+'</div>'+
+      '<table class="tbl"><thead><tr><th>姓名</th><th>岗位</th><th>部门</th><th>手机号（脱敏）</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
+      orgMembers.filter(function(m){return state.deptSel==='总部'||m.dept===state.deptSel;}).map(function(m){
+        return '<tr><td><div class="u-cell">'+av(m.n,m.c,'sm')+esc(m.n)+'</div></td><td>'+esc(m.p)+'</td><td>'+esc(m.dept)+'</td><td><span class="code">'+esc(m.ph)+'</span></td>'+
+          '<td><span class="state '+(m.s==='在线'?'ok':'off')+'">'+esc(m.s)+'</span></td>'+
+          '<td style="white-space:nowrap"><button class="btn sm" data-act="h5-person" data-n="'+esc(m.n)+'">人员卡片</button> <button class="btn sm primary" data-act="pc-msg" data-n="'+esc(m.n)+'" data-c="'+esc(m.c)+'">发消息</button></td></tr>';
+      }).join('')+'</tbody></table></div></div></section>';
+  }else if(dv==='files'){
+    main='<section class="chat-col" style="flex:1"><div class="chat-top">'+ic('folder',17)+
+      '<div><div class="ct-name">文件</div><div class="ct-sub">跨端文件传输记录 · 预签名 URL 下载（FR-FILE-04）</div></div></div>'+
+      '<div class="chat-msgs scroll" style="padding:16px"><div class="card"><table class="tbl"><thead><tr><th>文件名</th><th>大小</th><th>来源</th><th>时间</th><th>操作</th></tr></thead><tbody>'+
+      fileRows.map(function(r){
+        return '<tr><td>'+ic('file',14)+' '+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td>'+
+          '<td style="white-space:nowrap"><button class="btn sm" data-act="file-dl" data-n="'+esc(r[0])+'">下载</button> <button class="btn sm" data-act="fwd-file" data-n="'+esc(r[0])+'">转发</button></td></tr>';
+      }).join('')+'</tbody></table></div></div></section>';
+  }else{
+    main='<section class="chat-col" style="flex:1"><div class="chat-top">'+ic('chart',17)+
+      '<div><div class="ct-name">统计</div><div class="ct-sub">个人消息与会话概览</div></div></div>'+
+      '<div class="chat-msgs scroll" style="padding:16px">'+
+      '<div class="grid2"><div class="card"><h3>本周消息趋势</h3><div class="chart-wrap"><svg viewBox="0 0 500 160" width="100%" height="160" preserveAspectRatio="none">'+
+        [40,80,120].map(function(y){return '<line x1="0" y1="'+y+'" x2="500" y2="'+y+'" stroke="#eef1f7"/>';}).join('')+
+        '<polyline points="0,120 80,96 160,104 240,64 320,80 400,36 495,52" fill="none" stroke="#4f6ef7" stroke-width="2.5" stroke-linecap="round"/></svg></div>'+
+        '<div class="legend"><span><i style="background:#4f6ef7"></i>每日消息数</span><span style="margin-left:auto">周一 — 周日</span></div></div>'+
+        '<div class="card"><h3>会话活跃度</h3>'+[['单聊',68],['群聊',26],['系统通知',6]].map(function(b){
+          return '<div class="bar-row"><span class="bl">'+b[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+b[1]+'%"></div></div><span class="bv">'+b[1]+'%</span></div>';
+        }).join('')+'</div></div>'+
+      '<div class="card" style="margin-top:14px"><h3>我的消息统计</h3>'+
+        [['本周发送','486 条'],['本周接收','1,204 条'],['活跃会话','9 个'],['文件传输','12 个 · 24.8 MB'],['音视频通话','6 通 · 42 分钟']].map(function(r){
+          return '<div class="switch-row"><div>'+r[0]+'</div><span class="state info">'+r[1]+'</span></div>';
+        }).join('')+'</div></div></section>';
+  }
+  document.getElementById('desktopFrame').innerHTML=
+  '<div class="titlebar"><div class="mac-dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>'+
+    '<div class="tb-title">NexIM · '+esc(dv==='msg'?c.name:({'contacts':'通讯录','files':'文件','stats':'统计'})[dv])+'</div><div class="tb-sync"><i class="dot"></i>已同步 · 延迟 23ms</div></div>'+
+  '<div class="desktop-body">'+
+    '<nav class="rail"><div class="r-logo">N</div>'+rail.map(function(r){
+      return '<button class="'+(dv===r[2]?'on':'')+'" data-act="desk-rail" data-name="'+r[1]+'">'+ic(r[0],20)+'</button>';
+    }).join('')+'<div class="r-bottom"><button data-act="desk-bell">'+ic('bell',19)+'</button><button data-act="desk-shortcut">'+ic('settings',19)+'</button>'+
+      av('林','linear-gradient(135deg,#4f6ef7,#7b61ff)','sm')+'</div></nav>'+
+    main+'</div>'+
     (!state.authed?'<div class="vcall" style="align-items:center;justify-content:center"><div style="text-align:center;padding:24px"><div style="font-size:15px;font-weight:700">未登录</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin:8px 0 18px;line-height:1.7">请在 H5 端登录或注册，<br>桌面端将自动同步相同账号的消息</div><button class="btn primary" data-act="auth-demo">使用演示账号一键登录</button></div></div>':'')+(state.call.active&&!state.call.ringing?vcallHtml():'')+(state.call.ringing?incomingHtml():'')+
     '<div class="desk-status"><span class="ds-ok"><i class="dot"></i>长连接正常 (wss://im.nex.com/ws)</span><span>设备：Windows 客户端</span><span>本地缓存：已加密 · 1.2 GB</span><button class="btn sm" data-act="sim-incoming">'+ic('phoneIn',13)+'模拟来电</button><span style="margin-left:auto">v1.0.0 · 自动更新已开启</span></div>';
-  scrollBottom(document.getElementById('deskMsgs'));
+  restoreDraft();
+  var dme=document.getElementById('deskMsgs');if(dme)scrollBottom(dme);
 }
 
 /* ==================== 管理后台 ==================== */
@@ -1317,10 +1788,11 @@ function renderAdminMenu(){
 function hint(text,extra){return '<div class="proto-hint">'+ic('shield',15)+esc(text)+'<span class="ph-r">'+esc(extra||'交互原型 · 数据为演示数据')+'</span></div>';}
 function kpi(t,v,d,ico,down){return '<div class="card kpi"><div class="k-t">'+esc(t)+'</div><div class="k-v">'+esc(v)+'</div><div class="k-d '+(down?'down':'')+'">'+esc(d)+'</div><div class="k-ico">'+ic(ico,19)+'</div></div>';}
 function pageDashboard(){
-  var pts1='0,145 55,120 110,132 165,82 220,96 275,52 330,70 385,28 440,42 495,16';
-  var pts2='0,160 55,148 110,152 165,126 220,134 275,110 330,120 385,92 440,104 495,84';
+  var is30=state.dashRange==='30';
+  var pts1=is30?'0,150 55,132 110,118 165,124 220,88 275,96 330,62 385,74 440,40 495,52':'0,145 55,120 110,132 165,82 220,96 275,52 330,70 385,28 440,42 495,16';
+  var pts2=is30?'0,164 55,152 110,146 165,138 220,142 275,126 330,118 385,108 440,112 495,98':'0,160 55,148 110,152 165,126 220,134 275,110 330,120 385,92 440,104 495,84';
   return hint('工作台指标来自消息链路埋点与聚合任务，支持近 7 / 30 天切换。','FR-ADMIN-01')+
-  '<div class="toolbar"><div class="sp"></div><button class="btn sm" data-act="dash-range" data-r="7">近 7 天</button><button class="btn sm" data-act="dash-range" data-r="30">近 30 天</button><button class="btn sm" data-act="dash-refresh">'+ic('refresh',13)+'刷新</button></div>'+
+  '<div class="toolbar"><div class="sp"></div><button class="btn sm '+(is30?'':'primary')+'" data-act="dash-range" data-r="7">近 7 天</button><button class="btn sm '+(is30?'primary':'')+'" data-act="dash-range" data-r="30">近 30 天</button><button class="btn sm" data-act="dash-refresh">'+ic('refresh',13)+'刷新</button></div>'+
   '<div class="grid4">'+
     kpi('当前在线用户','8,642','较昨日 +12.4% · 峰值 9,180','users')+
     kpi('今日消息量','1,284,309','峰值 4,820 QPS · 群聊占 38%','msg')+
@@ -1375,7 +1847,7 @@ function pageUsers(){
     '<div class="pager">共 '+users.length+' 条 <button>‹</button><button class="on">1</button><button>2</button><button>›</button></div></div>';
 }
 function pageDepts(){
-  var depts=[['总部','1,248'],['研发中心','386'],['产品组','42'],['后端组','86'],['前端组','54'],['架构组','18'],['市场部','212'],['审计部','16'],['客服部','96']];
+  var depts=deptData;
   return hint('组织架构变更在 60 秒内同步到 H5 与桌面端通讯录，并影响 RBAC 数据范围。','FR-CONTACT-01 / FR-ADMIN-03')+
   '<div class="split"><div class="card"><h3>部门树</h3><div class="csub">支持拖拽调整层级</div>'+
     depts.map(function(d,i){return '<div class="tree-row '+(i===1?'on':'')+'" data-act="dept-select" data-name="'+d[0]+'">'+ic(i<2?'folder':'chev',14)+esc(d[0])+'<span class="tr-c">'+d[1]+' 人</span></div>';}).join('')+
@@ -1391,7 +1863,7 @@ function pageDepts(){
 function pageGroups(){
   return hint('冻结 / 解散属于敏感操作，需二次确认并写入审计日志（含操作人与 IP）。','FR-GROUP-08 / FR-SEC-01')+
   '<div class="card"><div class="toolbar"><input placeholder="群名称 / 群主" style="width:210px"><select><option>全部状态</option><option>正常</option><option>已冻结</option></select>'+
-    '<button class="btn">'+ic('search',14)+'查询</button><div class="sp"></div><button class="btn" data-act="group-export">'+ic('download',14)+'导出</button></div>'+
+    '<button class="btn" data-act="tbl-query">'+ic('search',14)+'查询</button><div class="sp"></div><button class="btn" data-act="group-export">'+ic('download',14)+'导出</button></div>'+
     '<table class="tbl"><thead><tr><th>群组</th><th>群主</th><th>成员数</th><th>消息量</th><th>创建时间</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
     groups.map(function(g){
       return '<tr><td><div class="u-cell">'+av(g.name,'#5f72f6','sm')+esc(g.name)+'</div></td><td>'+esc(g.owner)+'</td><td>'+g.members+'</td><td>'+esc(g.msgs)+'</td><td>'+esc(g.created)+'</td>'+
@@ -1431,7 +1903,7 @@ function pageRoles(){
 function pageLogs(){
   return hint('审计日志仅追加写入，应用账号无 UPDATE / DELETE 权限，保留 ≥ 180 天。','FR-SEC-01 / FR-ADMIN-08')+
   '<div class="card"><div class="toolbar"><input placeholder="操作人 / IP / 关键词" style="width:210px"><select><option>全部模块</option><option>用户管理</option><option>角色权限</option><option>消息审计</option></select>'+
-    '<input type="date" value="2026-11-15"><button class="btn">'+ic('search',14)+'查询</button><div class="sp"></div>'+
+    '<input type="date" value="2026-11-15"><button class="btn" data-act="tbl-query">'+ic('search',14)+'查询</button><div class="sp"></div>'+
     '<button class="btn" data-act="log-export">'+ic('download',14)+'导出日志</button></div>'+
     '<table class="tbl"><thead><tr><th>时间</th><th>操作人</th><th>模块</th><th>操作内容</th><th>来源 IP</th><th>结果</th></tr></thead><tbody>'+
     logRows.map(function(l){
@@ -1444,7 +1916,7 @@ function pageAudit(){
   '<div class="card" style="margin-bottom:14px"><h3>审计检索</h3><div class="csub">支持按用户 / 会话 / 时间范围 / 关键字组合检索</div>'+
     '<div class="toolbar"><input placeholder="关键字" style="width:190px"><input placeholder="发送人 UID" style="width:150px">'+
     '<select><option>全部会话类型</option><option>单聊</option><option>群聊</option><option>系统通知</option></select>'+
-    '<input type="date" value="2026-11-15"><button class="btn primary">'+ic('search',14)+'检索</button></div></div>'+
+    '<input type="date" value="2026-11-15"><button class="btn primary" data-act="tbl-query">'+ic('search',14)+'检索</button></div></div>'+
   '<div class="card"><div class="toolbar"><h3 style="font-size:13px">检索结果 <span style="color:#8a95aa;font-weight:400">· 6 条</span></h3><div class="sp"></div>'+
     '<button class="btn" data-act="audit-export">'+ic('download',14)+'导出结果</button></div>'+
     '<table class="tbl"><thead><tr><th>时间</th><th>会话</th><th>发送人</th><th>类型</th><th>内容（脱敏）</th><th>检测结果</th></tr></thead><tbody>'+
@@ -1459,7 +1931,7 @@ function pageSensitive(){
   '<div class="grid2" style="grid-template-columns:1fr 1fr"><div class="card"><h3>敏感词库</h3><div class="csub">当前词库 v8 · 共 '+words.length+' 条演示词</div>'+
     '<div class="word-cloud">'+words.map(function(w){return '<span class="word">'+esc(w)+'<button data-act="word-del" data-w="'+esc(w)+'">'+ic('x',12)+'</button></span>';}).join('')+'</div>'+
     '<div class="toolbar"><input id="wordInput" data-input="word" placeholder="输入新敏感词" style="flex:1"><button class="btn primary" data-act="word-add">'+ic('plus',14)+'添加</button>'+
-    '<button class="btn">导入词库</button></div></div>'+
+    '<button class="btn" data-act="word-import">导入词库</button></div></div>'+
   '<div class="card"><h3>命中策略</h3><div class="csub">策略修改后无需重启服务</div>'+
     [['拦截并提示发送方','命中后拒绝发送，返回错误码 4005','block'],['替换为 * ','消息正常投递，敏感内容脱敏','replace'],['仅告警留痕','消息正常投递并生成审计记录','alert']].map(function(s,i){
       return '<div class="switch-row"><div>'+esc(s[0])+'<div class="sr-desc">'+esc(s[1])+'</div></div><div class="switch '+(i===0?'on':'')+'" data-act="strategy" data-name="'+esc(s[0])+'"></div></div>';
@@ -1500,7 +1972,7 @@ function pageCalls(){
   '<div class="card"><div class="toolbar"><input placeholder="发起人 / 对端 / 房间号" style="width:210px">'+
     '<select><option>全部类型</option><option>1v1 语音</option><option>1v1 视频</option><option>群组语音</option><option>群组视频</option></select>'+
     '<select><option>全部结果</option><option>已接</option><option>未接</option><option>强制挂断</option></select>'+
-    '<input type="date" value="2026-11-15"><button class="btn primary">'+ic('search',14)+'检索</button><div class="sp"></div>'+
+    '<input type="date" value="2026-11-15"><button class="btn primary" data-act="tbl-query">'+ic('search',14)+'检索</button><div class="sp"></div>'+
     '<button class="btn" data-act="call-export">'+ic('download',14)+'导出</button></div>'+
     '<table class="tbl"><thead><tr><th>时间</th><th>类型</th><th>发起人</th><th>对端 / 群</th><th>成员数</th><th>时长</th><th>模式</th><th>质量</th><th>录制</th><th>操作</th></tr></thead><tbody>'+
     callRows.map(function(r){
@@ -1529,9 +2001,9 @@ function pageRtcQuality(){
     }).join('')+'</div></div>';
 }
 function pageNotices(){
-  return hint('公告到达客户端系统通知会话，已读率按 HyperLogLog 估算（误差 < 1%），下线后不可再送达。','FR-ADMIN-13')+
+  return hint('公告到达客户端系统通知会话，已读率按 HyperLogLog 估算（误差 < 1%），下线后不可再送达。','FR-ADMIN-11')+
   '<div class="card"><div class="toolbar"><input placeholder="标题 / 范围" style="width:200px"><select><option>全部状态</option><option>已发布</option><option>定时中</option><option>已下线</option></select>'+
-    '<button class="btn primary">'+ic('search',14)+'查询</button><div class="sp"></div>'+
+    '<button class="btn primary" data-act="tbl-query">'+ic('search',14)+'查询</button><div class="sp"></div>'+
     '<button class="btn primary" data-act="notice-new">'+ic('plus',14)+'新建公告</button></div>'+
     '<table class="tbl"><thead><tr><th>标题</th><th>定向范围</th><th>状态</th><th>发布时间</th><th>已读率</th><th>操作</th></tr></thead><tbody>'+
     notices.map(function(n){
@@ -1555,7 +2027,7 @@ function pageLoginLogs(){
   return hint('登录日志全量留存，异地 / 高频失败自动告警，异常 IP 可一键封禁。','FR-ADMIN-09 / FR-AUTH-06')+
   '<div class="card"><div class="toolbar"><input placeholder="用户 / IP" style="width:190px"><select><option>全部结果</option><option>成功</option><option>失败</option></select>'+
     '<select><option>全部风险</option><option>异常登录</option><option>异地登录</option></select>'+
-    '<input type="date" value="2026-11-15"><button class="btn primary">'+ic('search',14)+'查询</button><div class="sp"></div>'+
+    '<input type="date" value="2026-11-15"><button class="btn primary" data-act="tbl-query">'+ic('search',14)+'查询</button><div class="sp"></div>'+
     '<button class="btn" data-act="login-export">'+ic('download',14)+'导出</button></div>'+
     '<table class="tbl"><thead><tr><th>时间</th><th>用户</th><th>来源 IP</th><th>地点</th><th>设备</th><th>结果</th><th>风险</th><th>操作</th></tr></thead><tbody>'+
     rows.map(function(r){
@@ -1601,9 +2073,9 @@ function updateGroupChecks(){
 
 /* ==================== 动作 ==================== */
 function openConv(id,target){
-  state.mention=null;
+  state.mention=null;state.draft='';state.emojiFor=null;state.attach=false;
   if(target==='h5'){state.h5Conv=id;state.h5Page='chat';C[id].unread=0;
-    var idx=convOrder.indexOf(id);C[id].last='刚刚 · 已同步';renderH5();}
+    var idx=convOrder.indexOf(id);C[id].last='刚刚 · 已同步';renderCur();}
   else{state.deskConv=id;C[id].unread=0;renderDesktop();}
   toast('会话已打开，未读清零并同步到其他端','ok');
 }
@@ -1617,48 +2089,81 @@ function sendMsg(target){
   var now=new Date(),time=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
   C[id].messages.push({mine:true,sender:'我',text:text,time:time,read:false});
   C[id].last='我：'+text;C[id].time='刚刚';
-  inp.value='';
+  inp.value='';state.draft='';state.emojiFor=null;
   if(target==='h5'){document.getElementById('h5Msgs').innerHTML=messagesHtml(id);scrollBottom(document.getElementById('h5Msgs'));}
   else{document.getElementById('deskMsgs').innerHTML=messagesHtml(id);scrollBottom(document.getElementById('deskMsgs'));}
   flashSync();
-  toast('消息已发送 · 已同步到 H5 / 桌面 / 其他在线设备','ok');
+  toast('消息已发送 · 已同步到全部在线端（H5 / 安卓 / iOS / 桌面）','ok');
   setTimeout(function(){
     var m=C[id].messages[C[id].messages.length-1];if(m&&m.mine)m.read=true;
-    if(state.view==='h5'&&state.h5Page==='chat'&&(state.h5Conv||'c1')===id){var e=document.getElementById('h5Msgs');if(e){e.innerHTML=messagesHtml(id);scrollBottom(e);}}
+    if(isMobile()&&state.h5Page==='chat'&&(state.h5Conv||'c1')===id){var e=document.getElementById('h5Msgs');if(e){e.innerHTML=messagesHtml(id);scrollBottom(e);}}
     if(state.view==='desktop'&&state.deskConv===id){var e2=document.getElementById('deskMsgs');if(e2){e2.innerHTML=messagesHtml(id);scrollBottom(e2);}}
   },1200);
 }
 function switchView(v){
   state.view=v;
-  ['h5','desktop','admin'].forEach(function(x){document.getElementById('view-'+x).classList.toggle('hide',x!==v);});
+  ['h5','android','ios','desktop','admin'].forEach(function(x){var el=document.getElementById('view-'+x);if(el)el.classList.toggle('hide',x!==v);});
   document.querySelectorAll('#viewTabs button').forEach(function(b){b.classList.toggle('on',b.dataset.view===v);});
-  if(v==='h5')renderH5();if(v==='desktop')renderDesktop();if(v==='admin')renderAdmin();
+  renderCur();
+  if(v==='admin')renderAdmin();
 }
 
 document.addEventListener('click',function(e){
   if(!(e.target.closest&&e.target.closest('#msgMenu')))closeMsgMenu();
-  var t=e.target.closest('[data-act]');if(!t)return;
+  if(pt.moved){pt.moved=false;return;}
+  var pg=e.target.closest?e.target.closest('.pager button'):null;
+  if(pg){toast('演示数据仅展示首页，正式版按游标分页拉取');return;}
+  var t=e.target.closest('[data-act]');
+  if(state.emojiFor||state.mention||state.attach){
+    var keepOpen=t&&['emoji-toggle','emoji-pick','h5-mention','mention-pick','h5-attach','attach','desk-tool'].indexOf(t.dataset.act)>=0;
+    var inFloat=e.target.closest?(e.target.closest('.mention-panel')||e.target.closest('.attach-panel')):null;
+    if(!keepOpen&&!inFloat){
+      state.emojiFor=null;state.mention=null;state.attach=false;
+      renderCur();
+    }
+  }
+  if(!t)return;
   var a=t.dataset.act,id=t.dataset.id;
   switch(a){
     case 'switch-view':switchView(t.dataset.view);break;
-    case 'h5-page':state.h5Page=t.dataset.page;if(t.dataset.page==='chat'&&!state.h5Conv)state.h5Conv='c1';renderH5();break;
-    case 'h5-back':state.h5Page='convs';state.attach=false;renderH5();break;
+    case 'h5-page':state.h5Page=t.dataset.page;if(t.dataset.page==='chat'&&!state.h5Conv)state.h5Conv='c1';renderCur();break;
+    case 'h5-back':state.h5Page='convs';state.attach=false;renderCur();break;
     case 'auth-login':doLogin();break;
     case 'auth-demo':doLogin('linxiao','123456');break;
-    case 'auth-register':state.authPage='register';renderH5();break;
-    case 'auth-back':state.authPage='login';renderH5();break;
+    case 'auth-register':state.authPage='register';renderCur();break;
+    case 'auth-back':state.authPage='login';renderCur();break;
     case 'auth-register-submit':doRegister();break;
-    case 'auth-send-code':sendCode();break;
-    case 'auth-sso':toast('跳转企业 SSO（OAuth2 / LDAP，后台可配置）','ok');break;
-    case 'auth-code':toast('验证码登录：输入手机号获取验证码（演示环境 123456）');break;
-    case 'auth-forgot':toast('找回密码：验证手机号后重置（原型演示略）');break;
+    case 'auth-send-code':sendCode(t);break;
+    case 'auth-sso':modal('企业 SSO 登录','<div style="font-size:12px;color:#4a556b;line-height:2">即将跳转企业统一认证（OAuth2 / LDAP，后台可配置开关，FR-AUTH-02）。<br><br>· OAuth2：跳转企业 IdP 授权后回跳本应用<br>· LDAP：域账号 + 密码直连企业目录服务<br>· 登录成功签发双令牌，并同步组织架构与权限摘要</div>',
+      function(){closeModal();doLogin('linxiao','123456');},'模拟 SSO 登录');break;
+    case 'auth-code':modal('验证码登录','<div class="field"><label>手机号</label><input id="vcPhone" placeholder="11 位手机号" style="width:100%"></div>'+
+      '<div class="field"><label>验证码</label><div style="display:flex;gap:8px"><input id="vcCode" placeholder="6 位验证码" style="flex:1"><button class="btn" data-act="auth-send-code" id="codeBtn">获取验证码</button></div></div>'+
+      '<div style="font-size:11px;color:#8a95aa">验证码 5 分钟有效、一次性使用（FR-AUTH-09，演示环境 123456）</div>',
+      function(){var p=((document.getElementById('vcPhone')||{}).value||'').trim(),c=((document.getElementById('vcCode')||{}).value||'').trim();
+        if(!/^1\d{10}$/.test(p)){toast('请输入 11 位手机号','warn');return;}
+        if(c!=='123456'){toast('验证码不正确（演示环境：123456）','err');return;}
+        closeModal();doLogin('linxiao','123456');},'登录');break;
+    case 'auth-forgot':modal('找回密码','<div class="field"><label>账号 / 手机号</label><input id="fpPhone" placeholder="注册手机号" style="width:100%"></div>'+
+      '<div class="field"><label>验证码</label><div style="display:flex;gap:8px"><input id="fpCode" placeholder="6 位验证码" style="flex:1"><button class="btn" data-act="auth-send-code" id="codeBtn">获取验证码</button></div></div>'+
+      '<div class="field"><label>新密码</label><input id="fpPwd" type="password" placeholder="8~20 位，含字母与数字" style="width:100%"></div>',
+      function(){var p=((document.getElementById('fpPhone')||{}).value||'').trim(),c=((document.getElementById('fpCode')||{}).value||'').trim(),w=(document.getElementById('fpPwd')||{}).value||'';
+        if(!/^1\d{10}$/.test(p)){toast('请输入 11 位手机号','warn');return;}
+        if(c!=='123456'){toast('验证码不正确（演示环境：123456）','err');return;}
+        if(w.length<8||w.length>20||!/[A-Za-z]/.test(w)||!/\d/.test(w)){toast('新密码需 8~20 位且含字母与数字','warn');return;}
+        closeModal();toast('密码重置成功，请使用新密码登录','ok');},'重置密码');break;
+    case 'auth-terms':modal('服务协议与隐私政策','<div style="font-size:12px;color:#4a556b;line-height:1.9">本演示原型仅展示入口交互：正式版提供完整《服务协议》与《隐私政策》文本，涵盖消息留存策略（默认云端 180 天，可配置）、敏感内容检测与审计合规说明（FR-AUTH-10 / FR-SEC-02）。</div>',null,'知道了');break;
     case 'h5-new':modal('发起','<div style="display:flex;flex-direction:column;gap:8px">'+
       '<button class="btn" style="justify-content:flex-start" data-act="go-create-group">'+ic('users',16)+'发起群聊</button>'+
       '<button class="btn" style="justify-content:flex-start" data-act="go-add-friend">'+ic('user',16)+'添加朋友</button>'+
       '<button class="btn" style="justify-content:flex-start" data-act="scan-qr">'+ic('search',16)+'扫一扫</button></div>',null,'取消');break;
-    case 'go-add-friend':closeModal();state.h5Page='addFriend';renderH5();break;
-    case 'go-create-group':closeModal();state.groupPicked=[];state.h5Page='createGroup';renderH5();break;
-    case 'scan-qr':closeModal();toast('调用摄像头扫码（H5 降级为相册选图识别）');break;
+    case 'go-add-friend':closeModal();state.h5Page='addFriend';renderCur();break;
+    case 'go-create-group':closeModal();state.groupPicked=[];state.h5Page='createGroup';renderCur();break;
+    case 'scan-qr':modal('扫一扫','<div style="height:200px;border-radius:12px;background:linear-gradient(135deg,#1a2233,#2b3556);position:relative;display:grid;place-items:center">'+
+      '<div style="width:140px;height:140px;border:2px solid #4f6ef7;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.35)"></div>'+
+      '<div style="position:absolute;bottom:12px;color:#8fa2ff;font-size:11px">对准群二维码 / 好友名片（H5 降级为相册选图识别）</div></div>'+
+      '<div class="qentry" style="margin-top:12px">'+ic('hash',18)+'<div style="flex:1"><div class="qe-t">识别到群二维码：架构评审临时群</div><div class="qe-s">群主 李工 · 12 人 · 入群需审批</div></div></div>'+
+      '<div class="qentry">'+ic('user',18)+'<div style="flex:1"><div class="qe-t">识别到好友名片：周涛</div><div class="qe-s">客服部 · 138****0086</div></div></div>',
+      function(){closeModal();toast('已发送入群申请与好友申请（演示）','ok');},'执行识别结果');break;
     case 'add-friend':{
       var au=searchUsers.filter(function(x){return x.id===t.dataset.id;})[0];if(!au)break;
       modal('添加好友','<div class="field"><label>发送申请</label><input id="afMsg" value="你好，我是'+esc(state.loginUser)+'，申请添加你为好友" style="width:100%"></div>'+
@@ -1671,7 +2176,7 @@ document.addEventListener('click',function(e){
     case 'gp-toggle':{
       var gid=t.dataset.id,pos=state.groupPicked.indexOf(gid);
       if(pos>=0)state.groupPicked.splice(pos,1);else state.groupPicked.push(gid);
-      renderH5();break;}
+      renderCur();break;}
     case 'group-create':{
       if(!state.groupPicked.length){toast('请至少选择 1 位联系人','warn');break;}
       var gnames=state.groupPicked.map(function(id){var u=groupCandidates.filter(function(x){return x.id===id;})[0];return u?u.name:'';}).filter(Boolean);
@@ -1685,43 +2190,92 @@ document.addEventListener('click',function(e){
             last:'你创建了群聊，邀请 '+gnames.length+' 位成员',online:(gnames.length+1)+' 人在线',members:gnames.length+1,
             messages:[{mine:false,sender:'系统',text:'你创建了群聊「'+nm+'」，'+gnames.join('、')+' 已加入',time:nowTime(),color:'#64748b'}]};
           convOrder.unshift(nid);state.h5Conv=nid;state.h5Page='chat';state.groupPicked=[];
-          closeModal();renderH5();flashSync();toast('群聊「'+nm+'」已创建，消息将实时同步到各端','ok');
+          closeModal();renderCur();flashSync();toast('群聊「'+nm+'」已创建，消息将实时同步到各端','ok');
         },'创建');break;}
     case 'pick-media':{
       var pi=parseInt(t.dataset.i,10),pk=t.dataset.kind,item=(mediaItems[pk]||[])[pi];
       closeModal();if(item)sendMedia(pk,item);break;}
     case 'view-media':openMedia(parseInt(t.dataset.idx,10));break;
-    case 'h5-chat-more':toast('会话设置：置顶 / 免打扰 / 群公告 / 成员管理');break;
-    case 'h5-attach':state.attach=!state.attach;renderH5();break;
+    case 'h5-chat-more':case 'conv-settings':{
+      var csid=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv,cs=C[csid];
+      modal('会话设置 · '+cs.name,'<div class="csub" style="margin-bottom:10px">对应 FR-MSG-24：操作后多端同步，云端漫游仍可拉取</div><div style="display:flex;flex-direction:column;gap:8px">'+
+        '<button class="btn" style="justify-content:flex-start" data-act="cm" data-k="pin" data-id="'+csid+'">'+ic('pin',16)+(cs.pinned?'取消置顶':'置顶会话')+'</button>'+
+        '<button class="btn" style="justify-content:flex-start" data-act="cm" data-k="mute" data-id="'+csid+'">'+ic('bell',16)+(cs.muted?'开启提醒':'消息免打扰')+'</button>'+
+        '<button class="btn" style="justify-content:flex-start" data-act="cm" data-k="read" data-id="'+csid+'">'+ic('check',16)+'标记本会话已读</button>'+
+        '<div class="mm-sep"></div>'+
+        '<button class="btn" style="justify-content:flex-start;color:#ef4b5b" data-act="cm" data-k="clear" data-id="'+csid+'">'+ic('trash',16)+'清空本地聊天记录</button></div>',null,'关闭');
+      break;}
+    case 'h5-attach':state.attach=!state.attach;renderCur();break;
     case 'attach':{
       var ak=t.dataset.kind;
       if(ak==='call-audio'){state.attach=false;startCall(state.h5Conv||'c1','audio');break;}
       if(ak==='call-video'){state.attach=false;startCall(state.h5Conv||'c1','video');break;}
       if(ak==='image'||ak==='video'||ak==='file'){state.attach=false;openPicker(ak);break;}
-      toast('表情面板（原型演示）');break;}
+      if(ak==='emoji'){state.attach=false;state.emojiFor=state.emojiFor==='h5'?null:'h5';renderCur();break;}
+      toast('其他附件类型（原型演示）');break;}
     case 'h5-send':sendMsg('h5');break;
-    case 'h5-qentry':if(t.dataset.name==='新的朋友'){state.h5Page='friends';renderH5();break;}toast(t.dataset.name+' · 功能入口（详见业务需求文档）');break;
-    case 'h5-contact':openConv('c2','h5');break;
-    case 'h5-status':state.status=t.dataset.s;renderH5();toast('状态已设为「'+t.dataset.s+'」，已广播给好友','ok');break;
-    case 'h5-settings':toast('设置：通知 / 隐私 / 通用');break;
+    case 'h5-qentry':{
+      var qn=t.dataset.name;
+      if(qn==='新的朋友'){state.h5Page='friends';renderCur();break;}
+      if(qn==='待办与提醒'){openReminds();break;}
+      if(qn==='企业公告'){openNoticeBoard();break;}
+      if(qn==='群聊'){state.h5Page='groups';renderCur();break;}
+      if(qn==='组织架构'){state.h5Page='dept';renderCur();break;}
+      if(qn==='文件助手'){state.h5Page='files';renderCur();break;}
+      if(qn==='收藏'){state.h5Page='favorites';renderCur();break;}
+      if(qn==='消息通知'||qn==='隐私与安全'||qn==='通用设置'){
+        state.h5Page='settings';state.settingsTab=({'消息通知':'notify','隐私与安全':'privacy','通用设置':'general'})[qn];renderCur();break;}
+      if(qn==='黑名单管理'){toast('黑名单（FR-CONTACT-04）：2 人 · 拉黑后不再接收对方消息');break;}
+      toast(qn+' · 功能入口（详见业务需求文档）');break;}
+    case 'h5-contact':personCard(t.dataset.name);break;
+    case 'h5-person':personCard(t.dataset.n);break;
+    case 'h5-status':state.status=t.dataset.s;renderCur();toast('状态已设为「'+t.dataset.s+'」，已广播给好友','ok');break;
+    case 'h5-settings':state.h5Page='settings';state.settingsTab='notify';renderCur();break;
+    case 'settings-tab':state.settingsTab=t.dataset.t;renderCur();break;
+    case 'dept-pick-h5':state.deptSel=t.dataset.n;renderCur();break;
+    case 'group-open':openConv(t.dataset.id,isMobile()?'h5':'desktop');break;
+    case 'file-dl':toast('正在下载 '+t.dataset.n+'（预签名 URL 有效期 15 分钟）','ok');break;
+    case 'fav-del':favItems.splice(parseInt(t.dataset.i,10),1);renderCur();toast('已取消收藏','ok');break;
+    case 'pc-msg':{
+      var pmc=ensureSingleConv(t.dataset.n,t.dataset.c);closeModal();openConv(pmc,isMobile()?'h5':'desktop');break;}
+    case 'pc-call':{
+      var pcc=ensureSingleConv(t.dataset.n,t.dataset.c);closeModal();startCall(pcc,t.dataset.t);break;}
+    case 'pc-add':closeModal();toast('已向 '+t.dataset.n+' 发送好友申请（FR-CONTACT-08），等待对方通过','ok');break;
+    case 'h5-devices':deviceModal();break;
+    case 'device-kick':{
+      var dk=parseInt(t.dataset.i,10),dn=deviceList[dk]?deviceList[dk].name:'设备';
+      deviceList.splice(dk,1);deviceModal();toast('「'+dn+'」已远程下线，长连接已断开（FR-AUTH-07）','ok');break;}
+    case 'h5-blacklist':toast('黑名单（FR-CONTACT-04）：拉黑后不再接收对方消息，双方关系解除');break;
+    case 'h5-clear-cache':modal('清空本地缓存','确认清空本地加密消息缓存（约 1.2 GB）？云端漫游 180 天，重新登录后按会话增量同步恢复。',function(){
+      closeModal();toast('本地缓存已清空，下次同步将从云端拉取','ok');},'清空',true);break;
+    case 'emoji-toggle':{
+      state.emojiFor=state.emojiFor===t.dataset.t?null:t.dataset.t;
+      state.mention=null;renderCur();break;}
+    case 'emoji-pick':{
+      var eIn=document.getElementById(t.dataset.t==='h5'?'h5Input':'deskInput');
+      if(eIn){eIn.value=(eIn.value||'')+t.dataset.e;state.draft=eIn.value;}
+      break;}
     case 'h5-logout':modal('退出登录','确认退出当前账号？本地缓存的加密消息将被清除，重新登录后从云端增量同步。',function(){
       closeModal();state.authed=false;state.h5Page='convs';state.authPage='login';
-      renderH5();renderDesktop();toast('已退出登录，所有长连接已断开','ok');},'退出',true);break;
+      renderCur();renderDesktop();toast('已退出登录，所有长连接已断开','ok');},'退出',true);break;
     case 'msg-revoke':{
       var cid=state.view==='h5'?(state.h5Conv||'c1'):state.deskConv,mi=parseInt(t.dataset.idx,10);
       modal('撤回消息','确认撤回这条消息？撤回后消息正文将从服务端与各端缓存中移除，并广播 REVOKE_PUSH 同步展示撤回提示（仅 2 分钟内可撤回）。',function(){
         C[cid].messages.splice(mi,1);closeModal();
-        if(state.view==='h5')renderH5();else renderDesktop();
-        toast('消息已撤回，H5 / 桌面 / 其他在线设备已同步','ok');
+        renderCur();
+        toast('消息已撤回，全部在线端已同步移除','ok');
       },'确认撤回',true);break;}
-    case 'open-conv':openConv(id,state.view==='h5'?'h5':'desktop');break;
+    case 'open-conv':{
+      if(t.style&&t.style.transform){t.style.transform='';resetSwipes(t);break;}
+      resetSwipes();
+      openConv(id,isMobile()?'h5':'desktop');break;}
     case 'desk-send':sendMsg('desktop');break;
     case 'h5-call-audio':startCall(state.h5Conv||'c1','audio');break;
     case 'desk-call-audio':startCall(state.deskConv,'audio');break;
     case 'desk-call-video':startCall(state.deskConv,'video');break;
     case 'call-toggle':callToggle(t.dataset.key);break;
     case 'call-end':endCall('通话结束');break;
-    case 'call-min':if(state.view==='h5'){state.h5Page='chat';renderH5();}toast('通话已最小化，仍在进行中（桌面端悬浮窗示意）');break;
+    case 'call-min':if(isMobile()){state.h5Page='chat';renderCur();}toast('通话已最小化，仍在进行中（画中画 / 悬浮窗示意）');break;
     case 'sim-incoming':simulateIncoming();break;
     case 'call-answer':answerCall();break;
     case 'call-decline':declineCall();break;
@@ -1729,26 +2283,113 @@ document.addEventListener('click',function(e){
       if(state.filter==='unread'){var ids=convOrder.filter(function(i){return C[i].unread;});if(ids.length)state.deskConv=ids[0];}
       renderDesktop();toast('筛选：'+({all:'全部会话',unread:'仅未读',group:'群聊'}[state.filter]));break;
     case 'desk-members':state.memberPanel=!state.memberPanel;renderDesktop();break;
-    case 'desk-invite':toast('邀请成员：链接 / 扫码 / 从组织架构选择');break;
+    case 'desk-invite':modal('邀请成员入群','<div class="csub">支持链接邀请 / 扫码 / 从组织架构选择（FR-GROUP-02）</div>'+
+      '<div class="qentry" style="margin-top:10px">'+ic('link',18)+'<div style="flex:1"><div class="qe-t">邀请链接</div><div class="qe-s">https://im.nex.com/join/g_7391 · 7 天有效 · 需审批</div></div>'+
+      '<button class="btn sm" data-act="invite-copy">复制</button></div>'+
+      '<div class="qentry">'+ic('hash',18)+'<div style="flex:1"><div class="qe-t">群二维码</div><div class="qe-s">扫码直达入群申请</div></div><button class="btn sm" data-act="invite-qr">查看</button></div>'+
+      '<div class="sec-title" style="margin-top:10px">从组织架构选择</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">'+orgMembers.map(function(m){
+        return '<button class="btn sm" data-act="invite-pick" data-n="'+esc(m.n)+'">'+esc(m.n)+'</button>';
+      }).join('')+'</div>',null,'完成');break;
+    case 'invite-copy':toast('邀请链接已复制到剪贴板','ok');break;
+    case 'invite-qr':toast('群二维码已生成（演示）','ok');break;
+    case 'invite-pick':toast('已向 '+t.dataset.n+' 发送入群邀请（需审批，FR-GROUP-02）','ok');break;
+    case 'fwd-file':modal('转发文件','将「'+esc(t.dataset.n)+'」转发到：'+
+      '<div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">'+convOrder.slice(0,5).map(function(i){
+        return '<button class="btn" style="justify-content:flex-start" data-act="fwd-file-to" data-id="'+i+'" data-n="'+esc(t.dataset.n)+'">'+av(C[i].name,C[i].color,'sm')+C[i].name+'</button>';
+      }).join('')+'</div>',null,'取消');break;
+    case 'fwd-file-to':{
+      var ft=C[t.dataset.id];
+      ft.messages.push({mine:true,sender:'我',type:'file',fileName:t.dataset.n,fileSize:'—',time:nowTime(),fromName:'文件助手'});
+      ft.last='我：[文件] '+t.dataset.n;ft.time='刚刚';
+      closeModal();renderCur();
+      toast('文件已转发给 '+ft.name+'（保留原始类型与来源署名）','ok');break;}
     case 'desk-tool':{
       var dn=t.dataset.name;
       if(dn==='@提及'){toggleMention();break;}
       if(dn==='图片'){openPicker('image');break;}
       if(dn==='文件'){openPicker('file');break;}
       if(dn==='截图'){sendMedia('image',{label:'屏幕截图',bg:'linear-gradient(135deg,#4f6ef7,#7b61ff)'});break;}
-      if(dn==='表情'){toast('表情面板（原型演示）');break;}
+      if(dn==='表情'){state.emojiFor=state.emojiFor==='desk'?null:'desk';state.mention=null;renderDesktop();break;}
       toast(dn+'：调用桌面原生适配层');break;}
-    case 'desk-search':toast('全局搜索：消息 / 用户 / 文件（ES 检索）');break;
-    case 'desk-rail':toast('导航：'+t.dataset.name);break;
+    case 'desk-search':closeCmd();openCmd();break;
+    case 'desk-rail':{
+      var rv=({'消息':'msg','通讯录':'contacts','文件':'files','统计':'stats'})[t.dataset.name]||'msg';
+      state.deskView=rv;renderDesktop();break;}
     case 'desk-bell':case 'desk-tray-demo':showNotify();break;
-    case 'desk-shortcut':toast('快捷键：Ctrl+K 搜索 · Ctrl+Shift+A 截图 · Ctrl+Enter 发送');break;
-    case 'desk-file':toast('拖拽文件到窗口即发送；截图后 Ctrl+V 粘贴发送');break;
-    case 'desk-update':toast('检测到新版本 v1.0.1，差分更新包 12.4 MB，签名校验通过');break;
+    case 'desk-shortcut':modal('全局快捷键（FR-PC-04）','<table class="tbl"><thead><tr><th>快捷键</th><th>功能</th></tr></thead><tbody>'+
+      [['Ctrl + K','全局搜索（会话 / 用户 / 后台功能）'],['Ctrl + Shift + A','截图并发送'],['Ctrl + Enter','发送消息'],['Ctrl + N','新建会话'],['Ctrl + ,','打开设置'],['Esc','关闭弹窗 / 取消输入']].map(function(r){
+        return '<tr><td><span class="code">'+r[0]+'</span></td><td>'+r[1]+'</td></tr>';
+      }).join('')+'</tbody></table><div class="csub" style="margin-top:10px">支持自定义与冲突检测，设置入口在「设置 → 快捷键」</div>',null,'知道了');break;
+    case 'desk-file':modal('拖拽 / 截图发送（FR-PC-05）','<div style="font-size:12px;color:#4a556b;line-height:2">'+
+      '· 直接拖拽文件到窗口任意位置即发送（分片上传 + 秒传）<br>· 截图后 <span class="code">Ctrl+V</span> 粘贴即发送图片消息<br>· 支持常见格式：png / jpg / mp4 / pdf / docx / xlsx / zip<br>· 单文件上限 100MB（视频 500MB，FR-FILE-01）</div>',null,'知道了');break;
+    case 'desk-update':modal('自动更新（FR-PC-07）','<div style="font-size:12px;color:#4a556b;line-height:2">检测到新版本 <b>v1.0.1</b><br>差分更新包 12.4 MB · 签名校验通过<br>更新内容：<br>· 会话右键菜单新增「清空本地记录」<br>· 消息转发支持附留言<br>· 修复深色主题下输入框对比度<br><br>升级过程不丢本地数据，失败自动回滚。</div>',
+      function(){closeModal();toast('已开始下载更新包，完成后重启生效','ok');},'立即更新');break;
+    case 'app-demo':{
+      var adk=t.dataset.k;
+      if(adk==='push')modal('系统级推送（FR-APP-02）','<div style="font-size:12px;color:#4a556b;line-height:2">App 在后台或被系统杀死时：<br>· Android：厂商通道（小米 / 华为 / OPPO / vivo）+ FCM 双通道送达<br>· iOS：APNs 离线推送，通知按会话分组<br>· 点击推送直达对应会话；来电走 CallKit / 系统来电界面</div>',
+        function(){closeModal();openConv('c1',isMobile()?'h5':'desktop');toast('已从推送直达「产品评审群」会话（演示）','ok');},'模拟收到推送');
+      else if(adk==='badge')modal('角标与锁屏通知（FR-APP-03）','<div style="font-size:12px;color:#4a556b;line-height:2">· 桌面图标角标 = 服务端未读总数，多端实时一致<br>· 锁屏通知预览支持隐私模式：仅显示「您有新消息」<br>· 通知栏支持快捷回复与标为已读<br>· 免打扰时段内静默，仅累计角标</div>',null,'知道了');
+      else if(adk==='perm')modal('权限申请与降级（FR-APP-04）','<div style="font-size:12px;color:#4a556b;line-height:2">首次使用按需申请：通知 / 麦克风 / 摄像头 / 相册 / 蓝牙。<br>拒绝后对应功能优雅降级（如语音通话按钮置灰），引导前往系统设置开启；不崩溃、不阻塞主流程。</div>',null,'知道了');
+      else if(adk==='update')modal('应用内更新（FR-APP-06）','<div style="font-size:12px;color:#4a556b;line-height:2">启动检测新版本 → 弹窗说明更新内容 → 跳转应用市场或应用内下载升级。<br>Android 允许安装未知来源需用户授权；差分包更新失败自动回滚。</div>',
+        function(){closeModal();toast('已开始下载差分包 12.4 MB（演示）','ok');},'立即更新');
+      else if(adk==='pip')modal('通话画中画 / 锁屏接听（FR-APP-07）','<div style="font-size:12px;color:#4a556b;line-height:2">· iOS CallKit / Android 系统来电：锁屏可接听或拒接<br>· 通话中返回其他页面保持通话，视频画中画小窗悬浮<br>· 来电振动与铃声、蓝牙耳机与扬声器一键切换</div>',null,'知道了');
+      else if(adk==='gesture')modal('移动端手势交互（FR-APP-08）','<div style="font-size:12px;color:#4a556b;line-height:2">· 在会话列表<b>按住会话向左滑</b>，露出置顶 / 免打扰 / 删除<br>· 在会话列表顶部<b>下拉</b>触发增量同步刷新<br>· 长按消息弹出操作菜单（复制 / 引用 / 转发 / 撤回 / 删除）<br>· 深色模式跟随系统</div>',
+        function(){closeModal();state.h5Page='convs';renderCur();toast('请在右侧手机中尝试左滑会话或下拉刷新','ok');},'去体验');
+      break;}
+    case 'lock-call':{
+      if(state.call.active){toast('已在通话中，请先结束当前通话','warn');break;}
+      state.call={active:true,convId:'c2',type:'video',phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:true};
+      state.h5Page='call';renderCur();
+      var lsc=mobileScreen();
+      if(lsc){
+        var ov=document.createElement('div');ov.className='lock-call';ov.id='lockCall';
+        ov.innerHTML='<div style="position:absolute;top:20px;font-size:12px;opacity:.75">9:41</div>'+
+          '<div class="lc-av" style="background:'+C.c2.color+'">张</div>'+
+          '<div class="lc-name">张伟</div>'+
+          '<div class="lc-sub">锁屏来电 · CallKit / 系统来电界面（FR-APP-07）<br>来电振动与自定义铃声 · 拒接可回短信</div>'+
+          '<div class="lc-btns">'+
+          '<button class="lc-btn lc-decline" data-act="lock-decline">'+ic('phoneOff',20)+'<span>拒接</span></button>'+
+          '<button class="lc-btn lc-accept" data-act="lock-accept">'+ic('phone',20)+'<span>接听</span></button></div>';
+        lsc.appendChild(ov);
+      }
+      toast('收到锁屏来电（演示）：可在锁屏直接接听或拒接');
+      break;}
+    case 'lock-accept':{
+      var lco=document.getElementById('lockCall');if(lco)lco.remove();
+      answerCall();toast('已从锁屏接听，进入通话页（SRTP 媒体面建立）','ok');break;}
+    case 'lock-decline':{
+      var lcd=document.getElementById('lockCall');if(lcd)lcd.remove();
+      declineCall();break;}
+    case 'wide-toggle':{
+      var wph=activePhone();
+      if(wph){var isWide=wph.classList.toggle('wide');toast(isWide?'已切换横屏 / 平板双列布局（NFR-COMP-03）':'已恢复竖屏手机布局','ok');}
+      break;}
     case 'notify-close':var n=document.getElementById('sysNotify');if(n)n.remove();break;
     case 'admin-page':state.adminPage=t.dataset.page;renderAdmin();document.querySelector('.admin-main').scrollTop=0;break;
-    case 'admin-bell':toast('2 条待处理告警：内容安全命中 · 异常登录');break;
-    case 'dash-range':toast('已切换至近 '+t.dataset.r+' 天趋势');break;
+    case 'admin-bell':modal('待处理告警（2）','<div style="display:flex;flex-direction:column;gap:8px">'+
+      '<button class="btn" style="justify-content:flex-start;text-align:left" data-act="alert-go" data-p="sensitive">'+ic('flag',15)+'<div><div style="font-weight:600">内容安全命中待处理</div><div style="font-size:11px;color:#8a95aa">u_1890 在市场交流群命中「竞品报价」· 告警留痕 · 昨天 19:33</div></div></button>'+
+      '<button class="btn" style="justify-content:flex-start;text-align:left" data-act="alert-go" data-p="loginLogs">'+ic('alert',15)+'<div><div style="font-weight:600">异常登录告警</div><div style="font-size:11px;color:#8a95aa">203.0.113.42 连续 5 次失败已锁定 · 今天 07:12</div></div></button></div>',null,'全部已读');break;
+    case 'alert-go':closeModal();state.adminPage=t.dataset.p;renderAdmin();break;
+    case 'dash-range':state.dashRange=t.dataset.r;renderAdmin();toast('已切换至近 '+t.dataset.r+' 天趋势','ok');break;
     case 'dash-refresh':renderAdmin();toast('指标已刷新','ok');break;
+    case 'tbl-query':{
+      var barQ=t.closest('.toolbar'),cardQ=t.closest('.card'),q='';
+      if(barQ){var biQ=barQ.querySelector('input');if(biQ)q=(biQ.value||'').trim();}
+      var tbQ=cardQ?cardQ.querySelector('table tbody'):null;
+      if(tbQ){
+        var trsQ=tbQ.querySelectorAll('tr'),hitQ=0;
+        for(var tiQ=0;tiQ<trsQ.length;tiQ++){
+          var okQ=!q||trsQ[tiQ].textContent.indexOf(q)>=0;
+          trsQ[tiQ].style.display=okQ?'':'none';if(okQ)hitQ++;
+        }
+        toast(q?('检索「'+q+'」命中 '+hitQ+' 条'):'已刷新列表','ok');
+      }else{toast('查询完成','ok');}
+      break;}
+    case 'admin-search':openCmd();break;
+    case 'word-import':modal('导入词库','<div style="font-size:12px;color:#4a556b;line-height:1.9">支持 txt / csv 词库导入（每行一词，可带分类前缀）。导入后词库版本号 +1，1 分钟内全节点热生效（FR-ADMIN-07）。</div>'+
+      '<div class="field" style="margin-top:10px"><label>选择文件</label><input value="sensitive-words-v9.txt（演示）" style="width:100%" readonly></div>',function(){
+        closeModal();toast('词库导入任务已提交，版本 v9 热更新中','ok');},'导入');break;
     case 'user-search':document.getElementById('userRows').innerHTML=userRowsHtml();toast('查询完成');break;
     case 'user-reset':document.getElementById('userQuery').value='';document.getElementById('userStatus').value='';document.getElementById('userRows').innerHTML=userRowsHtml();break;
     case 'user-toggle':{
@@ -1778,8 +2419,25 @@ document.addEventListener('click',function(e){
     case 'call-force':modal('强制挂断通话','确认强制结束「'+esc(t.dataset.t)+'」的通话？双方将收到 CALL_FORCE_END 通知，通话记录标记为「强制挂断」。<br><br>该操作会写入审计日志（操作人、IP、时间）。',function(){
       closeModal();toast('已强制挂断，双方已收到通知并记录审计','ok');},'确认挂断',true);break;
     case 'dept-select':document.querySelectorAll('.tree-row').forEach(function(x){x.classList.remove('on');});t.classList.add('on');toast('已选中部门：'+t.dataset.name);break;
-    case 'dept-add':toast('新增部门：填写名称与上级部门后保存');break;
-    case 'group-view':toast('群详情：成员列表 / 群公告 / 消息量统计');break;
+    case 'dept-add':modal('新增部门','<div class="field"><label>部门名称</label><input id="ndName" placeholder="如：解决方案部" style="width:100%"></div>'+
+      '<div class="field"><label>上级部门</label><select id="ndParent" style="width:100%">'+deptData.map(function(d){return '<option>'+esc(d[0])+'</option>';}).join('')+'</select></div>'+
+      '<div style="font-size:11px;color:#8a95aa">创建后 60s 内同步到全端通讯录（H5 / 安卓 / iOS / 桌面），并影响 RBAC 数据范围（FR-ADMIN-03）</div>',
+      function(){var n=((document.getElementById('ndName')||{}).value||'').trim();
+        if(!n){toast('请填写部门名称','warn');return;}
+        deptData.push([n,'0']);closeModal();renderAdmin();toast('部门「'+n+'」已创建并写入审计日志','ok');},'创建');break;
+    case 'group-view':{
+      var gv=groups.filter(function(x){return x.id===id;})[0];if(!gv)break;
+      modal('群详情 · '+esc(gv.name),'<div class="csub">群主 '+esc(gv.owner)+' · '+gv.members+' 人 · 累计消息 '+esc(gv.msgs)+' · 创建于 '+esc(gv.created)+'</div>'+
+        '<div class="sec-title" style="margin-top:10px">群公告</div><div style="font-size:12px;color:#4a556b;line-height:1.8">每周五 17:00 前提交周报；架构评审材料统一放在群文件，勿外传。</div>'+
+        '<div class="sec-title" style="margin-top:10px">成员（演示 6 人）</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+
+        [['林晓','群主'],['李工','管理员'],['王敏','成员'],['赵琳','成员'],['张伟','成员'],['陈静','成员']].map(function(m,i){
+          return av(m[0],['#4f6ef7','#e9834a','#3ba58c','#f2994a','#3ba7d8','#a05ce6'][i],'sm')+'<span style="font-size:10px;color:#8a95aa;margin-right:6px">'+m[0]+'·'+m[1]+'</span>';
+        }).join('')+'</div>'+
+        '<div class="sec-title" style="margin-top:10px">消息量统计</div>'+
+        [['今日','86 条'],['本周','612 条'],['敏感词命中','2 条（已按策略处理）']].map(function(r){
+          return '<div class="switch-row"><div>'+r[0]+'</div><span class="state info">'+r[1]+'</span></div>';}).join('')+
+        '<div style="margin-top:10px;font-size:11px;color:#8a95aa">后台可查看、冻结、解散任意群并留存审计记录（FR-GROUP-08）</div>',null,'关闭');
+      break;}
     case 'group-freeze':{
       var g=groups.filter(function(x){return x.id===id;})[0];
       modal('确认'+(g.status==='正常'?'冻结':'解冻')+'群组','群组「'+esc(g.name)+'」'+(g.status==='正常'?'冻结后将禁止发送新消息，历史消息保留并可审计。':'解冻后恢复正常收发。')+'<br><br>该操作会写入审计日志（操作人、IP、时间）。',function(){
@@ -1817,21 +2475,33 @@ document.addEventListener('click',function(e){
     case 'settings-save':toast('系统配置已保存并热生效，变更已写入操作日志','ok');break;
     case 'settings-reset':renderAdmin();toast('已恢复默认配置');break;
     case 'toggle-theme':toggleTheme();break;
-    case 'cm':convAction(t.dataset.k,t.dataset.id);break;
+    case 'cm':closeModal();convAction(t.dataset.k,t.dataset.id);break;
     case 'fwd':{
-      var fc=C[t.dataset.from],fi=parseInt(t.dataset.idx,10),fm=fc.messages[fi];
-      if(fm){C[t.dataset.id].messages.push({mine:true,sender:'我',text:(fm.text||'['+(fm.fileName||'消息')+']'),time:nowTime(),read:false});
-        C[t.dataset.id].last='我：[转发] '+(fm.text||fm.fileName||'消息');C[t.dataset.id].time='刚刚';}
-      closeModal();toast('已转发给 '+C[t.dataset.id].name+'（保留原发送者署名）','ok');break;}
+      var fc=C[t.dataset.from],fi=parseInt(t.dataset.idx,10),fm=fc.messages[fi],tgt=C[t.dataset.id];
+      if(fm&&tgt){
+        var fnote=((document.getElementById('fwdNote')||{}).value||'').trim();
+        var copy={mine:true,sender:'我',time:nowTime(),read:false,fromName:fm.sender||'我',fwdNote:fnote};
+        if(fm.type){copy.type=fm.type;copy.bg=fm.bg;copy.label=fm.label;copy.duration=fm.duration;copy.fileName=fm.fileName;copy.fileSize=fm.fileSize;copy.callType=fm.callType;copy.result=fm.result;}
+        else{copy.text=(fnote?fnote+' · ':'')+'「'+(fm.sender||'我')+'：'+(fm.text||'')+'」';}
+        tgt.messages.push(copy);
+        tgt.last='我：[转发] '+(fm.text||fm.fileName||fm.label||'消息');tgt.time='刚刚';
+      }
+      closeModal();toast('已转发给 '+tgt.name+'（保留原始类型与发送者署名）','ok');
+      renderCur();break;}
+    case 'msg-filter':{
+      state.mFilter=t.dataset.f;
+      var tabs=t.parentNode.querySelectorAll('button[data-act="msg-filter"]');
+      for(var fi=0;fi<tabs.length;fi++)tabs[fi].classList.toggle('on',tabs[fi]===t);
+      var wrap=document.getElementById('convListWrap'),sv=document.getElementById('convSearch');
+      if(wrap)wrap.innerHTML=convListHtml(null,sv?sv.value:'',state.mFilter);
+      toast('筛选：'+({all:'全部会话',unread:'仅未读',group:'群聊'}[state.mFilter]));break;}
+    case 'read-all-h5':convOrder.forEach(function(i){C[i].unread=0;});renderCur();toast('全部会话已标记已读，已按会话上报最大已读 seq','ok');break;
     case 'read-all':convOrder.forEach(function(i){C[i].unread=0;});renderDesktop();toast('全部会话已标记已读，已按会话上报最大已读 seq','ok');break;
-    case 'reminds':modal('提醒我','最近 @我 与引用我的消息（保留 30 天，点击定位）：<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">'+
-      [['李工 在 产品评审群 @我','架构文档已更新到 v1.4','今天 09:42','c1'],['张伟 在单聊 @我','十点对齐接口','09:18','c2'],['赵琳 在 前端研发组 引用我','动态路由已经跑通','昨天 17:20','c3']].map(function(r){
-        return '<button class="btn" style="justify-content:flex-start;text-align:left" data-act="remind-loc" data-id="'+r[3]+'">'+ic('at',15)+'<div><div style="font-weight:600">'+esc(r[0])+'</div><div style="font-size:11px;color:#8a95aa">'+esc(r[1])+' · '+esc(r[2])+'</div></div></button>';
-      }).join('')+'</div>',null,'关闭');break;
-    case 'remind-loc':closeModal();openConv(t.dataset.id,state.view==='h5'?'h5':'desktop');break;
+    case 'reminds':openReminds();break;
+    case 'remind-loc':closeModal();openConv(t.dataset.id,isMobile()?'h5':'desktop');break;
     case 'fa-handle':{
       var fa=friendApplies.filter(function(x){return x.id===t.dataset.id;})[0];if(!fa)break;
-      fa.status=t.dataset.r==='ok'?1:2;renderH5();
+      fa.status=t.dataset.r==='ok'?1:2;renderCur();
       toast(t.dataset.r==='ok'?'已同意 '+fa.name+' 的好友申请，可立即发起会话':'已拒绝 '+fa.name+' 的申请','ok');break;}
     case 'notice-new':modal('新建公告','<div class="field"><label>标题</label><input id="ntTitle" placeholder="公告标题"></div>'+
       '<div class="field"><label>定向范围</label><select id="ntScope" style="width:100%"><option>全员</option><option>研发中心</option><option>市场部</option><option>客服部</option><option>按角色：运营管理员</option></select></div>'+
@@ -1842,24 +2512,43 @@ document.addEventListener('click',function(e){
         notices.unshift({id:'n'+(notices.length+1),title:ti,scope:document.getElementById('ntScope').value,status:tm?'定时中':'已发布',publish:tm?tm.replace('T',' '):'立即',read:'—',top:false});
         closeModal();renderAdmin();toast(tm?'公告已创建，将定时发布':'公告已创建并推送到系统通知会话','ok');},'发布');
       break;
-    case 'notice-edit':toast('编辑公告：内容与定向范围可修改，已读数据保留');break;
+    case 'notice-edit':{
+      var ne=notices.filter(function(x){return x.id===id;})[0];if(!ne)break;
+      modal('编辑公告','<div class="field"><label>标题</label><input id="neTitle" value="'+esc(ne.title)+'" style="width:100%"></div>'+
+        '<div class="field"><label>定向范围</label><select id="neScope" style="width:100%">'+['全员','研发中心','市场部','客服部'].map(function(s){
+          return '<option '+(ne.scope===s?'selected':'')+'>'+s+'</option>';}).join('')+'</select></div>'+
+        '<div class="field"><label>正文（支持富文本与附件）</label><textarea id="neBody" rows="4" style="width:100%">公告正文可编辑；保存后重新推送，已读数据保留。</textarea></div>'+
+        '<div style="font-size:11px;color:#8a95aa">当前状态：'+esc(ne.status)+' · 已读率 '+esc(ne.read)+'（FR-ADMIN-11）</div>',
+        function(){ne.title=((document.getElementById('neTitle')||{}).value||ne.title);ne.scope=((document.getElementById('neScope')||{}).value||ne.scope);
+          closeModal();renderAdmin();toast('公告已更新并重新定向推送，已读数据保留','ok');},'保存');
+      break;}
     case 'notice-offline':{
       var nn=notices.filter(function(x){return x.id===t.dataset.id;})[0];if(!nn)break;
       modal('下线公告','确认下线「'+esc(nn.title)+'」？已送达用户仍可查看历史，未送达用户不再推送；已读率统计冻结。',function(){
         nn.status='已下线';closeModal();renderAdmin();toast('公告已下线，操作已记审计','ok');},'确认下线',true);break;}
-    case 'cmd-conv':closeCmd();openConv(t.dataset.id,state.view==='h5'?'h5':'desktop');break;
-    case 'cmd-user':closeCmd();openConv('c2',state.view==='h5'?'h5':'desktop');break;
+    case 'cmd-conv':closeCmd();openConv(t.dataset.id,isMobile()?'h5':'desktop');break;
+    case 'cmd-user':{
+      closeCmd();
+      var cuName='联系人',cu=null;
+      users.forEach(function(u){if(u.id===id)cuName=u.name;});
+      convOrder.forEach(function(i){if(C[i].type==='single'&&C[i].name===cuName)cu=i;});
+      if(!cu)cu=ensureSingleConv(cuName);
+      openConv(cu,isMobile()?'h5':'desktop');break;}
     case 'cmd-page':closeCmd();switchView('admin');state.adminPage=t.dataset.id;renderAdmin();break;
     case 'cmd-theme':toggleTheme();break;
-    case 'cmd-call':closeCmd();startCall(state.view==='h5'?(state.h5Conv||'c1'):state.deskConv,t.dataset.id==='video'?'video':'audio');break;
+    case 'cmd-call':closeCmd();startCall(isMobile()?(state.h5Conv||'c1'):state.deskConv,t.dataset.id==='video'?'video':'audio');break;
     case 'mm':mmAction(t.dataset.k,parseInt(t.dataset.idx,10));break;
     case 'mention-pick':{
-      var inp=document.getElementById(state.view==='h5'?'h5Input':'deskInput');
+      var inp=document.getElementById(isMobile()?'h5Input':'deskInput');
       if(inp)inp.value=(inp.value||'')+t.dataset.name+' ';
-      state.mention=null;if(state.view==='h5')renderH5();else renderDesktop();
+      state.mention=null;renderCur();
       toast('已 @ '+t.dataset.name);break;}
     case 'h5-mention':toggleMention();break;
-    case 'pp-view':toast('已查询「'+(document.getElementById('ppUser')?document.getElementById('ppUser').value:'')+'」的权限：多角色并集 + 数据范围取最宽','ok');break;
+    case 'pp-view':{
+      var ppv=document.getElementById('ppUser')?document.getElementById('ppUser').value:'';
+      var ppRows=document.querySelectorAll('#adminContent .tbl tbody tr');
+      for(var pri=0;pri<ppRows.length;pri++){ppRows[pri].style.background=ppRows[pri].innerHTML.indexOf(ppv)>=0?'rgba(79,110,247,.12)':'';}
+      toast('已高亮「'+ppv+'」的最终权限：多角色并集 + 数据范围取最宽（FR-RBAC-12）','ok');break;}
     case 'login-export':toast('登录日志导出任务已提交','ok');break;
     case 'ban-ip':modal('封禁 IP','确认封禁 '+esc(t.dataset.ip)+'？该 IP 的登录与消息请求将被拒绝，并加入风险名单。',function(){closeModal();toast('IP 已封禁，操作已记审计','ok');},'确认封禁',true);break;
     case 'modal-close':closeModal();break;
@@ -1903,6 +2592,57 @@ document.addEventListener('contextmenu',function(e){
 document.addEventListener('input',function(e){
   if(e.target.dataset&&e.target.dataset.input==='cmd')cmdRender(e.target.value);
   if(e.target.dataset&&e.target.dataset.input==='friend'){var rows=document.getElementById('friendRows');if(rows)rows.innerHTML=friendRowsHtml(e.target.value);}
+  if(e.target.dataset&&e.target.dataset.input==='convSearch'){var cw=document.getElementById('convListWrap');if(cw)cw.innerHTML=convListHtml(null,e.target.value,state.mFilter);}
+  if(e.target.dataset&&e.target.dataset.input==='deskConvSearch'){var dw=document.getElementById('deskConvWrap');if(dw)dw.innerHTML=convListHtml(state.deskConv,e.target.value);}
+  if(e.target.dataset&&e.target.dataset.input==='contactSearch'){
+    var cq=e.target.value.trim();
+    var scM=mobileScreen();
+    var crows=scM?scM.querySelectorAll('.qentry[data-act="h5-contact"]'):[];
+    for(var ci=0;ci<crows.length;ci++){crows[ci].style.display=(!cq||crows[ci].textContent.indexOf(cq)>=0)?'':'none';}
+  }
+});
+/* ---- 移动端手势：会话左滑操作 + 下拉刷新（FR-APP-08） ---- */
+var pt={x0:0,y0:0,dx:0,dy:0,down:false,mode:null,item:null,sc:null,moved:false};
+function resetSwipes(except){
+  var its=document.querySelectorAll('.conv-item');
+  for(var i=0;i<its.length;i++){if(its[i]!==except&&its[i].style.transform)its[i].style.transform='';}
+}
+document.addEventListener('pointerdown',function(e){
+  pt.moved=false;pt.mode=null;pt.dx=0;pt.dy=0;pt.item=null;pt.sc=null;pt.down=true;
+  pt.x0=e.clientX;pt.y0=e.clientY;
+  if(!e.target.closest)return;
+  pt.item=e.target.closest('.conv-item');
+  if(isMobile()&&state.h5Page==='convs')pt.sc=e.target.closest('.h5-body.scroll');
+});
+document.addEventListener('pointermove',function(e){
+  if(!pt.down)return;
+  pt.dx=e.clientX-pt.x0;pt.dy=e.clientY-pt.y0;
+  if(!pt.mode&&(pt.item||pt.sc)){
+    if(pt.item&&pt.dx<-14&&Math.abs(pt.dy)<Math.abs(pt.dx)){pt.mode='swipe';pt.moved=true;}
+    else if(pt.sc&&pt.dy>14&&pt.dy>Math.abs(pt.dx)&&pt.sc.scrollTop<=2){pt.mode='pull';pt.moved=true;}
+  }
+  if(pt.mode==='swipe'&&pt.item){
+    var tx=Math.max(pt.dx,-188);
+    pt.item.style.transform='translateX('+tx+'px)';
+  }
+  if(pt.mode==='pull'&&pt.sc){
+    var h=Math.min(Math.max(pt.dy,0),70);
+    var ind=pt.sc.querySelector('.ptr-ind');
+    if(!ind){ind=document.createElement('div');ind.className='ptr-ind';ind.textContent='↓ 下拉刷新 · 释放同步增量';pt.sc.insertBefore(ind,pt.sc.firstChild);}
+    ind.style.height=h+'px';
+  }
+});
+document.addEventListener('pointerup',function(){
+  if(pt.mode==='swipe'&&pt.item){
+    pt.item.style.transform=(pt.dx<-46)?'translateX(-188px)':'';
+    if(pt.dx<-46)toast('左滑展开：置顶 / 免打扰 / 删除，点击其他区域收起');
+  }
+  if(pt.mode==='pull'&&pt.sc){
+    var ind2=pt.sc.querySelector('.ptr-ind');
+    if(pt.dy>58){flashSync();toast('已刷新：增量同步 3 条新消息（下拉刷新，FR-APP-08）','ok');renderCur();}
+    else if(ind2)ind2.remove();
+  }
+  pt.mode=null;pt.item=null;pt.sc=null;pt.down=false;
 });
 document.addEventListener('click',function(e){
   if(e.target.classList&&e.target.classList.contains('modal-mask'))closeModal();
@@ -1910,7 +2650,7 @@ document.addEventListener('click',function(e){
 });
 
 /* 初始渲染 */
-renderH5();renderDesktop();renderAdmin();applyTheme();
+renderCur();renderDesktop();renderAdmin();applyTheme();
 </script>
 </body>
 </html>
