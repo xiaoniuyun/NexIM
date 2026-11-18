@@ -1,6 +1,0 @@
-
-2026/11/18 15:14:56 [31;1mD:/workcode/NexIM/server/internal/service/auth.go:57 [35;1mrecord not found
-[0m[33m[2.132ms] [34;1m[rows:0][0m SELECT * FROM `sys_device` WHERE uid = 'u_1001' AND device_id = 'std' ORDER BY `sys_device`.`id` LIMIT 1
-
-2026/11/18 15:15:31 [31;1mD:/workcode/NexIM/server/internal/service/auth.go:57 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `sys_device` WHERE uid = 'u_1001' AND device_id = 'h5-gymcl5hg22' ORDER BY `sys_device`.`id` LIMIT 1

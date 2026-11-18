@@ -54,6 +54,7 @@ storage:
   endpoint: "http://rustfs:9000"
   access_key: "nexim"
   secret_key: "nexim123456"
+  region: "us-east-1"           # RustFS 默认区域；桶不存在时首次写入自动创建
 
 observability:
   metrics: prometheus

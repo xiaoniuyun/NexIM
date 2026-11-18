@@ -111,6 +111,7 @@ type Storage struct {
 	Endpoint  string `mapstructure:"endpoint"`
 	AccessKey string `mapstructure:"access_key"`
 	SecretKey string `mapstructure:"secret_key"`
+	Region    string `mapstructure:"region"`
 	Path      string `mapstructure:"path"`
 	LocalDir  string `mapstructure:"local_dir"`
 }
@@ -148,7 +149,7 @@ var envKeys = []string{
 	"db.dsn", "db.driver", "db.shards", "db.replicas", "db.message_driver",
 	"redis.addr", "redis.password", "redis.cluster", "cache.cluster",
 	"mq.driver", "mq.url", "mq.stream", "mq.brokers", "search.driver", "search.url",
-	"storage.driver", "storage.bucket", "storage.endpoint", "storage.access_key", "storage.secret_key",
+	"storage.driver", "storage.bucket", "storage.endpoint", "storage.access_key", "storage.secret_key", "storage.region",
 	"observability.metrics",
 	"rtc.coturnAddr", "rtc.turnUrl", "rtc.turnUsername", "rtc.turnPassword",
 	"auth.jwt_secret", "server.http_addr", "server.ws_addr", "log.level",
@@ -213,6 +214,7 @@ func setDefaults() {
 	viper.SetDefault("search.replicas", 1)
 	viper.SetDefault("storage.driver", "localFS")
 	viper.SetDefault("storage.local_dir", "data/files")
+	viper.SetDefault("storage.region", "us-east-1")
 	viper.SetDefault("observability.metrics", "victoriametrics")
 	viper.SetDefault("observability.tracingSample", 0.1)
 	viper.SetDefault("rtc.sfuNodes", 1)

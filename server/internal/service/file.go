@@ -1,22 +1,24 @@
 package service
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"nexim/server/internal/model"
+	"nexim/server/internal/storage"
 	"nexim/server/internal/store"
 )
 
 type FileService struct {
-	S     *store.Store
-	Root  string // 本地存储根目录
+	S    *store.Store
+	Objs storage.ObjectStore // localFS（lite）/ rustfs（standard）
 }
 
-func NewFile(s *store.Store, root string) *FileService {
-	os.MkdirAll(root, 0755)
-	return &FileService{S: s, Root: root}
+func NewFile(s *store.Store, objs storage.ObjectStore) *FileService {
+	if objs == nil {
+		objs = storage.NewLocal("data/files")
+	}
+	return &FileService{S: s, Objs: objs}
 }
 
 func (f *FileService) Upload(uid, name string, size int64, mime, convID string, data []byte) (*model.FileRecord, error) {
@@ -25,17 +27,13 @@ func (f *FileService) Upload(uid, name string, size int64, mime, convID string, 
 	}
 	now := model.Now()
 	fileID := fmt.Sprintf("f_%d", now)
-	rel := fmt.Sprintf("%d/%s", now/1000000, fileID)
-	abs := filepath.Join(f.Root, rel)
-	if err := os.MkdirAll(filepath.Dir(abs), 0755); err != nil {
-		return nil, err
-	}
-	if err := os.WriteFile(abs, data, 0644); err != nil {
+	key := fmt.Sprintf("%d/%s", now/1000000, fileID)
+	if err := f.Objs.Put(context.Background(), key, data, mime); err != nil {
 		return nil, err
 	}
 	rec := model.FileRecord{
 		FileID: fileID, UID: uid, Name: name, Size: size, MimeType: mime,
-		Path: rel, ConvID: convID, Status: 1, CreatedAt: now,
+		Path: key, ConvID: convID, Status: 1, CreatedAt: now,
 	}
 	if err := f.S.DB.Create(&rec).Error; err != nil {
 		return nil, err
@@ -49,12 +47,17 @@ func (f *FileService) List(uid string) []model.FileRecord {
 	return list
 }
 
-func (f *FileService) Get(fileID string) (*model.FileRecord, string, error) {
+// Open 读取文件对象（本地磁盘或 RustFS/S3）
+func (f *FileService) Open(fileID string) (*model.FileRecord, *storage.Object, error) {
 	var rec model.FileRecord
-	if err := f.S.DB.Where("file_id = ?", fileID).First(&rec).Error; err != nil {
-		return nil, "", err
+	if err := f.S.DB.Where("file_id = ? AND status = 1", fileID).First(&rec).Error; err != nil {
+		return nil, nil, err
 	}
-	return &rec, filepath.Join(f.Root, rec.Path), nil
+	obj, err := f.Objs.Open(context.Background(), rec.Path)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &rec, obj, nil
 }
 
 func (f *FileService) Delete(fileID, uid string) error {

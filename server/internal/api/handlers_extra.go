@@ -2,7 +2,10 @@ package api
 
 import (
 	"io"
+	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"nexim/server/internal/model"
 	"nexim/server/internal/pkg"
@@ -145,9 +148,12 @@ func (rt *Router) fileUpload(c *gin.Context) {
 	pkg.OK(c, rec)
 }
 func (rt *Router) fileDownload(c *gin.Context) {
-	// 支持 <a> 直接下载：query token 兜底（鉴权中间件已处理 Bearer）
+	// 匿名路由：优先 query token（<a> 直接下载），其次 Authorization: Bearer
 	if c.GetString("uid") == "" {
 		token := c.Query("token")
+		if token == "" {
+			token = strings.TrimSpace(strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer "))
+		}
 		if claims, e := pkg.ParseToken(rt.C.Auth.JWTSecret, token); e == nil && !rt.Auth.CheckBlacklist(claims.ID) {
 			c.Set("uid", claims.UID)
 		} else {
@@ -155,13 +161,45 @@ func (rt *Router) fileDownload(c *gin.Context) {
 			return
 		}
 	}
-	rec, path, err := rt.File.Get(c.Param("id"))
+	rec, obj, err := rt.File.Open(c.Param("id"))
 	if err != nil {
 		pkg.Fail(c, 404, 4000, "文件不存在")
 		return
 	}
-	c.Header("Content-Disposition", "attachment; filename="+rec.Name)
-	c.File(path)
+	defer obj.Body.Close()
+	ct := rec.MimeType
+	if ct == "" {
+		ct = obj.ContentType
+	}
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	headers := map[string]string{"Content-Disposition": contentDisposition(rec.Name)}
+	if obj.Size < 0 {
+		// 对象未返回长度（分块传输）：读全量后回写，避免 Content-Length 缺失导致截断
+		data, rerr := io.ReadAll(obj.Body)
+		if rerr != nil {
+			pkg.Fail(c, 500, 9000, "读取文件失败")
+			return
+		}
+		c.Data(http.StatusOK, ct, data)
+		return
+	}
+	c.DataFromReader(http.StatusOK, obj.Size, ct, obj.Body, headers)
+}
+
+// contentDisposition 生成兼容中文文件名的下载头（RFC 5987）
+func contentDisposition(name string) string {
+	if name == "" {
+		name = "download"
+	}
+	ascii := strings.Map(func(r rune) rune {
+		if r < 32 || r > 126 || r == '"' || r == '\\' {
+			return '_'
+		}
+		return r
+	}, name)
+	return `attachment; filename="` + ascii + `"; filename*=UTF-8''` + url.PathEscape(name)
 }
 func (rt *Router) fileDelete(c *gin.Context) {
 	_ = rt.File.Delete(c.Param("id"), uid(c))

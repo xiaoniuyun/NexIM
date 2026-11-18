@@ -116,6 +116,7 @@ services:
       redis: { condition: service_healthy }
       nats: { condition: service_healthy }
       scylla: { condition: service_healthy }
+      rustfs: { condition: service_started }
     environment:
       CONFIG_PATH: /app/configs/config-standard.yaml
       DB_DSN: "root:nexim123@tcp(mysql:3306)/nexim?charset=utf8mb4&parseTime=True&loc=Local"

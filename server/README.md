@@ -113,6 +113,12 @@ docker compose -f docker-compose.standard.yml up -d --build
 # 含 mysql / redis / nats(JetStream) / meilisearch / rustfs / server(standard) 六个服务
 ```
 
+对象存储（RustFS）：
+
+- S3 API `http://localhost:9000`，控制台 `http://localhost:9001`（账号 `nexim / nexim123456`，对应 `RUSTFS_ACCESS_KEY/SECRET_KEY`）
+- 服务端凭据来自 `storage.access_key/secret_key`（或 `STORAGE_ACCESS_KEY/STORAGE_SECRET_KEY` 环境变量），桶 `nexim-files` 不存在时首次写入自动创建
+- 启动日志出现 `rustfs storage ready` 表示已接入对象存储；失败会回退本地 FS（lite）或仅告警（standard 下首次写入重试建桶）
+
 只起核心链路（消息收发 + MQ，最快）：
 
 ```bash
@@ -179,7 +185,7 @@ docker compose down -v      # 停止并清空数据卷
 创建群、我的群、群详情、群成员、邀请 / 移除成员、解散群。
 
 ### 文件
-本地 FS 存储（lite 形态）、上传 / 列表 / 下载（带 token）/ 删除。
+上传 / 列表 / 下载（带 token）/ 删除。对象存储按 `storage.driver` 分流：lite 落本地 FS（`data/files`），standard 走 **RustFS**（S3 协议，SigV4 直连，桶 `nexim-files` 首次写入自动创建）；下载由服务端流式转发，`Content-Disposition` 兼容中文文件名。
 
 ### 实时音视频（WebRTC 1对1）
 - 信令复用 WebSocket：`CALL_INVITE / CALL_ANSWER / CALL_ICE / CALL_HANGUP`，服务端校验后转发 `CALL_INVITE_PUSH / CALL_ANSWER_PUSH / CALL_ICE_PUSH / CALL_HANGUP_PUSH`；standard 形态信令经 JetStream 主题 `im.call.signal` 跨网关节点投递
