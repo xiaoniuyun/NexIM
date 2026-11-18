@@ -1,0 +1,2 @@
+{"level":"info","ts":1794985434.224934,"caller":"server/main.go:49","msg":"gateway listening","addr":":8081"}
+{"level":"info","ts":1794985434.224934,"caller":"server/main.go:56","msg":"api listening","addr":":8080","profile":"lite"}

@@ -1,0 +1,3 @@
+{"level":"info","ts":1794986076.8691657,"caller":"server/main.go:31","msg":"deployment profile","summary":"profile=standard mode=cluster services=microservice mq=kafka cache=redis(cluster=true) db=mysql(shards=16,replicas=2) search=meilisearch(x3) storage=minio metrics=prometheus","lite":false,"standard":true}
+{"level":"info","ts":1794986084.140743,"caller":"server/main.go:62","msg":"api listening","addr":":8080","profile":"standard"}
+{"level":"info","ts":1794986084.140743,"caller":"server/main.go:55","msg":"gateway listening","addr":":8081"}

@@ -1,0 +1,142 @@
+# NexIM 标准版（standard profile）编排
+# 中间件按架构文档 13.1 标准版：MySQL 主从 + Redis Cluster(单节点模拟) + NATS JetStream + Meilisearch + RustFS
+# 说明：本文件用于标准版开发/联调；生产形态为 K8s + Helm + ArgoCD（见文档）
+services:
+  mysql:
+    image: mysql:8.0.36
+    container_name: nexim-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: nexim123
+      MYSQL_DATABASE: nexim
+    ports: ["3306:3306"]
+    volumes: [mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-pnexim123"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: nexim-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports: ["6379:6379"]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # 标准版消息队列：NATS + JetStream（事件持久化、可回放、跨网关节点扩散）
+  nats:
+    image: nats:2.10-alpine
+    container_name: nexim-nats
+    restart: unless-stopped
+    command: ["-js", "-sd", "/data", "-m", "8222"]
+    ports: ["4222:4222", "8222:8222"]
+    volumes: [nats-data:/data]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # 标准版消息库：ScyllaDB（宽表，按 conv_id 分区、seq 聚类）
+  scylla:
+    image: scylladb/scylla:5.4
+    container_name: nexim-scylla
+    restart: unless-stopped
+    command: ["--smp", "1", "--memory", "1G", "--overprovisioned", "1", "--developer-mode", "1", "--api-address", "0.0.0.0"]
+    ports: ["9042:9042"]
+    volumes: [scylla-data:/var/lib/scylla]
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 40
+
+  # 标准版 TURN/STUN 中继（WebRTC 音视频，跨 NAT 必选）
+  coturn:
+    image: coturn/coturn:4.6.2
+    container_name: nexim-coturn
+    restart: unless-stopped
+    command:
+      - "-n"
+      - "--log-file=stdout"
+      - "--lt-cred-mech"
+      - "--user=nexim:nexim123"
+      - "--realm=nexim.local"
+      - "--fingerprint"
+      - "--no-tls"
+      - "--no-dtls"
+      - "--min-port=49160"
+      - "--max-port=49200"
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "49160-49200:49160-49200/udp"
+
+  # 标准版检索（3 副本在生产；开发用单节点，数据格式兼容）
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: nexim-meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: "change-me"
+      MEILI_ENV: development
+    ports: ["7700:7700"]
+    volumes: [meili-data:/meili_data]
+
+  # 标准版对象存储：RustFS（S3 兼容，已替换 MinIO；9000=S3 API，9001=控制台）
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: nexim-rustfs
+    restart: unless-stopped
+    command: ["/data"]
+    environment:
+      RUSTFS_ACCESS_KEY: nexim
+      RUSTFS_SECRET_KEY: nexim123456
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_OBS_LOGGER_LEVEL: error
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [rustfs-data:/data]
+
+  # 单二进制（API/WS/H5/Admin），standard profile
+  server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: nexim-server
+    restart: unless-stopped
+    depends_on:
+      mysql: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      nats: { condition: service_healthy }
+      scylla: { condition: service_healthy }
+    environment:
+      CONFIG_PATH: /app/configs/config-standard.yaml
+      DB_DSN: "root:nexim123@tcp(mysql:3306)/nexim?charset=utf8mb4&parseTime=True&loc=Local"
+      DB_MESSAGE_DRIVER: "scylla"
+      SCYLLA_HOSTS: "scylla:9042"
+      REDIS_ADDR: "redis:6379"
+      AUTH_JWT_SECRET: "nexim-dev-secret-change-in-production"
+      SERVER_HTTP_ADDR: ":8080"
+      SERVER_WS_ADDR: ":8081"
+      MQ_DRIVER: "jetstream"
+      MQ_URL: "nats://nats:4222"
+      MQ_STREAM: "IM_EVENT"
+      SEARCH_URL: "http://meilisearch:7700"
+      STORAGE_DRIVER: "rustfs"
+      STORAGE_ENDPOINT: "http://rustfs:9000"
+    ports: ["8080:8080"]
+
+volumes:
+  mysql-data:
+  redis-data:
+  nats-data:
+  scylla-data:
+  meili-data:
+  rustfs-data:

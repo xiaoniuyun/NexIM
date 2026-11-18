@@ -1,0 +1,179 @@
+- generic [ref=e17]:
+  - complementary [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]: "N"
+      - generic [ref=e21]: NexIM Console
+    - generic [ref=e22]: 概览
+    - button "▦ 工作台" [ref=e23] [cursor=pointer]:
+      - generic [ref=e24]: ▦
+      - generic [ref=e25]: 工作台
+    - generic [ref=e26]: 用户与组织
+    - button "👥 用户管理" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: 👥
+      - generic [ref=e29]: 用户管理
+    - button "🏢 组织架构" [ref=e30] [cursor=pointer]:
+      - generic [ref=e31]: 🏢
+      - generic [ref=e32]: 组织架构
+    - button "💬 群组管理" [ref=e33] [cursor=pointer]:
+      - generic [ref=e34]: 💬
+      - generic [ref=e35]: 群组管理
+    - button "📋 登录日志" [ref=e36] [cursor=pointer]:
+      - generic [ref=e37]: 📋
+      - generic [ref=e38]: 登录日志
+    - generic [ref=e39]: 权限治理
+    - button "🛡️ 角色权限" [ref=e40] [cursor=pointer]:
+      - generic [ref=e41]: 🛡️
+      - generic [ref=e42]: 角色权限
+    - button "🔑 权限预览" [ref=e43] [cursor=pointer]:
+      - generic [ref=e44]: 🔑
+      - generic [ref=e45]: 权限预览
+    - button "📜 操作日志" [ref=e46] [cursor=pointer]:
+      - generic [ref=e47]: 📜
+      - generic [ref=e48]: 操作日志
+    - generic [ref=e49]: 内容与安全
+    - button "👁️ 消息审计" [ref=e50] [cursor=pointer]:
+      - generic [ref=e51]: 👁️
+      - generic [ref=e52]: 消息审计
+    - button "🚩 内容安全" [ref=e53] [cursor=pointer]:
+      - generic [ref=e54]: 🚩
+      - generic [ref=e55]: 内容安全
+    - button "🔔 公告管理" [ref=e56] [cursor=pointer]:
+      - generic [ref=e57]: 🔔
+      - generic [ref=e58]: 公告管理
+    - generic [ref=e59]: 音视频
+    - button "📞 通话记录" [ref=e60] [cursor=pointer]:
+      - generic [ref=e61]: 📞
+      - generic [ref=e62]: 通话记录
+    - button "📊 质量监控" [ref=e63] [cursor=pointer]:
+      - generic [ref=e64]: 📊
+      - generic [ref=e65]: 质量监控
+    - generic [ref=e66]: 系统
+    - button "⚙️ 系统设置" [ref=e67] [cursor=pointer]:
+      - generic [ref=e68]: ⚙️
+      - generic [ref=e69]: 系统设置
+  - generic [ref=e70]:
+    - generic [ref=e71]:
+      - generic [ref=e72]: 工作台
+      - generic [ref=e73]: / 概览
+      - generic [ref=e74]: 林
+      - generic [ref=e75]: 林晓
+      - button "退出" [ref=e76] [cursor=pointer]
+    - generic [ref=e78]:
+      - generic [ref=e79]:
+        - text: 工作台指标来自消息链路埋点与聚合任务，支持近 7 / 30 天切换。
+        - generic [ref=e80]: FR-ADMIN-01
+      - generic [ref=e81]:
+        - button "近 7 天" [ref=e82] [cursor=pointer]
+        - button "近 30 天" [ref=e83] [cursor=pointer]
+        - button "⟳ 刷新" [ref=e84] [cursor=pointer]
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - generic [ref=e87]: 在线用户
+          - generic [ref=e88]: "7"
+          - generic [ref=e89]: 账号正常 · 实时长连接
+          - generic [ref=e90]: 🟢
+        - generic [ref=e91]:
+          - generic [ref=e92]: 今日消息量
+          - generic [ref=e93]: "0"
+          - generic [ref=e94]: 峰值 4,820 QPS · 群聊占 38%
+          - generic [ref=e95]: 💬
+        - generic [ref=e96]:
+          - generic [ref=e97]: 活跃用户 DAU
+          - generic [ref=e98]: "7"
+          - generic [ref=e99]: 较昨日 +5.1%
+          - generic [ref=e100]: 📈
+        - generic [ref=e101]:
+          - generic [ref=e102]: 活跃群组
+          - generic [ref=e103]: "1"
+          - generic [ref=e104]: 今日有消息的会话数
+          - generic [ref=e105]: 👥
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - heading "消息量趋势" [level=3] [ref=e108]
+          - generic [ref=e109]: 按小时聚合 · 单聊 / 群聊总量（近 7 天）
+          - generic [ref=e115]:
+            - generic [ref=e116]: 今日
+            - generic [ref=e118]: 昨日
+            - generic [ref=e120]: 00:00 — 24:00
+        - generic [ref=e121]:
+          - heading "消息类型分布" [level=3] [ref=e122]
+          - generic [ref=e123]: 今日各类型消息占比
+          - generic [ref=e124]:
+            - generic [ref=e125]: 文本
+            - generic [ref=e128]: 72%
+          - generic [ref=e129]:
+            - generic [ref=e130]: 图片
+            - generic [ref=e133]: 14%
+          - generic [ref=e134]:
+            - generic [ref=e135]: 文件
+            - generic [ref=e138]: 8%
+          - generic [ref=e139]:
+            - generic [ref=e140]: 语音
+            - generic [ref=e143]: 4%
+          - generic [ref=e144]:
+            - generic [ref=e145]: 系统
+            - generic [ref=e148]: 2%
+        - generic [ref=e149]:
+          - heading "客户端分布（登录分布）" [level=3] [ref=e150]
+          - generic [ref=e151]: 按最后活跃端统计的登录占比
+          - generic [ref=e152]:
+            - generic [ref=e153]: Windows
+            - generic [ref=e156]: 34%
+          - generic [ref=e157]:
+            - generic [ref=e158]: H5 移动端
+            - generic [ref=e161]: 32%
+          - generic [ref=e162]:
+            - generic [ref=e163]: macOS
+            - generic [ref=e166]: 24%
+          - generic [ref=e167]:
+            - generic [ref=e168]: Linux
+            - generic [ref=e171]: 10%
+      - generic [ref=e172]:
+        - generic [ref=e173]:
+          - heading "最近后台操作" [level=3] [ref=e174]
+          - generic [ref=e175]: 全部写操作自动记录审计日志
+          - generic [ref=e176]:
+            - generic [ref=e178]: 林晓 · 禁用用户 zhoutao
+            - generic [ref=e179]: 09:42
+          - generic [ref=e180]:
+            - generic [ref=e182]: 赵琳 · 修改角色 OPS_ADMIN 权限
+            - generic [ref=e183]: 09:18
+          - generic [ref=e184]:
+            - generic [ref=e186]: 王敏 · 导出消息审计结果
+            - generic [ref=e187]: 08:56
+          - generic [ref=e188]:
+            - generic [ref=e190]: 系统 · 敏感词库 v8 热更新
+            - generic [ref=e191]: 08:30
+        - generic [ref=e192]:
+          - heading "系统健康度" [level=3] [ref=e193]
+          - generic [ref=e194]: 核心链路实时状态
+          - generic [ref=e195]:
+            - generic [ref=e196]:
+              - text: Gateway 集群
+              - generic [ref=e197]: 3 / 3 节点正常
+            - generic [ref=e198]: 正常
+          - generic [ref=e199]:
+            - generic [ref=e200]:
+              - text: 消息到达率
+              - generic [ref=e201]: 99.993%
+            - generic [ref=e202]: 正常
+          - generic [ref=e203]:
+            - generic [ref=e204]:
+              - text: Kafka 消费 lag
+              - generic [ref=e205]: 1,204 条
+            - generic [ref=e206]: 关注
+          - generic [ref=e207]:
+            - generic [ref=e208]:
+              - text: 待处理告警
+              - generic [ref=e209]: 2 条 · 内容安全 / 异常登录
+            - generic [ref=e210]: 关注
+          - generic [ref=e211]:
+            - generic [ref=e212]:
+              - text: MySQL 主从
+              - generic [ref=e213]: 正常 · 延迟 0.3s
+            - generic [ref=e214]: 正常
+          - generic [ref=e215]:
+            - generic [ref=e216]:
+              - text: 对象存储
+              - generic [ref=e217]: 可用率 100%
+            - generic [ref=e218]: 正常

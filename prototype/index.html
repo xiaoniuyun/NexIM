@@ -74,7 +74,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0
 .avatar{width:42px;height:42px;border-radius:13px;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;letter-spacing:.5px}
 .avatar.sm{width:32px;height:32px;border-radius:10px;font-size:11px}
 .avatar.lg{width:60px;height:60px;border-radius:18px;font-size:19px}
-.conv-item{display:flex;align-items:center;gap:11px;padding:11px 10px;border-radius:12px;width:100%;text-align:left;transition:.16s;position:relative}
+.conv-item{display:flex;align-items:center;gap:11px;padding:11px 10px;border-radius:12px;width:100%;text-align:left;transition:.16s;position:relative;background:var(--card);z-index:1}
 .conv-item:hover{background:#f3f5fb}
 .conv-item.on{background:var(--brand-soft)}
 .conv-item .ci-main{flex:1;min-width:0}
@@ -93,21 +93,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0
 .av-st.av-off{background:#c3cbd9}
 .av-st.av-sys,.av-st.av-grp{width:16px;height:16px;background:var(--brand);color:#fff;border-color:#fff}
 .last-ico{color:var(--muted);display:inline-flex;vertical-align:-2px;margin-right:3px}
-.msg-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.msg-quick button{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:10px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;transition:.16s}
-.msg-quick button:hover{border-color:var(--brand);transform:translateY(-1px)}
-.msg-quick .mq-ico{width:38px;height:38px;border-radius:12px;display:grid;place-items:center}
-.msg-quick .mq-t{font-size:11px;font-weight:600;color:var(--ink2)}
-.msg-quick .mq-b{position:absolute;top:6px;right:9px;min-width:15px;height:15px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;display:grid;place-items:center}
-.msg-tabs{display:flex;align-items:center;gap:4px;background:#f0f2f8;border-radius:10px;padding:3px;margin-bottom:10px}
-.msg-tabs button{flex:1;font-size:11.5px;padding:6px 4px;border-radius:8px;color:var(--ink2);font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px}
-.msg-tabs button.on{background:var(--card);color:var(--brand);box-shadow:0 1px 4px rgba(28,42,80,.08)}
-.msg-tabs .tab-badge{font-style:normal;font-size:9px;background:var(--danger);color:#fff;border-radius:99px;padding:1px 5px}
-.msg-tabs .tab-read{flex:none;width:30px;margin-left:2px;background:transparent}
-.msg-summary{flex:none;display:flex;align-items:center;gap:8px;padding:9px 16px 0;background:#fff;font-size:11px;color:var(--muted)}
-.msg-summary b{font-size:12px;color:var(--ink)}
-.msg-summary .dot{width:6px;height:6px;border-radius:50%;background:var(--ok);margin-left:auto}
-body.dark .msg-summary{background:#151d2f}
 .h5-head .icon-btn{position:relative}
 .hd-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:1.5px solid #fff}
 .h5-head .icon-btn .avatar{width:26px;height:26px;border-radius:9px;font-size:10px}
@@ -459,11 +444,9 @@ body.dark .msg-summary{background:#151d2f}
 /* ---------- 安卓 / 苹果原生风格 ---------- */
 .phone.app-android{position:relative;border-radius:26px}
 .phone.app-android .h5-head{box-shadow:0 1px 3px rgba(20,30,60,.08)}
-.phone.app-android .h5-head .icon-btn[data-act="h5-new"]{display:none}
 .phone.app-android .tabbar button{position:relative;color:#7d8799}
 .phone.app-android .tabbar button.on{color:var(--brand);font-weight:700}
 .phone.app-android .tabbar button.on:before{content:'';position:absolute;top:2px;left:50%;transform:translateX(-50%);width:26px;height:3px;border-radius:3px;background:var(--brand)}
-.phone.app-android .fab{position:absolute;right:16px;bottom:78px;width:52px;height:52px;border-radius:17px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:grid;place-items:center;box-shadow:0 8px 20px rgba(79,110,247,.4);z-index:12}
 .phone.app-android .conv-item .ci-time{font-size:10px}
 .phone.app-ios{border-radius:44px;border-width:6px}
 .phone.app-ios .statusbar{font-weight:600;font-size:11px;letter-spacing:.2px}
@@ -479,6 +462,14 @@ body.dark .msg-summary{background:#151d2f}
 .phone.app-ios .btn.primary{background:#0a84ff}
 .phone.app-ios .send-btn{background:#0a84ff;box-shadow:none}
 .phone.app-ios .sec-title{padding-left:16px}
+
+/* ---------- 通讯录通栏平铺（H5 / 安卓 / iOS 共用） ---------- */
+.h5-body.contacts-body{padding:0 0 12px}
+.h5-body.contacts-body .h5-search{margin:12px 12px 10px;border-radius:10px}
+.h5-body.contacts-body .sec-title{padding:9px 16px 5px;background:#fafbfe}
+.h5-body.contacts-body .qentry{border-radius:0;margin-bottom:0;padding:11px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+.phone.app-ios .h5-body.contacts-body .qentry{padding:11px 16px;background:var(--card);border-radius:0}
+body.dark .h5-body.contacts-body .sec-title{background:#101726}
 
 /* ---------- 平板 / 横屏布局（NFR-COMP-03） ---------- */
 .phone.wide{width:min(720px,92vw);height:440px}
@@ -526,9 +517,6 @@ body.dark .statusbar,body.dark .h5-head,body.dark .chat-head,body.dark .composer
 body.dark .h5-body,body.dark .chat-msgs{background:#101726}
 body.dark .bubble{background:#232c42;color:#e6eaf4;box-shadow:none}
 body.dark .h5-search,body.dark .composer input,body.dark .desktop .composer input{background:#20293d;color:#e6eaf4}
-body.dark .msg-tabs{background:#20293d}
-body.dark .msg-tabs button.on{background:#2b3550;color:#8fa6ff}
-body.dark .msg-quick button{background:#181f31;border-color:#2a3348}
 body.dark .av-st{border-color:#151d2f;box-shadow:none}
 body.dark .hd-dot{border-color:#151d2f}
 body.dark .desktop-body{background:#0f1524}
@@ -560,7 +548,7 @@ body.dark .contact-pick{border-color:#232c42}
 <header class="topbar">
   <div class="brand">
     <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.2 9.2 0 0 1-3.9-.9L3 21l1.9-4.7A8.4 8.4 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01"/></svg></div>
-    <div>NexIM<small>企业级即时通讯平台</small></div>
+    <div>NexIM<small id="brandSub">企业级即时通讯平台</small></div>
   </div>
   <div class="seg" id="viewTabs">
     <button data-act="switch-view" data-view="h5" class="on">H5 移动端</button>
@@ -570,6 +558,7 @@ body.dark .contact-pick{border-color:#232c42}
     <button data-act="switch-view" data-view="admin">Vue 管理后台</button>
   </div>
   <div class="top-right">
+    <button class="btn sm" data-act="lang-toggle" style="padding:5px 10px" title="Switch Language">🌐 <span id="langLabel">中文</span></button>
     <span class="pill" id="syncPill"><i class="dot"></i>已同步 · 5 端在线</span>
     <span class="pill blue">交互原型 v1.9</span>
     <button class="icon-btn" id="themeBtn" data-act="toggle-theme" title="切换深浅色主题"></button>
@@ -877,8 +866,93 @@ const mediaItems={
   video:[{label:'架构评审录屏',duration:'02:18',bg:'linear-gradient(135deg,#2b3556,#4a3a6e)'},{label:'原型演示视频',duration:'00:46',bg:'linear-gradient(135deg,#3b2f56,#6b3a6e)'}],
   file:[{label:'02-技术架构文档.md',size:'38 KB'},{label:'需求评审纪要.docx',size:'1.2 MB'},{label:'接口清单.xlsx',size:'86 KB'}]
 };
-const state={view:'h5',h5Page:'convs',h5Conv:null,deskConv:'c1',deskView:'msg',adminPage:'dashboard',role:'r1',status:'在线',attach:false,memberPanel:true,filter:'all',mFilter:'all',theme:'light',mention:null,emojiFor:null,draft:'',settingsTab:'notify',deptSel:'研发中心',dashRange:'7',msgMenuIdx:null,authed:false,authPage:'login',loginUser:'林晓',groupPicked:[],
+const state={view:'h5',h5Page:'convs',h5Conv:null,deskConv:'c1',deskView:'msg',adminPage:'dashboard',role:'r1',status:'在线',attach:false,memberPanel:true,filter:'all',theme:'light',lang:'zh',mention:null,emojiFor:null,draft:'',settingsTab:'notify',deptSel:'研发中心',dashRange:'7',msgMenuIdx:null,authed:false,authPage:'login',loginUser:'林晓',groupPicked:[],
   call:{active:false,convId:null,type:'audio',phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:false}};
+/* ==================== 国际化 I18N（NFR-I18N-01：文案与语言资源分离） ==================== */
+const I18N={
+  zh:{
+    brandSub:'企业级即时通讯平台', sync:'已同步 · 5 端在线', proto:'交互原型', arch:'架构',
+    vH5:'H5 移动端', vAndroid:'安卓原生', vIOS:'苹果原生', vDesktop:'桌面客户端', vAdmin:'Vue 管理后台',
+    tConvs:'消息', tContacts:'通讯录', tDiscover:'发现', tMine:'我的',
+    pConvs:'消息 / 会话列表', pChat:'聊天页', pCall:'音视频通话页', pAddFriend:'添加朋友', pCreateGroup:'发起群聊',
+    pContacts:'通讯录 / 入口', pDept:'组织架构页', pGroups:'群聊列表', pFriends:'好友申请（新的朋友）',
+    pDiscover:'发现', pFiles:'文件助手', pFavorites:'收藏', pMine:'我的 / 设备与设置', pSettings:'设置（通知/隐私/通用）',
+    secPinned:'置顶会话', secAll:'全部会话', secUnread:'未读会话', secGroup:'群聊会话',
+    searchConv:'搜索会话 / 消息 / 用户', noMatch:'未找到匹配会话', noUnread:'暂无未读会话', noGroup:'暂无群聊会话', noConv:'暂无会话',
+    filterAll:'全部', filterUnread:'未读', filterGroup:'群聊', readAll:'全部已读',
+    settings:'设置', setNotify:'消息通知', setPrivacy:'隐私与安全', setGeneral:'通用设置',
+    setDark:'深色主题', setLang:'多语言', setLangDesc:'当前：简体中文（点击切换）', setFont:'字体大小', setStandard:'标准',
+    setCache:'清空本地缓存', setTerms:'服务协议与隐私政策', setAbout:'关于 NexIM',
+    nNewMsg:'接收新消息通知', nShowDetail:'通知显示消息详情', nSound:'通知声音', nVibrate:'震动', nDnd:'免打扰时段 22:00 - 08:00',
+    pVerify:'加我为好友需要验证', pPhoneSearch:'允许通过手机号搜索到我', pOnline:'向好友展示在线状态', pDevices:'登录设备管理', pBlacklist:'黑名单',
+    onlineState:'在线状态', busy:'忙碌', invisible:'隐身',
+    loginWelcome:'欢迎回来', loginSub:'登录后同步你的消息、文件与通话记录',
+    account:'账号 / 手机号', password:'密码', remember:'记住我', forgot:'忘记密码？', login:'登录',
+    otherLogin:'其他登录方式', sso:'企业 SSO', codeLogin:'验证码登录', demoAccount:'演示账号 linxiao / 123456', oneClick:'一键登录',
+    noAccount:'还没有账号？', registerNow:'立即注册', agreeLogin:'登录即代表同意',
+    createAccount:'创建账号', regSub:'注册后即可添加好友、创建群聊，消息在 H5 与桌面端实时同步',
+    nickname:'昵称', phone:'手机号', verifyCode:'验证码', setPwd:'设置密码', confirmPwd:'确认密码', getCode:'获取验证码',
+    agreeReg:'我已阅读并同意《服务协议》与《隐私政策》，了解消息将按企业留存策略保存', register:'注册并登录', hasAccount:'已有账号？', backLogin:'返回登录',
+    contactsTitle:'通讯录', newFriends:'新的朋友', groups:'群聊', org:'组织架构', discoverTitle:'发现',
+    mine:'我的 / 设备与设置', files:'文件助手', favorites:'收藏', dept:'组织架构',
+    back:'返回', send:'发送', cancel:'取消', confirm:'确认', close:'关闭', download:'下载', search:'搜索',
+    switchLangTip:'界面语言已切换',
+    dFiles:'文件', dStats:'统计', searchConvUser:'搜索会话 / 用户 / 消息', remindMe:'提醒我',
+    cloudSync180:'消息已云端同步 180 天', globalSearch:'全局搜索', voiceCall:'语音通话', videoCall:'视频通话',
+    convSettings:'会话设置', groupMembers:'群成员', invite:'邀请成员', emoji:'表情', image:'图片', file:'文件', mention:'@提及', screenshot:'截图',
+    inputPlaceholder:'输入消息，Enter 发送...', tipGlobal:'全局搜索', tipEnter:'发送消息', tipScreenshot:'截图', tipDrag:'支持拖拽文件到窗口',
+    cmdPlaceholder:'搜索会话、用户、后台功能…', gConv:'会话', gUser:'用户', gAdmin:'管理后台', gCmd:'快捷命令',
+    kOpen:'打开', kStart:'发起', cmdThemeDark:'切换深色主题', cmdThemeLight:'切换浅色主题', cmdThemeHint:'Ctrl+K 可随时呼出',
+    cmdCallAudio:'发起语音通话', cmdCallVideo:'发起视频通话', cmdCurrentConv:'对当前会话', cmdNoResult:'无匹配结果',
+    mNew:'发起', mCreateGroup:'发起群聊', mAddFriend:'添加朋友', mScan:'扫一扫', mCancel:'取消'
+  },
+  en:{
+    brandSub:'Enterprise IM Platform', sync:'Synced · 5 devices online', proto:'Interactive Prototype', arch:'Architecture',
+    vH5:'H5 Mobile', vAndroid:'Android Native', vIOS:'iOS Native', vDesktop:'Desktop', vAdmin:'Admin Console',
+    tConvs:'Chats', tContacts:'Contacts', tDiscover:'Discover', tMine:'Me',
+    pConvs:'Messages / Chat List', pChat:'Chat', pCall:'Audio / Video Call', pAddFriend:'Add Friend', pCreateGroup:'New Group',
+    pContacts:'Contacts / Entry', pDept:'Organization', pGroups:'Group Chats', pFriends:'Friend Requests',
+    pDiscover:'Discover', pFiles:'File Assistant', pFavorites:'Favorites', pMine:'Me / Devices & Settings', pSettings:'Settings (Notify/Privacy/General)',
+    secPinned:'Pinned', secAll:'All Chats', secUnread:'Unread', secGroup:'Group Chats',
+    searchConv:'Search chats / messages / users', noMatch:'No matching chats', noUnread:'No unread chats', noGroup:'No group chats', noConv:'No chats',
+    filterAll:'All', filterUnread:'Unread', filterGroup:'Groups', readAll:'Mark all read',
+    settings:'Settings', setNotify:'Notifications', setPrivacy:'Privacy & Security', setGeneral:'General',
+    setDark:'Dark Mode', setLang:'Language', setLangDesc:'Current: English (tap to switch)', setFont:'Font Size', setStandard:'Standard',
+    setCache:'Clear Local Cache', setTerms:'Terms & Privacy Policy', setAbout:'About NexIM',
+    nNewMsg:'New message alerts', nShowDetail:'Show message details', nSound:'Notification sound', nVibrate:'Vibrate', nDnd:'Do not disturb 22:00 - 08:00',
+    pVerify:'Require verification to add me', pPhoneSearch:'Allow finding me by phone', pOnline:'Show online status to friends', pDevices:'Logged-in devices', pBlacklist:'Blacklist',
+    onlineState:'Online status', busy:'Busy', invisible:'Invisible',
+    loginWelcome:'Welcome back', loginSub:'Sign in to sync your messages, files and call history',
+    account:'Account / Phone', password:'Password', remember:'Remember me', forgot:'Forgot password?', login:'Sign In',
+    otherLogin:'Other sign-in methods', sso:'Enterprise SSO', codeLogin:'Code Sign-in', demoAccount:'Demo linxiao / 123456', oneClick:'One-tap Sign In',
+    noAccount:'No account?', registerNow:'Sign up', agreeLogin:'By signing in you agree to',
+    createAccount:'Create Account', regSub:'Add friends and create groups after sign-up; messages sync across H5 and desktop',
+    nickname:'Nickname', phone:'Phone', verifyCode:'Verify Code', setPwd:'Password', confirmPwd:'Confirm Password', getCode:'Send Code',
+    agreeReg:'I have read and agree to the Terms & Privacy Policy, and understand messages are retained per policy', register:'Sign Up & In', hasAccount:'Have an account?', backLogin:'Back to Sign In',
+    contactsTitle:'Contacts', newFriends:'New Friends', groups:'Groups', org:'Organization', discoverTitle:'Discover',
+    mine:'Me / Devices & Settings', files:'File Assistant', favorites:'Favorites', dept:'Organization',
+    back:'Back', send:'Send', cancel:'Cancel', confirm:'Confirm', close:'Close', download:'Download', search:'Search',
+    switchLangTip:'Interface language switched',
+    dFiles:'Files', dStats:'Stats', searchConvUser:'Search chats / users / messages', remindMe:'Remind me',
+    cloudSync180:'Messages synced to cloud for 180 days', globalSearch:'Global search', voiceCall:'Voice call', videoCall:'Video call',
+    convSettings:'Chat settings', groupMembers:'Group members', invite:'Invite', emoji:'Emoji', image:'Image', file:'File', mention:'@Mention', screenshot:'Screenshot',
+    inputPlaceholder:'Type a message, Enter to send...', tipGlobal:'Global search', tipEnter:'Send message', tipScreenshot:'Screenshot', tipDrag:'Drop files to attach',
+    cmdPlaceholder:'Search chats, users, admin features…', gConv:'Chats', gUser:'Users', gAdmin:'Admin', gCmd:'Quick commands',
+    kOpen:'Open', kStart:'Start', cmdThemeDark:'Switch to dark mode', cmdThemeLight:'Switch to light mode', cmdThemeHint:'Press Ctrl+K anytime',
+    cmdCallAudio:'Start voice call', cmdCallVideo:'Start video call', cmdCurrentConv:'For current chat', cmdNoResult:'No matches',
+    mNew:'New', mCreateGroup:'New Group', mAddFriend:'Add Friend', mScan:'Scan QR', mCancel:'Cancel'
+  }
+};
+function t(k){var d=I18N[state.lang]||I18N.zh;return d[k]!=null?d[k]:(I18N.zh[k]!=null?I18N.zh[k]:k);}
+function applyLang(){
+  document.documentElement.lang=state.lang==='en'?'en':'zh-CN';
+  var bs=document.getElementById('brandSub');if(bs)bs.textContent=t('brandSub');
+  var sp=document.getElementById('syncPill');if(sp)sp.innerHTML='<i class="dot"></i>'+t('sync');
+  var ll=document.getElementById('langLabel');if(ll)ll.textContent=state.lang==='en'?'English':'中文';
+  var vtabs=[['h5','vH5'],['android','vAndroid'],['ios','vIOS'],['desktop','vDesktop'],['admin','vAdmin']];
+  var box=document.getElementById('viewTabs');
+  if(box)vtabs.forEach(function(x){var b=box.querySelector('[data-view="'+x[0]+'"]');if(b)b.textContent=t(x[1]);});
+}
 /* 组织架构 / 收藏 / 设备 / 表情 演示数据 */
 const orgDepts=[['总部',1248],['研发中心',386],['产品组',42],['后端组',86],['前端组',54],['架构组',18],['市场部',212],['审计部',16],['客服部',96]];
 const orgMembers=[
@@ -970,9 +1044,9 @@ function convListHtml(active,q,filter){
     return true;
   };
   var pinned=convOrder.filter(function(i){return C[i].pinned&&match(i);}),rest=convOrder.filter(function(i){return !C[i].pinned&&match(i);});
-  if(!pinned.length&&!rest.length)return '<div style="text-align:center;color:#8a95aa;font-size:12px;padding:26px">'+(q?'未找到匹配会话':(filter==='unread'?'暂无未读会话':(filter==='group'?'暂无群聊会话':'暂无会话')))+'</div>';
-  return (pinned.length?'<div class="sec-title">置顶会话</div>'+pinned.map(function(i){return convItemHtml(i,active);}).join(''):'')+
-         (rest.length?'<div class="sec-title">'+(filter==='unread'?'未读会话':(filter==='group'?'群聊会话':'全部会话'))+'</div>'+rest.map(function(i){return convItemHtml(i,active);}).join(''):'');
+  if(!pinned.length&&!rest.length)return '<div style="text-align:center;color:#8a95aa;font-size:12px;padding:26px">'+(q?t('noMatch'):(filter==='unread'?t('noUnread'):(filter==='group'?t('noGroup'):t('noConv'))))+'</div>';
+  return (pinned.length?'<div class="sec-title">'+t('secPinned')+'</div>'+pinned.map(function(i){return convItemHtml(i,active);}).join(''):'')+
+         (rest.length?'<div class="sec-title">'+(filter==='unread'?t('secUnread'):(filter==='group'?t('secGroup'):t('secAll')))+'</div>'+rest.map(function(i){return convItemHtml(i,active);}).join(''):'');
 }
 function scrollBottom(el){if(el)setTimeout(function(){el.scrollTop=el.scrollHeight;},10);}
 function nowTime(){var n=new Date();return ('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2);}
@@ -1039,7 +1113,7 @@ function declineCall(){endCall('已拒接');}
 function openCmd(){
   if(document.getElementById('cmdBox')){closeCmd();return;}
   var d=document.createElement('div');d.className='cmd-mask';d.id='cmdBox';
-  d.innerHTML='<div class="cmd-panel"><div class="cmd-input">'+ic('search',18)+'<input id="cmdInput" data-input="cmd" placeholder="搜索会话、用户、后台功能…"><kbd>ESC</kbd></div><div class="cmd-list" id="cmdList"></div></div>';
+  d.innerHTML='<div class="cmd-panel"><div class="cmd-input">'+ic('search',18)+'<input id="cmdInput" data-input="cmd" placeholder="'+t('cmdPlaceholder')+'"><kbd>ESC</kbd></div><div class="cmd-list" id="cmdList"></div></div>';
   document.body.appendChild(d);
   setTimeout(function(){var i=document.getElementById('cmdInput');if(i)i.focus();},0);
   cmdRender('');
@@ -1048,19 +1122,19 @@ function closeCmd(){var d=document.getElementById('cmdBox');if(d)d.remove();}
 function cmdRender(q){
   q=(q||'').trim().toLowerCase();
   var list=[];
-  convOrder.forEach(function(i){var c=C[i];if(!q||c.name.toLowerCase().indexOf(q)>=0||(c.last||'').toLowerCase().indexOf(q)>=0){list.push({g:'会话',icon:av(c.name,c.color,'sm'),t:c.name,s:c.last||'',k:'打开',act:'cmd-conv',id:i});}});
-  users.filter(function(u){return !q||u.name.toLowerCase().indexOf(q)>=0||u.account.toLowerCase().indexOf(q)>=0;}).slice(0,8).forEach(function(u){list.push({g:'用户',icon:av(u.name,u.color,'sm'),t:u.name,s:'@'+u.account+' · '+u.dept,k:'会话',act:'cmd-user',id:u.id});});
-  adminMenus.forEach(function(grp){grp.items.forEach(function(it){if(!q||it[1].toLowerCase().indexOf(q)>=0){list.push({g:'管理后台',icon:'<span class="ci-icon">'+ic(it[2],16)+'</span>',t:it[1],s:grp.g,k:'打开',act:'cmd-page',id:it[0]});}});});
+  convOrder.forEach(function(i){var c=C[i];if(!q||c.name.toLowerCase().indexOf(q)>=0||(c.last||'').toLowerCase().indexOf(q)>=0){list.push({g:t('gConv'),icon:av(c.name,c.color,'sm'),t:c.name,s:c.last||'',k:t('kOpen'),act:'cmd-conv',id:i});}});
+  users.filter(function(u){return !q||u.name.toLowerCase().indexOf(q)>=0||u.account.toLowerCase().indexOf(q)>=0;}).slice(0,8).forEach(function(u){list.push({g:t('gUser'),icon:av(u.name,u.color,'sm'),t:u.name,s:'@'+u.account+' · '+u.dept,k:t('tConvs'),act:'cmd-user',id:u.id});});
+  adminMenus.forEach(function(grp){grp.items.forEach(function(it){if(!q||it[1].toLowerCase().indexOf(q)>=0){list.push({g:t('gAdmin'),icon:'<span class="ci-icon">'+ic(it[2],16)+'</span>',t:it[1],s:grp.g,k:t('kOpen'),act:'cmd-page',id:it[0]});}});});
   var cmds=[
-    {g:'快捷命令',icon:'<span class="ci-icon">'+ic(state.theme==='light'?'moon':'sun',16)+'</span>',t:state.theme==='light'?'切换深色主题':'切换浅色主题',s:'Ctrl+K 可随时呼出',k:'',act:'cmd-theme'},
-    {g:'快捷命令',icon:'<span class="ci-icon">'+ic('phoneIn',16)+'</span>',t:'发起语音通话',s:'对当前会话',k:'',act:'cmd-call',id:'audio'},
-    {g:'快捷命令',icon:'<span class="ci-icon">'+ic('video',16)+'</span>',t:'发起视频通话',s:'对当前会话',k:'',act:'cmd-call',id:'video'}
+    {g:t('gCmd'),icon:'<span class="ci-icon">'+ic(state.theme==='light'?'moon':'sun',16)+'</span>',t:state.theme==='light'?t('cmdThemeDark'):t('cmdThemeLight'),s:t('cmdThemeHint'),k:'',act:'cmd-theme'},
+    {g:t('gCmd'),icon:'<span class="ci-icon">'+ic('phoneIn',16)+'</span>',t:t('cmdCallAudio'),s:t('cmdCurrentConv'),k:'',act:'cmd-call',id:'audio'},
+    {g:t('gCmd'),icon:'<span class="ci-icon">'+ic('video',16)+'</span>',t:t('cmdCallVideo'),s:t('cmdCurrentConv'),k:'',act:'cmd-call',id:'video'}
   ].filter(function(c){return !q||c.t.indexOf(q)>=0;});
   list=list.concat(cmds);
   var html='',lastG='';
   list.forEach(function(it){if(it.g!==lastG){html+='<div class="cmd-group">'+it.g+'</div>';lastG=it.g;}
     html+='<button class="cmd-item" data-act="'+it.act+'" data-id="'+(it.id||'')+'">'+it.icon+'<div><div class="ci-t">'+esc(it.t)+'</div><div class="ci-s">'+esc(it.s)+'</div></div><span class="ci-k">'+esc(it.k)+'</span></button>';});
-  if(!list.length)html='<div style="padding:26px;text-align:center;color:#8a95aa;font-size:12px">无匹配结果</div>';
+  if(!list.length)html='<div style="padding:26px;text-align:center;color:#8a95aa;font-size:12px">'+t('cmdNoResult')+'</div>';
   document.getElementById('cmdList').innerHTML=html;
 }
 
@@ -1256,11 +1330,12 @@ function incomingHtml(){
 /* ==================== H5 ==================== */
 const h5Pages=[{k:'convs',n:'消息 / 会话列表',i:'msg',no:'FR-MSG-01'},{k:'chat',n:'聊天页',i:'msg',no:'FR-MSG-02'},{k:'call',n:'音视频通话页',i:'phoneIn',no:'FR-RTC-01'},{k:'addFriend',n:'添加朋友',i:'user',no:'FR-CONTACT-08'},{k:'createGroup',n:'发起群聊',i:'users',no:'FR-GROUP-09'},{k:'contacts',n:'通讯录 / 入口',i:'contacts',no:'FR-CONTACT-01'},{k:'dept',n:'组织架构页',i:'dept',no:'FR-CONTACT-01'},{k:'groups',n:'群聊列表',i:'users',no:'FR-MSG-04'},{k:'friends',n:'好友申请（新的朋友）',i:'contacts',no:'FR-CONTACT-07'},{k:'discover',n:'发现',i:'compass',no:'FR-H5-02'},{k:'files',n:'文件助手',i:'folder',no:'FR-FILE-04'},{k:'favorites',n:'收藏',i:'pin',no:'FR-MSG-09'},{k:'mine',n:'我的 / 设备与设置',i:'user',no:'FR-AUTH-07'},{k:'settings',n:'设置（通知/隐私/通用）',i:'settings',no:'NFR-MNT-01'}];
 function renderH5Nav(){
+  var pageNames={convs:'pConvs',chat:'pChat',call:'pCall',addFriend:'pAddFriend',createGroup:'pCreateGroup',contacts:'pContacts',dept:'pDept',groups:'pGroups',friends:'pFriends',discover:'pDiscover',files:'pFiles',favorites:'pFavorites',mine:'pMine',settings:'pSettings'};
   var listHtml=h5Pages.map(function(p){
-    return '<button data-act="h5-page" data-page="'+p.k+'" class="'+(state.h5Page===p.k?'on':'')+'">'+ic(p.i,16)+p.n+'<span class="num">'+p.no+'</span></button>';
+    return '<button data-act="h5-page" data-page="'+p.k+'" class="'+(state.h5Page===p.k?'on':'')+'">'+ic(p.i,16)+t(pageNames[p.k]||p.n)+'<span class="num">'+p.no+'</span></button>';
   }).join('');
   ['h5PageList','andPageList','iosPageList'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=listHtml;});
-  var tabs=[{k:'convs',n:'消息',i:'msg'},{k:'contacts',n:'通讯录',i:'contacts'},{k:'discover',n:'发现',i:'compass'},{k:'mine',n:'我的',i:'user'}];
+  var tabs=[{k:'convs',n:t('tConvs'),i:'msg'},{k:'contacts',n:t('tContacts'),i:'contacts'},{k:'discover',n:t('tDiscover'),i:'compass'},{k:'mine',n:t('tMine'),i:'user'}];
   var total=convOrder.reduce(function(s,i){return s+C[i].unread;},0);
   var tbar=mobileTabbar();
   if(tbar)tbar.innerHTML=state.h5Page==='call'?'':tabs.map(function(t){
@@ -1327,27 +1402,27 @@ function ensureSingleConv(name,color){
 /* ---- H5 新增页面 ---- */
 function h5SettingsHtml(){
   var tab=state.settingsTab||'notify';
-  var tabs=[['notify','消息通知','bell'],['privacy','隐私与安全','lock'],['general','通用设置','settings']];
+  var tabs=[['notify',t('setNotify'),'bell'],['privacy',t('setPrivacy'),'lock'],['general',t('setGeneral'),'settings']];
   var body='';
   if(tab==='notify'){
-    body=[['接收新消息通知',1],['通知显示消息详情',1],['通知声音',1],['震动',0],['免打扰时段 22:00 - 08:00',0]].map(function(s){
+    body=[[t('nNewMsg'),1],[t('nShowDetail'),1],[t('nSound'),1],[t('nVibrate'),0],[t('nDnd'),0]].map(function(s){
       return '<div class="switch-row"><div>'+esc(s[0])+'</div><div class="switch '+(s[1]?'on':'')+'" data-act="switch" data-name="'+esc(s[0])+'"></div></div>';
     }).join('');
   }else if(tab==='privacy'){
-    body=[['加我为好友需要验证',1],['允许通过手机号搜索到我',1],['向好友展示在线状态',1]].map(function(s){
+    body=[[t('pVerify'),1],[t('pPhoneSearch'),1],[t('pOnline'),1]].map(function(s){
       return '<div class="switch-row"><div>'+esc(s[0])+'</div><div class="switch '+(s[1]?'on':'')+'" data-act="switch" data-name="'+esc(s[0])+'"></div></div>';
     }).join('')+
-      '<button class="gb-row" data-act="h5-devices" style="width:100%">'+ic('monitor',17)+'登录设备管理<span class="gb-r">'+deviceList.length+' 台'+ic('chev',13)+'</span></button>'+
-      '<button class="gb-row" data-act="h5-blacklist" style="width:100%">'+ic('shield',17)+'黑名单<span class="gb-r">2 人'+ic('chev',13)+'</span></button>';
+      '<button class="gb-row" data-act="h5-devices" style="width:100%">'+ic('monitor',17)+t('pDevices')+'<span class="gb-r">'+deviceList.length+ic('chev',13)+'</span></button>'+
+      '<button class="gb-row" data-act="h5-blacklist" style="width:100%">'+ic('shield',17)+t('pBlacklist')+'<span class="gb-r">2'+ic('chev',13)+'</span></button>';
   }else{
-    body='<div class="switch-row"><div>深色主题</div><div class="switch '+(state.theme==='dark'?'on':'')+'" data-act="toggle-theme"></div></div>'+
-      '<div class="switch-row"><div>多语言<div class="sr-desc">当前：简体中文（NFR-I18N-01 结构预留）</div></div><span class="state info">中文</span></div>'+
-      '<div class="switch-row"><div>字体大小<div class="sr-desc">标准</div></div><span class="state info">标准</span></div>'+
-      '<button class="gb-row" data-act="h5-clear-cache" style="width:100%">'+ic('trash',17)+'清空本地缓存<span class="gb-r">1.2 GB'+ic('chev',13)+'</span></button>'+
-      '<button class="gb-row" data-act="auth-terms" style="width:100%">'+ic('file',17)+'服务协议与隐私政策<span class="gb-r">'+ic('chev',13)+'</span></button>'+
-      '<div class="switch-row"><div>关于 NexIM<div class="sr-desc">交互原型 v1.9 · 对应 BRD v1.9 / 架构 v1.12</div></div><span class="state info">v1.9</span></div>';
+    body='<div class="switch-row"><div>'+t('setDark')+'</div><div class="switch '+(state.theme==='dark'?'on':'')+'" data-act="toggle-theme"></div></div>'+
+      '<button class="gb-row" data-act="lang-toggle" style="width:100%">'+ic('settings',17)+t('setLang')+'<span class="gb-r">'+t('setLangDesc')+' '+ic('chev',13)+'</span></button>'+
+      '<div class="switch-row"><div>'+t('setFont')+'<div class="sr-desc">'+t('setStandard')+'</div></div><span class="state info">'+t('setStandard')+'</span></div>'+
+      '<button class="gb-row" data-act="h5-clear-cache" style="width:100%">'+ic('trash',17)+t('setCache')+'<span class="gb-r">1.2 GB'+ic('chev',13)+'</span></button>'+
+      '<button class="gb-row" data-act="auth-terms" style="width:100%">'+ic('file',17)+t('setTerms')+'<span class="gb-r">'+ic('chev',13)+'</span></button>'+
+      '<div class="switch-row"><div>'+t('setAbout')+'<div class="sr-desc">'+t('proto')+' v1.9 · BRD v2.0 / '+t('arch')+' v1.12</div></div><span class="state info">v1.9</span></div>';
   }
-  return h5Head('设置','','')+'<div class="h5-body scroll" style="padding:12px">'+
+  return h5Head(t('settings'),'','')+'<div class="h5-body scroll" style="padding:12px">'+
     '<div style="display:flex;gap:6px;margin-bottom:12px">'+tabs.map(function(x){
       return '<button class="btn sm '+(tab===x[0]?'primary':'')+'" data-act="settings-tab" data-t="'+x[0]+'">'+ic(x[2],13)+esc(x[1])+'</button>';
     }).join('')+'</div>'+body+'</div>';
@@ -1398,27 +1473,27 @@ function authHtml(){
   if(state.authPage==='register'){
     return '<div class="auth">'+
       '<button class="a-back" data-act="auth-back">'+ic('back',17)+'</button>'+
-      '<div class="a-logo">N</div><h2>创建账号</h2><div class="a-sub">注册后即可添加好友、创建群聊，消息在 H5 与桌面端实时同步</div>'+
-      '<div class="a-field"><label>昵称</label><input id="regNick" placeholder="请输入昵称（如：陈晨）"></div>'+
-      '<div class="a-field"><label>手机号</label><input id="regPhone" placeholder="11 位手机号"></div>'+
-      '<div class="a-field"><label>验证码</label><div class="a-code"><input id="regCode" placeholder="6 位验证码"><button data-act="auth-send-code" id="codeBtn">获取验证码</button></div></div>'+
-      '<div class="a-field"><label>设置密码</label><input id="regPwd" type="password" placeholder="8~20 位，含字母与数字"></div>'+
-      '<div class="a-field"><label>确认密码</label><input id="regPwd2" type="password" placeholder="再次输入密码"></div>'+
-      '<label class="a-agree"><input type="checkbox" id="regAgree">我已阅读并同意《服务协议》与《隐私政策》，了解消息将按企业留存策略保存</label>'+
-      '<button class="a-btn" data-act="auth-register-submit">注册并登录</button>'+
-      '<div class="a-foot">已有账号？<a data-act="auth-back">返回登录</a></div></div>';
+      '<div class="a-logo">N</div><h2>'+t('createAccount')+'</h2><div class="a-sub">'+t('regSub')+'</div>'+
+      '<div class="a-field"><label>'+t('nickname')+'</label><input id="regNick" placeholder="'+t('nickname')+'"></div>'+
+      '<div class="a-field"><label>'+t('phone')+'</label><input id="regPhone" placeholder="11"></div>'+
+      '<div class="a-field"><label>'+t('verifyCode')+'</label><div class="a-code"><input id="regCode" placeholder="6"><button data-act="auth-send-code" id="codeBtn">'+t('getCode')+'</button></div></div>'+
+      '<div class="a-field"><label>'+t('setPwd')+'</label><input id="regPwd" type="password"></div>'+
+      '<div class="a-field"><label>'+t('confirmPwd')+'</label><input id="regPwd2" type="password"></div>'+
+      '<label class="a-agree"><input type="checkbox" id="regAgree">'+t('agreeReg')+'</label>'+
+      '<button class="a-btn" data-act="auth-register-submit">'+t('register')+'</button>'+
+      '<div class="a-foot">'+t('hasAccount')+'<a data-act="auth-back">'+t('backLogin')+'</a></div></div>';
   }
   return '<div class="auth">'+
-    '<div class="a-logo">N</div><h2>欢迎回来</h2><div class="a-sub">登录后同步你的消息、文件与通话记录</div>'+
-    '<div class="a-field"><label>账号 / 手机号</label><input id="loginAcc" value="linxiao" placeholder="请输入账号或手机号"></div>'+
-    '<div class="a-field"><label>密码</label><input id="loginPwd" type="password" value="123456" placeholder="请输入密码"></div>'+
-    '<div class="a-row"><label><input type="checkbox" checked> 记住我</label><a data-act="auth-forgot">忘记密码？</a></div>'+
-    '<button class="a-btn" data-act="auth-login">登录</button>'+
-    '<div class="a-alt">其他登录方式</div>'+
-    '<div class="a-others"><button data-act="auth-sso">'+ic('shield',14)+'企业 SSO</button><button data-act="auth-code">'+ic('phone',14)+'验证码登录</button></div>'+
-    '<div class="a-demo">演示账号 linxiao / 123456<button data-act="auth-demo">一键登录</button></div>'+
-    '<div class="a-foot">还没有账号？<a data-act="auth-register">立即注册</a></div>'+
-    '<div class="a-foot" style="margin-top:8px">登录即代表同意<a data-act="auth-terms">《服务协议》</a>与<a data-act="auth-terms">《隐私政策》</a></div></div>';
+    '<div class="a-logo">N</div><h2>'+t('loginWelcome')+'</h2><div class="a-sub">'+t('loginSub')+'</div>'+
+    '<div class="a-field"><label>'+t('account')+'</label><input id="loginAcc" value="linxiao" placeholder="'+t('account')+'"></div>'+
+    '<div class="a-field"><label>'+t('password')+'</label><input id="loginPwd" type="password" value="123456" placeholder="'+t('password')+'"></div>'+
+    '<div class="a-row"><label><input type="checkbox" checked> '+t('remember')+'</label><a data-act="auth-forgot">'+t('forgot')+'</a></div>'+
+    '<button class="a-btn" data-act="auth-login">'+t('login')+'</button>'+
+    '<div class="a-alt">'+t('otherLogin')+'</div>'+
+    '<div class="a-others"><button data-act="auth-sso">'+ic('shield',14)+t('sso')+'</button><button data-act="auth-code">'+ic('phone',14)+t('codeLogin')+'</button></div>'+
+    '<div class="a-demo">'+t('demoAccount')+'<button data-act="auth-demo">'+t('oneClick')+'</button></div>'+
+    '<div class="a-foot">'+t('noAccount')+'<a data-act="auth-register">'+t('registerNow')+'</a></div>'+
+    '<div class="a-foot" style="margin-top:8px">'+t('agreeLogin')+'<a data-act="auth-terms">'+t('setTerms')+'</a></div></div>';
 }
 function doLogin(accIn,pwdIn){
   var a=document.getElementById('loginAcc'),p=document.getElementById('loginPwd');
@@ -1483,34 +1558,11 @@ function renderH5(){
   renderH5Nav();
   var s=mobileScreen(),html='',p=state.h5Page;
   if(p==='convs'){
-    var totalUnread=convOrder.reduce(function(s,i){return s+C[i].unread;},0);
-    var quickEntries=[
-      {n:'待办与提醒',s:'3 条 @我',i:'bell',c:'#f2994a',bg:'#fff5e5',act:'reminds',b:3},
-      {n:'文件助手',s:'跨端文件',i:'folder',c:'#12a594',bg:'#e6f8f2',act:'h5-page',page:'files'},
-      {n:'群聊',s:'3 个群',i:'users',c:'#5f72f6',bg:'#eef1ff',act:'h5-page',page:'groups'},
-      {n:'收藏',s:'12 条',i:'pin',c:'#a05ce6',bg:'#f3eaff',act:'h5-page',page:'favorites'}
-    ];
-    var quickHtml=quickEntries.map(function(q){
-      var ad='data-act="'+q.act+'"'+(q.page?' data-page="'+q.page+'"':'');
-      return '<button '+ad+'><span class="mq-ico" style="color:'+q.c+';background:'+q.bg+'">'+ic(q.i,20)+'</span>'+
-        '<span class="mq-t">'+q.n+'</span>'+(q.b?'<span class="mq-b">'+q.b+'</span>':'')+'</button>';
-    }).join('');
-    var mf=state.mFilter||'all';
-    var cntUnread=convOrder.filter(function(i){return C[i].unread;}).length;
-    var filterHtml='<div class="msg-tabs">'+
-      '<button class="'+(mf==='all'?'on':'')+'" data-act="msg-filter" data-f="all">全部</button>'+
-      '<button class="'+(mf==='unread'?'on':'')+'" data-act="msg-filter" data-f="unread">未读'+(cntUnread?'<i class="tab-badge">'+cntUnread+'</i>':'')+'</button>'+
-      '<button class="'+(mf==='group'?'on':'')+'" data-act="msg-filter" data-f="group">群聊</button>'+
-      '<button class="tab-read" data-act="read-all-h5" title="全部已读">'+ic('check',15)+'</button></div>';
-    html=h5Head('消息',
-        '<button class="icon-btn" data-act="h5-page" data-page="mine" title="我的">'+av(state.loginUser||'林晓','linear-gradient(135deg,#4f6ef7,#7b61ff)','sm')+'</button>',
-        '<button class="icon-btn" data-act="reminds" title="待办与提醒">'+ic('bell',18)+'<i class="hd-dot"></i></button>'+
-        '<button class="icon-btn" data-act="h5-new" title="发起会话">'+ic('plus',18)+'</button>')+
-      '<div class="msg-summary"><b>'+esc(state.loginUser||'林晓')+'</b><span>'+(totalUnread?('有 '+totalUnread+' 条未读消息 · 云端已同步'):'消息已全部读完 · 云端已同步')+'</span><i class="dot"></i></div>'+
-      '<div class="h5-body scroll" style="padding:10px 10px"><div class="msg-quick">'+quickHtml+'</div>'+
-      '<div class="h5-search">'+ic('search',14)+'<input id="convSearch" data-input="convSearch" placeholder="搜索会话 / 消息 / 用户" style="border:0;background:none;padding:0;flex:1;font-size:12px"></div>'+
-      filterHtml+'<div id="convListWrap">'+convListHtml(null,null,mf)+'</div></div>'+
-      (state.view==='android'?'<button class="fab" data-act="h5-new" title="发起会话">'+ic('plus',22)+'</button>':'');
+    html=h5Head(t('tConvs'),
+        '<button class="icon-btn" data-act="h5-page" data-page="mine" title="'+t('tMine')+'">'+av(state.loginUser||'林晓','linear-gradient(135deg,#4f6ef7,#7b61ff)','sm')+'</button>',
+        '<button class="icon-btn" data-act="reminds" title="'+t('newFriends')+'">'+ic('bell',18)+'<i class="hd-dot"></i></button>'+
+        '<button class="icon-btn" data-act="h5-new" title="'+t('mAddFriend')+'">'+ic('plus',18)+'</button>')+
+      '<div class="h5-body scroll" style="padding:10px 10px"><div id="convListWrap">'+convListHtml(null,null,'all')+'</div></div>';
   }else if(p==='chat'){
     var c=C[state.h5Conv||'c1'];
     html='<div class="chat-head"><button class="icon-btn" data-act="h5-back">'+ic('back',18)+'</button>'+
@@ -1571,7 +1623,7 @@ function renderH5(){
       }).join('')+'</div>';
   }else if(p==='contacts'){
     html=h5Head('通讯录','','<button class="icon-btn" data-act="h5-new">'+ic('plus',18)+'</button>')+
-      '<div class="h5-body scroll"><div class="h5-search">'+ic('search',14)+'<input data-input="contactSearch" placeholder="搜索姓名 / 拼音 / 部门" style="border:0;background:none;padding:0;flex:1;font-size:12px"></div>'+
+      '<div class="h5-body scroll contacts-body"><div class="h5-search">'+ic('search',14)+'<input data-input="contactSearch" placeholder="搜索姓名 / 拼音 / 部门" style="border:0;background:none;padding:0;flex:1;font-size:12px"></div>'+
       [['新的朋友','3 条待处理','#f2994a','contacts'],['群聊','我加入的 8 个群','#4f9ee8','users'],['组织架构','总部 / 5 个一级部门','#12a594','dept']].map(function(q){
         return '<button class="qentry" data-act="h5-qentry" data-name="'+q[0]+'">'+av(q[0],'linear-gradient(135deg,'+q[2]+',#7b61ff)','sm')+
           '<div><div class="qe-t">'+q[0]+'</div><div class="qe-s">'+q[1]+'</div></div><span style="margin-left:auto;color:#aab3c4">'+ic('chev',14)+'</span></button>';
@@ -1626,40 +1678,40 @@ function renderH5(){
 function renderDesktop(){
   saveDraft();
   var c=C[state.deskConv],dv=state.deskView||'msg';
-  var rail=[['msg','消息','msg'],['contacts','通讯录','contacts'],['folder','文件','files'],['chart','统计','stats']];
+  var rail=[['msg',t('tConvs'),'msg'],['contacts',t('tContacts'),'contacts'],['folder',t('dFiles'),'files'],['chart',t('dStats'),'stats']];
   var main='';
   if(dv==='msg'){
     main=
-    '<section class="conv-col"><div class="cc-head"><div class="h5-search" style="margin:0">'+ic('search',14)+'<input id="deskConvSearch" data-input="deskConvSearch" placeholder="搜索会话 / 用户 / 消息" style="border:0;background:none;padding:0;flex:1;font-size:12px"></div>'+
-      '<div class="conv-filters"><button class="'+(state.filter==='all'?'on':'')+'" data-act="desk-filter" data-f="all">全部</button>'+
-      '<button class="'+(state.filter==='unread'?'on':'')+'" data-act="desk-filter" data-f="unread">未读 '+convOrder.reduce(function(s,i){return s+C[i].unread;},0)+'</button>'+
-      '<button class="'+(state.filter==='group'?'on':'')+'" data-act="desk-filter" data-f="group">群聊</button>'+
-      '<button data-act="read-all" title="FR-MSG-25">'+ic('check',13)+'全部已读</button>'+
-      '<button data-act="reminds" title="FR-MSG-26">'+ic('bell',13)+'提醒我</button></div></div>'+
+    '<section class="conv-col"><div class="cc-head"><div class="h5-search" style="margin:0">'+ic('search',14)+'<input id="deskConvSearch" data-input="deskConvSearch" placeholder="'+t('searchConvUser')+'" style="border:0;background:none;padding:0;flex:1;font-size:12px"></div>'+
+      '<div class="conv-filters"><button class="'+(state.filter==='all'?'on':'')+'" data-act="desk-filter" data-f="all">'+t('filterAll')+'</button>'+
+      '<button class="'+(state.filter==='unread'?'on':'')+'" data-act="desk-filter" data-f="unread">'+t('filterUnread')+' '+convOrder.reduce(function(s,i){return s+C[i].unread;},0)+'</button>'+
+      '<button class="'+(state.filter==='group'?'on':'')+'" data-act="desk-filter" data-f="group">'+t('filterGroup')+'</button>'+
+      '<button data-act="read-all" title="FR-MSG-25">'+ic('check',13)+t('readAll')+'</button>'+
+      '<button data-act="reminds" title="FR-MSG-26">'+ic('bell',13)+t('remindMe')+'</button></div></div>'+
       '<div class="conv-scroll scroll"><div id="deskConvWrap">'+convListHtml(state.deskConv)+'</div></div></section>'+
     '<section class="chat-col"><div class="chat-top">'+av(c.name,c.color,'sm')+
-      '<div><div class="ct-name">'+esc(c.name)+'</div><div class="ct-sub">'+esc(c.online||'在线')+' · 消息已云端同步 180 天</div></div><div style="flex:1"></div>'+
-      '<button class="icon-btn" data-act="desk-search" title="全局搜索">'+ic('search',17)+'</button>'+
-      '<button class="icon-btn" data-act="desk-call-audio" title="语音通话">'+ic('phoneIn',17)+'</button>'+
-      '<button class="icon-btn" data-act="desk-call-video" title="视频通话">'+ic('video',17)+'</button>'+
+      '<div><div class="ct-name">'+esc(c.name)+'</div><div class="ct-sub">'+esc(c.online||t('onlineState'))+' · '+t('cloudSync180')+'</div></div><div style="flex:1"></div>'+
+      '<button class="icon-btn" data-act="desk-search" title="'+t('globalSearch')+'">'+ic('search',17)+'</button>'+
+      '<button class="icon-btn" data-act="desk-call-audio" title="'+t('voiceCall')+'">'+ic('phoneIn',17)+'</button>'+
+      '<button class="icon-btn" data-act="desk-call-video" title="'+t('videoCall')+'">'+ic('video',17)+'</button>'+
       '<button class="icon-btn" data-act="desk-members">'+ic('users',17)+'</button>'+
-      '<button class="icon-btn" data-act="conv-settings" title="会话设置">'+ic('more',17)+'</button></div>'+
+      '<button class="icon-btn" data-act="conv-settings" title="'+t('convSettings')+'">'+ic('more',17)+'</button></div>'+
       '<div class="chat-msgs scroll" id="deskMsgs">'+messagesHtml(c.id)+'</div>'+
-      (state.memberPanel&&c.type==='group'?'<div class="member-panel"><h4>群成员 · '+c.members+'</h4>'+
+      (state.memberPanel&&c.type==='group'?'<div class="member-panel"><h4>'+t('groupMembers')+' · '+c.members+'</h4>'+
         [['林晓','群主'],['李工','管理员'],['王敏','成员'],['赵琳','成员'],['张伟','成员'],['陈静','成员']].map(function(m,i){
           var cols=['#4f6ef7','#e9834a','#3ba58c','#f2994a','#3ba7d8','#a05ce6'];
           return '<div class="mp-row">'+av(m[0],cols[i],'sm')+'<span>'+m[0]+'</span><span style="margin-left:auto;color:#8a95aa;font-size:10px">'+m[1]+'</span></div>';
-        }).join('')+'<button class="btn sm" style="width:100%;justify-content:center;margin-top:12px" data-act="desk-invite">'+ic('plus',13)+'邀请成员</button></div>':'')+
+        }).join('')+'<button class="btn sm" style="width:100%;justify-content:center;margin-top:12px" data-act="desk-invite">'+ic('plus',13)+t('invite')+'</button></div>':'')+
       '<div class="composer-wrap">'+
       (state.mention==='desk'?mentionHtml():'')+
       (state.emojiFor==='desk'?emojiPanelHtml('desk'):'')+
       '<div class="composer"><div class="composer-tools">'+
-        [['smile','表情'],['image','图片'],['clip','文件'],['at','@提及'],['flag','截图']].map(function(t){
-          return '<button data-act="desk-tool" data-name="'+t[1]+'" title="'+t[1]+'">'+ic(t[0],17)+'</button>';
+        [['smile',t('emoji')],['image',t('image')],['clip',t('file')],['at',t('mention')],['flag',t('screenshot')]].map(function(x){
+          return '<button data-act="desk-tool" data-name="'+x[1]+'" title="'+x[1]+'">'+ic(x[0],17)+'</button>';
         }).join('')+'</div>'+
-        '<input id="deskInput" data-input="desk" placeholder="输入消息，Enter 发送..." autocomplete="off">'+
-        '<button class="btn primary" data-act="desk-send">发送 '+ic('send',14)+'</button></div></div>'+
-      '<div class="tip-line"><span><kbd>Ctrl</kbd>+<kbd>K</kbd> 全局搜索</span><span><kbd>Enter</kbd> 发送消息</span><span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd> 截图</span><span>支持拖拽文件到窗口</span></div>'+
+        '<input id="deskInput" data-input="desk" placeholder="'+t('inputPlaceholder')+'" autocomplete="off">'+
+        '<button class="btn primary" data-act="desk-send">'+t('send')+' '+ic('send',14)+'</button></div></div>'+
+      '<div class="tip-line"><span><kbd>Ctrl</kbd>+<kbd>K</kbd> '+t('tipGlobal')+'</span><span><kbd>Enter</kbd> '+t('tipEnter')+'</span><span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd> '+t('tipScreenshot')+'</span><span>'+t('tipDrag')+'</span></div>'+
     '</section>';
   }else if(dv==='contacts'){
     main='<section class="chat-col" style="flex:1"><div class="chat-top">'+ic('contacts',17)+
@@ -1848,17 +1900,22 @@ function pageUsers(){
 }
 function pageDepts(){
   var depts=deptData;
+  var sel=state.deptSel||'研发中心';
+  var dmeta=depts.filter(function(d){return d[0]===sel;})[0]||depts[1];
+  var members=orgMembers.filter(function(m){return sel==='总部'||m.dept===sel;});
+  var pathMap={'总部':'/1/','研发中心':'/1/3/','产品组':'/1/3/5/','后端组':'/1/3/6/','前端组':'/1/3/7/','架构组':'/1/3/8/'};
+  var dpath=pathMap[sel]||'/1/'+String(depts.indexOf(dmeta)+1)+'/';
   return hint('组织架构变更在 60 秒内同步到 H5 与桌面端通讯录，并影响 RBAC 数据范围。','FR-CONTACT-01 / FR-ADMIN-03')+
-  '<div class="split"><div class="card"><h3>部门树</h3><div class="csub">支持拖拽调整层级</div>'+
-    depts.map(function(d,i){return '<div class="tree-row '+(i===1?'on':'')+'" data-act="dept-select" data-name="'+d[0]+'">'+ic(i<2?'folder':'chev',14)+esc(d[0])+'<span class="tr-c">'+d[1]+' 人</span></div>';}).join('')+
+  '<div class="split"><div class="card"><h3>部门树</h3><div class="csub">点击部门筛选成员 · 支持拖拽调整层级</div>'+
+    depts.map(function(d,i){return '<div class="tree-row '+(sel===d[0]?'on':'')+'" data-act="dept-select" data-name="'+d[0]+'">'+ic(i<2?'folder':'chev',14)+esc(d[0])+'<span class="tr-c">'+d[1]+' 人</span></div>';}).join('')+
     '<button class="btn primary sm" style="width:100%;justify-content:center;margin-top:12px" data-act="dept-add">'+ic('plus',13)+'新增部门</button></div>'+
-  '<div><div class="card" style="margin-bottom:14px"><h3>研发中心 · 成员</h3><div class="csub">当前选中部门，共 386 人</div>'+
+  '<div><div class="card" style="margin-bottom:14px"><h3>'+esc(sel)+' · 成员</h3><div class="csub">当前选中部门，编制 '+esc(dmeta[1])+' 人 · 列表 '+members.length+' 人</div>'+
     '<table class="tbl"><thead><tr><th>姓名</th><th>岗位</th><th>手机号（已脱敏）</th><th>状态</th></tr></thead><tbody>'+
-    [['林晓','产品负责人','138****0086','正常'],['张伟','Go 后端工程师','139****2214','正常'],['赵琳','前端工程师','137****8890','正常'],['李工','架构师','136****4412','正常']].map(function(u){
-      return '<tr><td><div class="u-cell">'+av(u[0],'#4f6ef7','sm')+u[0]+'</div></td><td>'+u[1]+'</td><td><span class="code">'+u[2]+'</span></td><td><span class="state ok">'+u[3]+'</span></td></tr>';
-    }).join('')+'</tbody></table></div>'+
-    '<div class="card"><h3>数据范围示例</h3><div class="csub">部门物化路径 /1/3/ 用于自动注入 SQL 过滤条件</div>'+
-    '<p style="font-size:12px;line-height:1.9;color:#4a556b">选择「部门管理员」角色后，部门树中仅「本部门及下级」可见；列表查询由 ORM 中间件自动追加 <span class="code">dept.path LIKE &#39;/1/3/%&#39;</span> 条件，业务代码无需手写，避免遗漏导致越权。</p></div></div></div>';
+    (members.length?members.map(function(u){
+      return '<tr><td><div class="u-cell">'+av(u.n,u.c,'sm')+u.n+'</div></td><td>'+u.p+'</td><td><span class="code">'+u.ph+'</span></td><td><span class="state '+(u.s==='在线'?'ok':(u.s==='忙碌'?'warn':'off'))+'">'+u.s+'</span></td></tr>';
+    }).join(''):'<tr><td colspan="4" style="text-align:center;color:#8a95aa;padding:20px">该部门暂无成员数据（演示数据）</td></tr>')+'</tbody></table></div>'+
+    '<div class="card"><h3>数据范围示例</h3><div class="csub">当前部门「'+esc(sel)+'」物化路径 '+esc(dpath)+' 用于自动注入 SQL 过滤条件</div>'+
+    '<p style="font-size:12px;line-height:1.9;color:#4a556b">选择「部门管理员」角色后，部门树中仅「本部门及下级」可见；列表查询由 ORM 中间件自动追加 <span class="code">dept.path LIKE &#39;'+esc(dpath)+'%&#39;</span> 条件，业务代码无需手写，避免遗漏导致越权。</p></div></div></div>';
 }
 function pageGroups(){
   return hint('冻结 / 解散属于敏感操作，需二次确认并写入审计日志（含操作人与 IP）。','FR-GROUP-08 / FR-SEC-01')+
@@ -2152,10 +2209,10 @@ document.addEventListener('click',function(e){
         if(w.length<8||w.length>20||!/[A-Za-z]/.test(w)||!/\d/.test(w)){toast('新密码需 8~20 位且含字母与数字','warn');return;}
         closeModal();toast('密码重置成功，请使用新密码登录','ok');},'重置密码');break;
     case 'auth-terms':modal('服务协议与隐私政策','<div style="font-size:12px;color:#4a556b;line-height:1.9">本演示原型仅展示入口交互：正式版提供完整《服务协议》与《隐私政策》文本，涵盖消息留存策略（默认云端 180 天，可配置）、敏感内容检测与审计合规说明（FR-AUTH-10 / FR-SEC-02）。</div>',null,'知道了');break;
-    case 'h5-new':modal('发起','<div style="display:flex;flex-direction:column;gap:8px">'+
-      '<button class="btn" style="justify-content:flex-start" data-act="go-create-group">'+ic('users',16)+'发起群聊</button>'+
-      '<button class="btn" style="justify-content:flex-start" data-act="go-add-friend">'+ic('user',16)+'添加朋友</button>'+
-      '<button class="btn" style="justify-content:flex-start" data-act="scan-qr">'+ic('search',16)+'扫一扫</button></div>',null,'取消');break;
+    case 'h5-new':modal(t('mNew'),'<div style="display:flex;flex-direction:column;gap:8px">'+
+      '<button class="btn" style="justify-content:flex-start" data-act="go-create-group">'+ic('users',16)+t('mCreateGroup')+'</button>'+
+      '<button class="btn" style="justify-content:flex-start" data-act="go-add-friend">'+ic('user',16)+t('mAddFriend')+'</button>'+
+      '<button class="btn" style="justify-content:flex-start" data-act="scan-qr">'+ic('search',16)+t('mScan')+'</button></div>',null,t('mCancel'));break;
     case 'go-add-friend':closeModal();state.h5Page='addFriend';renderCur();break;
     case 'go-create-group':closeModal();state.groupPicked=[];state.h5Page='createGroup';renderCur();break;
     case 'scan-qr':modal('扫一扫','<div style="height:200px;border-radius:12px;background:linear-gradient(135deg,#1a2233,#2b3556);position:relative;display:grid;place-items:center">'+
@@ -2233,6 +2290,7 @@ document.addEventListener('click',function(e){
     case 'h5-settings':state.h5Page='settings';state.settingsTab='notify';renderCur();break;
     case 'settings-tab':state.settingsTab=t.dataset.t;renderCur();break;
     case 'dept-pick-h5':state.deptSel=t.dataset.n;renderCur();break;
+    case 'dept-select':state.deptSel=t.dataset.n;renderAdmin();toast('已切换到「'+t.dataset.n+'」，成员列表与数据范围已同步','ok');break;
     case 'group-open':openConv(t.dataset.id,isMobile()?'h5':'desktop');break;
     case 'file-dl':toast('正在下载 '+t.dataset.n+'（预签名 URL 有效期 15 分钟）','ok');break;
     case 'fav-del':favItems.splice(parseInt(t.dataset.i,10),1);renderCur();toast('已取消收藏','ok');break;
@@ -2475,6 +2533,7 @@ document.addEventListener('click',function(e){
     case 'settings-save':toast('系统配置已保存并热生效，变更已写入操作日志','ok');break;
     case 'settings-reset':renderAdmin();toast('已恢复默认配置');break;
     case 'toggle-theme':toggleTheme();break;
+    case 'lang-toggle':state.lang=state.lang==='en'?'zh':'en';applyLang();renderCur();renderDesktop();renderAdmin();toast(t('switchLangTip'),'ok');break;
     case 'cm':closeModal();convAction(t.dataset.k,t.dataset.id);break;
     case 'fwd':{
       var fc=C[t.dataset.from],fi=parseInt(t.dataset.idx,10),fm=fc.messages[fi],tgt=C[t.dataset.id];
@@ -2488,15 +2547,7 @@ document.addEventListener('click',function(e){
       }
       closeModal();toast('已转发给 '+tgt.name+'（保留原始类型与发送者署名）','ok');
       renderCur();break;}
-    case 'msg-filter':{
-      state.mFilter=t.dataset.f;
-      var tabs=t.parentNode.querySelectorAll('button[data-act="msg-filter"]');
-      for(var fi=0;fi<tabs.length;fi++)tabs[fi].classList.toggle('on',tabs[fi]===t);
-      var wrap=document.getElementById('convListWrap'),sv=document.getElementById('convSearch');
-      if(wrap)wrap.innerHTML=convListHtml(null,sv?sv.value:'',state.mFilter);
-      toast('筛选：'+({all:'全部会话',unread:'仅未读',group:'群聊'}[state.mFilter]));break;}
-    case 'read-all-h5':convOrder.forEach(function(i){C[i].unread=0;});renderCur();toast('全部会话已标记已读，已按会话上报最大已读 seq','ok');break;
-    case 'read-all':convOrder.forEach(function(i){C[i].unread=0;});renderDesktop();toast('全部会话已标记已读，已按会话上报最大已读 seq','ok');break;
+    case 'read-all':convOrder.forEach(function(i){C[i].unread=0;});renderCur();renderDesktop();toast('全部会话已标记已读，已按会话上报最大已读 seq','ok');break;
     case 'reminds':openReminds();break;
     case 'remind-loc':closeModal();openConv(t.dataset.id,isMobile()?'h5':'desktop');break;
     case 'fa-handle':{
@@ -2592,7 +2643,6 @@ document.addEventListener('contextmenu',function(e){
 document.addEventListener('input',function(e){
   if(e.target.dataset&&e.target.dataset.input==='cmd')cmdRender(e.target.value);
   if(e.target.dataset&&e.target.dataset.input==='friend'){var rows=document.getElementById('friendRows');if(rows)rows.innerHTML=friendRowsHtml(e.target.value);}
-  if(e.target.dataset&&e.target.dataset.input==='convSearch'){var cw=document.getElementById('convListWrap');if(cw)cw.innerHTML=convListHtml(null,e.target.value,state.mFilter);}
   if(e.target.dataset&&e.target.dataset.input==='deskConvSearch'){var dw=document.getElementById('deskConvWrap');if(dw)dw.innerHTML=convListHtml(state.deskConv,e.target.value);}
   if(e.target.dataset&&e.target.dataset.input==='contactSearch'){
     var cq=e.target.value.trim();
@@ -2650,7 +2700,7 @@ document.addEventListener('click',function(e){
 });
 
 /* 初始渲染 */
-renderCur();renderDesktop();renderAdmin();applyTheme();
+renderCur();renderDesktop();renderAdmin();applyTheme();applyLang();
 </script>
 </body>
 </html>

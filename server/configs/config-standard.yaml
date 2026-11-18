@@ -1,0 +1,87 @@
+# NexIM 标准版配置（中大型私有化：NATS JetStream + Redis Cluster + 分片 + Meilisearch 3副本 + RustFS + Prometheus/Jaeger）
+deployment:
+  profile: standard
+  mode: cluster
+  services: microservice
+
+server:
+  http_addr: ":8080"
+  ws_addr: ":8081"
+  mode: release
+
+db:
+  driver: mysql                  # 元数据库（用户/会话/群组/权限）
+  dsn: "root:nexim123@tcp(mysql:3306)/nexim?charset=utf8mb4&parseTime=True&loc=Local"
+  max_open_conns: 100
+  max_idle_conns: 20
+  shards: 16
+  replicas: 2
+  messageSharedInstance: false   # 标准版消息库独立部署
+  message_driver: scylla         # 消息库：ScyllaDB 宽表
+  scylla:
+    hosts: ["scylla:9042"]
+    keyspace: nexim
+    timeout: 5s
+    replication_factor: 1        # 生产按 Scylla 集群副本数
+
+redis:
+  addr: "redis:6379"
+  password: ""
+  db: 0
+  cluster: true
+
+cache:
+  driver: redis
+  cluster: true
+  aof: true
+
+mq:
+  driver: jetstream            # NATS JetStream（standard 形态事件总线）
+  url: "nats://nats:4222"
+  stream: IM_EVENT
+  replicas: 1                  # 开发单节点；生产按 NATS 集群副本数
+  retention: 30d
+
+search:
+  driver: meilisearch
+  replicas: 3
+  url: "http://meilisearch:7700"
+  api_key: "change-me"
+
+storage:
+  driver: rustfs                # S3 兼容对象存储（替代 MinIO）
+  bucket: "nexim-files"
+  endpoint: "http://rustfs:9000"
+  access_key: "nexim"
+  secret_key: "nexim123456"
+
+observability:
+  metrics: prometheus
+  tracingSample: 0.2
+  jaeger: true
+  elk: true
+  endpoint: "http://otel-collector:4317"
+
+rtc:
+  sfuNodes: 3
+  clusterEnabled: true
+  coturnAddr: "coturn:3478"
+  # 浏览器侧可达地址（宿主机），容器内地址浏览器无法解析
+  stunServers: ["stun:127.0.0.1:3478", "stun:stun.l.google.com:19302"]
+  turnUrl: "turn:127.0.0.1:3478?transport=udp"
+  turnUsername: "nexim"
+  turnPassword: "nexim123"
+
+auth:
+  jwt_secret: "nexim-dev-secret-change-in-production"
+  access_token_ttl: 7200s
+  refresh_token_ttl: 604800s
+  verify_code_ttl: 300s
+
+message:
+  history_limit: 500
+  retention_days: 365
+
+log:
+  level: info
+  encoding: json

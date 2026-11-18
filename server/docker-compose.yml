@@ -1,0 +1,60 @@
+services:
+  mysql:
+    image: mysql:8.0.36
+    container_name: nexim-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: nexim123
+      MYSQL_DATABASE: nexim
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-pnexim123"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: nexim-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # 单二进制：Go API + WebSocket + Vue H5 + Vue Admin（前端已 embed 进二进制）
+  server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: nexim-server
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_DSN: "root:nexim123@tcp(mysql:3306)/nexim?charset=utf8mb4&parseTime=True&loc=Local"
+      REDIS_ADDR: "redis:6379"
+      AUTH_JWT_SECRET: "nexim-dev-secret-change-in-production"
+      SERVER_HTTP_ADDR: ":8080"
+      SERVER_WS_ADDR: ":8081"
+      LOG_LEVEL: "info"
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql-data:
+  redis-data:
