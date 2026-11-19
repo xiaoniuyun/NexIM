@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,6 +28,8 @@ type Router struct {
 	File    *service.FileService
 	Admin   *service.AdminService
 	Call    *service.CallService
+	Fav     *service.FavoriteService
+	Blacklist *service.BlacklistService
 	Hub     *gateway.Hub
 	Up      websocket.Upgrader
 }
@@ -35,7 +38,8 @@ func NewRouter(s *store.Store, c *config.Config, auth *service.AuthService, msg 
 	contact *service.ContactService, group *service.GroupService, file *service.FileService,
 	admin *service.AdminService, call *service.CallService, hub *gateway.Hub) *Router {
 	return &Router{
-		S: s, C: c, Auth: auth, Msg: msg, Contact: contact, Group: group, File: file, Admin: admin, Call: call, Hub: hub,
+		S: s, C: c, Auth: auth, Msg: msg, Contact: contact, Group: group, File: file, Admin: admin, Call: call,
+		Fav: service.NewFavorite(s), Blacklist: service.NewBlacklist(s), Hub: hub,
 		Up: websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }},
 	}
 }
@@ -43,7 +47,7 @@ func NewRouter(s *store.Store, c *config.Config, auth *service.AuthService, msg 
 func (rt *Router) Engine() *gin.Engine {
 	gin.SetMode(rt.C.Server.Mode)
 	r := gin.New()
-	r.Use(gin.Recovery(), traceMiddleware())
+	r.Use(gin.Recovery(), traceMiddleware(), corsMiddleware())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -97,6 +101,7 @@ func (rt *Router) Engine() *gin.Engine {
 			auth.GET("/depts/:id/members", rt.deptMembers)
 
 			auth.GET("/conversations", rt.conversations)
+			auth.DELETE("/conversations/:id", rt.conversationDelete)
 			auth.PATCH("/conversations/:id/settings", rt.convSettings)
 			auth.POST("/conversations/read-all", rt.readAll)
 			auth.GET("/conversations/:id/messages", rt.messages)
@@ -104,9 +109,18 @@ func (rt *Router) Engine() *gin.Engine {
 			auth.POST("/messages/send", rt.sendMessage)
 			auth.POST("/messages/revoke", rt.revoke)
 
+			// 收藏与黑名单
+			auth.GET("/favorites", rt.favorites)
+			auth.POST("/favorites", rt.favoriteAdd)
+			auth.DELETE("/favorites/:id", rt.favoriteDelete)
+			auth.GET("/contacts/blacklist", rt.blacklist)
+			auth.POST("/contacts/blacklist", rt.blacklistAdd)
+			auth.DELETE("/contacts/blacklist/:uid", rt.blacklistRemove)
+
 			// 实时音视频
 			auth.GET("/rtc/config", rt.rtcConfig)
 			auth.GET("/calls", rt.callRecords)
+			auth.POST("/calls/:id/quality", rt.callQualityReport)
 			auth.POST("/messages/search", rt.messageSearch)
 			auth.POST("/messages/forward", rt.messageForward)
 
@@ -146,12 +160,34 @@ func (rt *Router) Engine() *gin.Engine {
 				adm.PUT("/depts/:id", rt.requirePerm("dept:edit"), rt.adminUpdateDept)
 				adm.DELETE("/depts/:id", rt.requirePerm("dept:delete"), rt.adminDeleteDept)
 				adm.GET("/audit", rt.requirePerm("log:list"), rt.adminAudit)
+				adm.GET("/audit/export", rt.requirePerm("log:export"), rt.adminAuditExport)
 				adm.GET("/audit/messages", rt.requirePerm("audit:message:list"), rt.adminMessageAudit)
+				adm.GET("/audit/messages/export", rt.requirePerm("audit:message:export"), rt.adminMessagesExport)
 				adm.GET("/notices", rt.requirePerm("notice:publish"), rt.adminNotices)
 				adm.POST("/notices", rt.requirePerm("notice:publish"), rt.adminCreateNotice)
 				adm.PUT("/notices/:id", rt.requirePerm("notice:publish"), rt.adminUpdateNotice)
 				adm.GET("/sensitive-words", rt.requirePerm("sensitive:config"), rt.adminSensitiveWords)
 				adm.POST("/sensitive-words", rt.requirePerm("sensitive:config"), rt.adminAddSensitiveWord)
+				adm.POST("/sensitive-words/bulk", rt.requirePerm("sensitive:config"), rt.adminBulkSensitiveWords)
+				adm.DELETE("/sensitive-words/:word", rt.requirePerm("sensitive:config"), rt.adminDeleteSensitiveWord)
+				adm.GET("/sensitive/strategy", rt.requirePerm("sensitive:config"), rt.adminSensitiveStrategy)
+				adm.PUT("/sensitive/strategy", rt.requirePerm("sensitive:config"), rt.adminSetSensitiveStrategy)
+				adm.GET("/sensitive/hits", rt.requirePerm("sensitive:config"), rt.adminSensitiveHits)
+				adm.DELETE("/sensitive/hits", rt.requirePerm("sensitive:config"), rt.adminClearSensitiveHits)
+				// 通话 / 质量 / 群组 / 设置 / 登录日志
+				adm.GET("/calls", rt.requirePerm("rtc:record:list"), rt.adminCalls)
+				adm.GET("/calls-export", rt.requirePerm("rtc:record:export"), rt.adminCallsExport)
+				adm.POST("/calls/:id/end", rt.requirePerm("rtc:record:manage"), rt.adminEndCall)
+				adm.GET("/rtc/quality", rt.requirePerm("rtc:quality:view"), rt.adminRTCQuality)
+				adm.GET("/groups", rt.requirePerm("menu:groups"), rt.adminGroups)
+				adm.GET("/groups-export", rt.requirePerm("group:export"), rt.adminGroupsExport)
+				adm.PUT("/groups/:id/status", rt.requirePerm("group:manage"), rt.adminGroupStatus)
+				adm.DELETE("/groups/:id", rt.requirePerm("group:manage"), rt.adminGroupDissolve)
+				adm.GET("/settings", rt.requirePerm("menu:settings"), rt.adminGetSettings)
+				adm.PUT("/settings", rt.requirePerm("setting:config"), rt.adminSaveSettings)
+				adm.GET("/login-logs", rt.requirePerm("log:login:list"), rt.adminLoginLogs)
+				adm.GET("/login-logs-export", rt.requirePerm("log:login:list"), rt.adminLoginLogsExport)
+				adm.POST("/login-logs/ban", rt.requirePerm("log:login:ban"), rt.adminBanIP)
 			}
 		}
 	}
@@ -173,6 +209,23 @@ func (rt *Router) Engine() *gin.Engine {
 func traceMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("traceId", pkg.NewTrace())
+		c.Next()
+	}
+}
+
+// corsMiddleware：桌面端（app:// 自定义协议）与移动端跨域访问需要；
+// 仅使用 Authorization 头鉴权、不依赖 Cookie，因此允许任意来源。
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Authorization,Content-Type,X-Requested-With,X-Trace-Id")
+		c.Header("Access-Control-Expose-Headers", "Content-Disposition")
+		c.Header("Access-Control-Max-Age", "86400")
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
 		c.Next()
 	}
 }
@@ -265,11 +318,24 @@ func (rt *Router) login(c *gin.Context) {
 		pkg.Fail(c, 400, 1001, "参数错误")
 		return
 	}
+	ip := c.ClientIP()
+	platform := req.Platform
+	if platform == "" {
+		platform = "H5"
+	}
+	if rt.Admin.IsIPBanned(ip) {
+		rt.Admin.RecordLogin("", req.Account, ip, platform, req.DeviceID, false)
+		pkg.Fail(c, 403, 3002, "该 IP 已被封禁，请联系管理员")
+		return
+	}
 	data, err := rt.Auth.Login(req.Account, req.Password, req.DeviceID, req.Platform)
 	if err != nil {
+		rt.Admin.RecordLogin("", req.Account, ip, platform, req.DeviceID, false)
 		pkg.Fail(c, 401, 2000, err.Error())
 		return
 	}
+	loginUID := fmt.Sprint(data["uid"])
+	rt.Admin.RecordLogin(loginUID, req.Account, ip, platform, req.DeviceID, true)
 	pkg.OK(c, data)
 }
 
@@ -448,7 +514,7 @@ func (rt *Router) readAll(c *gin.Context) {
 	pkg.OK(c, nil)
 }
 func (rt *Router) messages(c *gin.Context) {
-	pkg.OK(c, rt.Msg.ListMessages(c.Param("id"), 200))
+	pkg.OK(c, rt.Msg.ListMessages(uid(c), c.Param("id"), 200))
 }
 func (rt *Router) markRead(c *gin.Context) {
 	var req struct {
@@ -490,7 +556,7 @@ func (rt *Router) sendMessage(c *gin.Context) {
 		return
 	}
 	rt.Hub.PushMessage(me, msg.ConvID, req.ConvType, toUID, req.ClientMsgID,
-		msg.MsgID, req.Type, msg.Content, msg.Seq, msg.CreatedAt)
+		msg.MsgID, req.Type, msg.Content, msg.Extra, msg.Seq, msg.CreatedAt)
 	pkg.OK(c, gin.H{
 		"clientMsgId": req.ClientMsgID, "msgId": msg.MsgID,
 		"convId": msg.ConvID, "seq": msg.Seq, "sendTime": msg.CreatedAt,

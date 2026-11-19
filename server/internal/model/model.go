@@ -78,6 +78,16 @@ type Call struct {
 	AnsweredAt int64  `json:"answeredAt"`
 	EndedAt    int64  `json:"endedAt"`
 	Duration   int    `json:"duration"` // 秒
+	RoomID     string `gorm:"size:64" json:"roomId"`
+	Mode       string `gorm:"size:16;default:'P2P'" json:"mode"`
+	Members    int    `gorm:"default:2" json:"members"`
+	Recorded   int    `gorm:"default:0" json:"recorded"`
+	ForceEnded int    `gorm:"default:0" json:"forceEnded"`
+	// 客户端上报的质量采样（MOS 1~5，丢包率 0~100，RTT/Jitter 毫秒）
+	MOS        float64 `gorm:"default:0" json:"mos"`
+	PacketLoss float64 `gorm:"default:0" json:"packetLoss"`
+	RTT        int     `gorm:"default:0" json:"rtt"`
+	Jitter     int     `gorm:"default:0" json:"jitter"`
 }
 
 type Friend struct {
@@ -154,6 +164,8 @@ type Notice struct {
 	Title     string `gorm:"size:128" json:"title"`
 	Content   string `gorm:"type:text" json:"content"`
 	Author    string `gorm:"size:64" json:"author"`
+	Scope     string `gorm:"size:32;default:'全员'" json:"scope"`
+	Pinned    int    `gorm:"default:0" json:"pinned"`
 	Status    int    `gorm:"default:1" json:"status"` // 1已发布 2下线
 	CreatedAt int64  `json:"createdAt"`
 	UpdatedAt int64  `json:"updatedAt"`
@@ -173,6 +185,58 @@ type UserRole struct {
 	RoleID int64  `gorm:"primaryKey" json:"roleId"`
 }
 
+// Favorite 消息收藏：对消息内容做快照，消息撤回/删除后仍可查看
+type Favorite struct {
+	ID        int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	UID       string `gorm:"size:32;uniqueIndex:uk_favorite" json:"uid"`
+	MsgID     string `gorm:"size:64;uniqueIndex:uk_favorite" json:"msgId"`
+	ConvID    string `gorm:"size:64;index" json:"convId"`
+	MsgType   int    `json:"msgType"`
+	Content   string `gorm:"type:text" json:"content"`
+	Extra     string `gorm:"type:text" json:"extra"`
+	FromUID   string `gorm:"size:32" json:"fromUid"`
+	FromName  string `gorm:"size:64" json:"fromName"`
+	CreatedAt int64  `json:"createdAt"`
+}
+
+// SensitiveHit 敏感词命中记录
+type SensitiveHit struct {
+	ID        int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	UID       string `gorm:"size:32;index" json:"uid"`
+	ConvID    string `gorm:"size:64" json:"convId"`
+	Word      string `gorm:"size:64" json:"word"`
+	Action    string `gorm:"size:16" json:"action"` // block | mask | alert
+	Content   string `gorm:"type:text" json:"content"`
+	CreatedAt int64  `json:"createdAt"`
+}
+
+// SystemSetting 管理端系统设置（键值对）
+type SystemSetting struct {
+	Key       string `gorm:"size:64;primaryKey" json:"key"`
+	Value     string `gorm:"type:text" json:"value"`
+	UpdatedAt int64  `json:"updatedAt"`
+}
+
+// LoginLog 登录日志
+type LoginLog struct {
+	ID        int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	UID       string `gorm:"size:32;index" json:"uid"`
+	Account   string `gorm:"size:64;index" json:"account"`
+	IP        string `gorm:"size:64" json:"ip"`
+	Platform  string `gorm:"size:16" json:"platform"`
+	DeviceID  string `gorm:"size:64" json:"deviceId"`
+	Result    string `gorm:"size:16" json:"result"` // success | fail
+	Risk      string `gorm:"size:32" json:"risk"`
+	CreatedAt int64  `gorm:"index" json:"createdAt"`
+}
+
+// Blacklist 用户黑名单：拉黑后不再收到对方单聊消息
+type Blacklist struct {
+	UID        string `gorm:"size:32;primaryKey" json:"uid"`
+	BlockedUID string `gorm:"size:32;primaryKey" json:"blockedUid"`
+	CreatedAt  int64  `json:"createdAt"`
+}
+
 func (User) TableName() string         { return "sys_user" }
 func (Device) TableName() string       { return "sys_device" }
 func (Conversation) TableName() string { return "im_conversation" }
@@ -188,5 +252,10 @@ func (FileRecord) TableName() string   { return "im_file" }
 func (Notice) TableName() string       { return "sys_notice" }
 func (Role) TableName() string         { return "sys_role" }
 func (UserRole) TableName() string     { return "sys_user_role" }
+func (Favorite) TableName() string     { return "im_favorite" }
+func (SensitiveHit) TableName() string { return "sys_sensitive_hit" }
+func (SystemSetting) TableName() string { return "sys_setting" }
+func (LoginLog) TableName() string     { return "sys_login_log" }
+func (Blacklist) TableName() string    { return "im_blacklist" }
 
 func Now() int64 { return time.Now().UnixMilli() }

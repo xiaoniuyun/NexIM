@@ -241,6 +241,11 @@ export const useCallStore = defineStore('call', () => {
         finish(direction.value === 'incoming' ? '对方已取消' : '对方已挂断')
         break
       }
+      case 'CALL_FORCE_END_PUSH': {
+        if (p.callId && p.callId !== callId.value) return
+        finish(p.reason || '管理员已结束通话')
+        break
+      }
       case 'CALL_ACK': {
         if (f.code && f.code !== 0) finish(f.message || '呼叫失败')
         break
@@ -311,12 +316,45 @@ export const useCallStore = defineStore('call', () => {
     if (remoteEl) remoteEl.srcObject = null
   }
 
+  // 通话结束前采集 WebRTC 质量并上报，供管理端质量监控使用
+  function reportQuality() {
+    const id = callId.value
+    const conn = pc
+    if (!id || !conn || duration.value <= 0) return Promise.resolve()
+    return conn.getStats().then(report => {
+      let packetsLost = 0, packetsReceived = 0, jitter = 0, rtt = 0
+      report.forEach(s => {
+        if (s.type === 'inbound-rtp') {
+          packetsLost += s.packetsLost || 0
+          packetsReceived += s.packetsReceived || 0
+          jitter = Math.max(jitter, Math.round((s.jitter || 0) * 1000))
+        }
+        if (s.type === 'candidate-pair' && (s.selected || s.state === 'succeeded')) {
+          rtt = Math.max(rtt, Math.round((s.currentRoundTripTime || 0) * 1000))
+        }
+      })
+      const total = packetsLost + packetsReceived
+      const loss = total > 0 ? Math.min(100, (packetsLost / total) * 100) : 0
+      let mos = 4.5 - loss * 0.25 - (rtt > 300 ? 0.6 : 0) - (jitter > 50 ? 0.4 : 0)
+      mos = Math.max(1, Math.min(5, Number(mos.toFixed(2))))
+      API.reportQuality(id, { mos, packetLoss: Number(loss.toFixed(2)), rtt, jitter }).catch(() => {})
+    }).catch(() => {})
+  }
+
   function finish(msg) {
     stopTimer()
-    stopMedia()
     state.value = 'ended'
     notice.value = msg || '通话已结束'
-    setTimeout(() => { if (state.value === 'ended') reset() }, 1600)
+    // 先采集 getStats 再关闭 PeerConnection，否则质量数据会丢失
+    let stopped = false
+    const teardown = () => {
+      if (stopped) return
+      stopped = true
+      stopMedia()
+      setTimeout(() => { if (state.value === 'ended') reset() }, 1600)
+    }
+    reportQuality().finally(teardown)
+    setTimeout(teardown, 800)
   }
 
   function reset() {

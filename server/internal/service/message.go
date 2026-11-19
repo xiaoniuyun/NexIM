@@ -2,8 +2,10 @@ package service
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"nexim/server/internal/model"
 	"nexim/server/internal/store"
@@ -43,6 +45,12 @@ func (m *MessageService) Send(fromUID, convID, convType, toID, msgType, content,
 		if exist, gerr := m.S.Msg.GetByMsgID(val); gerr == nil {
 			return exist, nil
 		}
+	}
+
+	// 敏感词策略：拦截 / 替换 / 仅告警
+	content, err = m.applySensitive(fromUID, convID, content)
+	if err != nil {
+		return nil, err
 	}
 
 	seq, err := m.nextSeq(convID)
@@ -149,24 +157,51 @@ func (m *MessageService) PushTargets(convID, convType, fromUID, toID string) []s
 		}
 		return out
 	}
+	// 单聊：接收方已拉黑发送方时不再实时推送
 	if toID != "" && toID != fromUID {
+		if m.IsBlocked(toID, fromUID) {
+			return nil
+		}
 		return []string{toID}
 	}
 	return nil
 }
 
-func (m *MessageService) ListMessages(convID string, limit int) []model.Message {
+func (m *MessageService) ListMessages(uid, convID string, limit int) []model.Message {
 	msgs, err := m.S.Msg.List(convID, limit)
 	if err != nil {
 		m.S.Log.Warn("list messages failed", zap.Error(err), zap.String("conv", convID))
 		return []model.Message{}
 	}
+	if m.isSingleConv(uid, convID) {
+		blocked := m.BlockedMap(uid)
+		if len(blocked) > 0 {
+			out := msgs[:0]
+			for _, msg := range msgs {
+				if blocked[msg.FromUID] {
+					continue
+				}
+				out = append(out, msg)
+			}
+			msgs = out
+		}
+	}
 	return msgs
+}
+
+func (m *MessageService) isSingleConv(uid, convID string) bool {
+	var c model.Conversation
+	if m.S.DB.Where("conv_id = ? AND owner_uid = ?", convID, uid).First(&c).Error != nil {
+		return false
+	}
+	return c.ConvType == 1
 }
 
 func (m *MessageService) Conversations(uid string) []model.Conversation {
 	var convs []model.Conversation
 	m.S.DB.Where("owner_uid = ?", uid).Order("pinned desc, last_msg_at desc").Find(&convs)
+	blocked := m.BlockedMap(uid)
+	out := convs[:0]
 	for i := range convs {
 		if convs[i].ConvType == 2 {
 			var g model.Group
@@ -174,6 +209,10 @@ func (m *MessageService) Conversations(uid string) []model.Conversation {
 				convs[i].PeerName = g.Name
 				convs[i].PeerAvatar = g.Avatar
 			}
+			out = append(out, convs[i])
+			continue
+		}
+		if blocked[convs[i].PeerID] {
 			continue
 		}
 		var u model.User
@@ -181,8 +220,9 @@ func (m *MessageService) Conversations(uid string) []model.Conversation {
 			convs[i].PeerName = u.Nickname
 			convs[i].PeerAvatar = u.Avatar
 		}
+		out = append(out, convs[i])
 	}
-	return convs
+	return out
 }
 
 func (m *MessageService) MarkRead(uid, convID string) error {
@@ -248,9 +288,64 @@ func convMsgType(s string) int {
 		return 4
 	case "file", "5":
 		return 5
+	case "video", "6":
+		return 6
 	case "system", "3":
 		return 3
 	default:
 		return 1
 	}
+}
+
+// DeleteConversation 删除某用户的会话记录（消息本身保留，收到新消息时会话会重新建立）
+func (m *MessageService) DeleteConversation(uid, convID string) error {
+	return m.S.DB.Where("conv_id = ? AND owner_uid = ?", convID, uid).Delete(&model.Conversation{}).Error
+}
+
+// applySensitive 对文本做敏感词检测，按 Redis 中的策略（block/mask/alert）处理并记录命中
+func (m *MessageService) applySensitive(uid, convID, content string) (string, error) {
+	if content == "" {
+		return content, nil
+	}
+	words, err := m.S.RDB.SMembers(m.S.Ctx, "sensitive:words:v1").Result()
+	if err != nil || len(words) == 0 {
+		return content, nil
+	}
+	lower := strings.ToLower(content)
+	matched := ""
+	for _, w := range words {
+		if w != "" && strings.Contains(lower, strings.ToLower(w)) {
+			matched = w
+			break
+		}
+	}
+	if matched == "" {
+		return content, nil
+	}
+	strategy, _ := m.S.RDB.Get(m.S.Ctx, "sensitive:strategy").Result()
+	if strategy != "mask" && strategy != "alert" {
+		strategy = "block"
+	}
+	hit := model.SensitiveHit{
+		UID: uid, ConvID: convID, Word: matched, Action: strategy,
+		Content: content, CreatedAt: model.Now(),
+	}
+	if err := m.S.DB.Create(&hit).Error; err != nil {
+		m.S.Log.Warn("save sensitive hit failed", zap.Error(err))
+	}
+	if strategy == "block" {
+		return "", fmt.Errorf("内容包含敏感词「%s」，已被拦截", matched)
+	}
+	if strategy == "mask" {
+		for _, w := range words {
+			if w == "" {
+				continue
+			}
+			re := regexp.MustCompile("(?i)" + regexp.QuoteMeta(w))
+			content = re.ReplaceAllStringFunc(content, func(s string) string {
+				return strings.Repeat("*", utf8.RuneCountInString(s))
+			})
+		}
+	}
+	return content, nil
 }

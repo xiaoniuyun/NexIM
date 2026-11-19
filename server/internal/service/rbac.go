@@ -55,6 +55,10 @@ var PermCatalog = []PermGroup{
 		{"敏感词配置", "sensitive:config", "POST /admin/sensitive-words"},
 		{"公告发布", "notice:publish", "POST /admin/notices"},
 		{"通话记录", "rtc:record:list", "GET /admin/calls"}, {"质量监控", "rtc:quality:view", "按钮"},
+		{"强制挂断", "rtc:record:manage", "按钮"}, {"导出通话", "rtc:record:export", "按钮"},
+		{"群组冻结/解散", "group:manage", "按钮"}, {"导出群组", "group:export", "按钮"},
+		{"登录日志", "log:login:list", "GET /admin/login-logs"}, {"封禁 IP", "log:login:ban", "按钮"},
+		{"保存系统设置", "setting:config", "PUT /admin/settings"},
 		{"处理举报", "report:handle", "按钮"},
 	}},
 }

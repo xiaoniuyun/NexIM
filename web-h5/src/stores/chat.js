@@ -18,8 +18,22 @@ export const useChatStore = defineStore('chat', () => {
 
   const unreadTotal = computed(() => convs.value.reduce((s, c) => s + (c.unread || 0), 0))
 
+  function parseExtra(v) {
+    if (!v) return null
+    if (typeof v === 'object') return v
+    try { return JSON.parse(v) } catch (_) { return null }
+  }
+
+  const TYPE_MAP = { 1: 'text', 2: 'image', 3: 'system', 4: 'voice', 5: 'file', 6: 'video' }
+  function normType(v) {
+    return typeof v === 'number' ? (TYPE_MAP[v] || 'text') : (v || 'text')
+  }
+
   function normalize(list) {
-    return (list || []).map(m => ({ ...m, mine: m.fromUid === auth.user?.uid, pending: false }))
+    return (list || []).map(m => ({
+      ...m, type: normType(m.type), extra: parseExtra(m.extra),
+      mine: m.fromUid === auth.user?.uid, pending: false
+    }))
   }
 
   // 按 msgId / clientMsgId 合并，避免同一条消息重复上屏
@@ -90,8 +104,8 @@ export const useChatStore = defineStore('chat', () => {
         if (currentConv.value === p.convId) {
           upsertMessage({
             msgId: p.msgId, clientMsgId: p.clientMsgId, convId: p.convId, seq: p.seq,
-            fromUid: p.fromUid, fromName: p.fromName, type: p.type || 'text',
-            content: p.content, createdAt: p.sendTime, status: 1,
+            fromUid: p.fromUid, fromName: p.fromName, type: normType(p.type),
+            content: p.content, extra: parseExtra(p.extra), createdAt: p.sendTime, status: 1,
             mine: p.fromUid === auth.user?.uid
           })
         }
@@ -166,17 +180,18 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  function sendText(text) {
+  function sendPayload(type, content, extra) {
     const conv = convs.value.find(c => c.convId === currentConv.value)
     const clientMsgId = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)
+    const extraText = extra ? JSON.stringify(extra) : ''
     const payload = {
       clientMsgId, convId: currentConv.value,
       convType: conv?.convType === 2 ? 'group' : 'single',
-      toUid: conv?.peerId || '', type: 'text', content: text
+      toUid: conv?.peerId || '', type, content, extra: extraText
     }
     messages.value.push({
       msgId: clientMsgId, clientMsgId, convId: currentConv.value, fromUid: auth.user?.uid,
-      fromName: auth.user?.nickname, type: 'text', content: text,
+      fromName: auth.user?.nickname, type, content, extra: extra || null,
       createdAt: Date.now(), status: 1, mine: true, pending: true
     })
     if (socket.value && socket.value.readyState === 1) {
@@ -189,6 +204,21 @@ export const useChatStore = defineStore('chat', () => {
     } else {
       httpSend(payload)
     }
+    return clientMsgId
+  }
+
+  function sendText(text) {
+    return sendPayload('text', text)
+  }
+
+  // 发送图片/视频/文件等富消息，extra 携带 fileId/name/size/mime
+  function sendMedia(type, content, extra) {
+    return sendPayload(type, content, extra)
+  }
+
+  // 本地删除一条消息（仅本端视图）
+  function removeLocal(msgId) {
+    messages.value = messages.value.filter(m => m.msgId !== msgId)
   }
   function ensureConv(peerId, peerName) {
     const convId = 'conv_' + [auth.user?.uid, peerId].sort().join('_')
@@ -204,6 +234,7 @@ export const useChatStore = defineStore('chat', () => {
 
   return {
     socket, convs, messages, currentConv, connected, unreadTotal,
-    connect, disconnect, sendFrame, loadConversations, openConv, sendText, syncMessages, ensureConv, reset, onSignal
+    connect, disconnect, sendFrame, loadConversations, openConv, sendText, sendMedia, removeLocal,
+    syncMessages, ensureConv, reset, onSignal
   }
 })

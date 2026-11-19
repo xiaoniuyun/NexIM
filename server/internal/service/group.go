@@ -86,5 +86,5 @@ func (g *GroupService) RemoveMember(groupID, uid string) error {
 }
 
 func (g *GroupService) Dissolve(groupID string) error {
-	return g.S.DB.Model(&model.Group{}).Where("group_id = ?", groupID).Update("status", 2).Error
+	return g.S.DB.Model(&model.Group{}).Where("group_id = ?", groupID).Update("status", 3).Error
 }

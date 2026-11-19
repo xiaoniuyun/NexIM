@@ -1,55 +1,83 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { API } from '../api'
 import { toast } from '../toast'
 
 const f = ref({ kw: '', module: '', date: '' })
 const rows = ref([])
-onMounted(async () => {
-  const demo = [
-    { u: '林晓', m: '角色权限', a: '更新角色 OPS_ADMIN 权限集合', ip: '10.20.3.18', t: '2026-11-15 09:38', r: '成功' },
-    { u: '王敏', m: '消息审计', a: '导出审计结果（320 条）', ip: '10.20.5.44', t: '2026-11-15 09:21', r: '成功' },
-    { u: '赵琳', m: '用户管理', a: '禁用账号 chenjing', ip: '10.20.3.77', t: '2026-11-15 08:46', r: '成功' },
-    { u: '未知', m: '认证', a: '登录失败 5 次触发锁定', ip: '203.0.113.42', t: '2026-11-15 07:12', r: '失败' },
-    { u: '林晓', m: '系统设置', a: '修改消息保留天数 180 → 180', ip: '10.20.3.18', t: '2026-11-14 18:02', r: '成功' },
-    { u: '周涛', m: '内容安全', a: '新增敏感词 3 条', ip: '10.20.6.12', t: '2026-11-14 16:33', r: '成功' }
-  ]
+const total = ref(0)
+const page = ref(1)
+const size = 20
+
+const modules = [
+  ['user', '用户管理'], ['role', '角色权限'], ['rbac', '角色权限'], ['audit', '消息审计'],
+  ['sensitive', '内容安全'], ['setting', '系统设置'], ['group', '群组管理'],
+  ['rtc', '音视频'], ['log', '登录/日志'], ['notice', '公告']
+]
+const actionText = {
+  'user:create': '新增用户', 'user:update': '编辑用户', 'user:disable': '禁用用户',
+  'user:enable': '启用用户', 'user:reset': '重置密码', 'user:export': '导出用户',
+  'role:update': '更新角色权限', 'rbac:role:grant': '分配用户角色',
+  'audit:message:export': '导出消息审计', 'sensitive:add': '新增敏感词',
+  'sensitive:delete': '删除敏感词', 'sensitive:import': '导入敏感词库',
+  'sensitive:strategy': '切换敏感词策略', 'setting:config': '保存系统设置',
+  'group:freeze': '冻结群组', 'group:unfreeze': '解冻群组', 'group:dissolve': '解散群组',
+  'group:export': '导出群组', 'rtc:record:manage': '强制挂断通话',
+  'rtc:record:export': '导出通话记录', 'log:export': '导出操作日志',
+  'log:login:export': '导出登录日志', 'log:login:ban': '封禁 IP', 'notice:publish': '发布公告'
+}
+function moduleOf(action) {
+  const hit = modules.find(m => String(action).startsWith(m[0]))
+  return hit ? hit[1] : String(action).split(':')[0]
+}
+function actText(a) { return actionText[a] || a }
+function fmt(ts) { return ts ? new Date(ts).toLocaleString() : '—' }
+
+async function load(reset = false) {
+  if (reset) page.value = 1
   try {
-    const d = (await API.audit()).data || {}
-    const real = (d.list || []).map(l => ({ u: String(l.uid), m: String(l.action || '').split(':')[0], a: l.action + (l.target ? ' · ' + l.target : ''), ip: l.detail || '127.0.0.1', t: new Date(l.createdAt).toLocaleString(), r: '成功' }))
-    rows.value = real.length ? real : demo
-  } catch (e) { rows.value = demo }
-})
-const filtered = computed(() => rows.value.filter(l =>
-  (!f.value.kw || [l.u, l.a, l.ip].some(x => String(x).toLowerCase().includes(f.value.kw.trim().toLowerCase()))) &&
-  (!f.value.module || l.m === f.value.module) &&
-  (!f.value.date || l.t.startsWith(f.value.date))
-))
+    const r = await API.audit({ ...params(), size })
+    let list = r.data?.list || []
+    if (f.value.date) list = list.filter(l => new Date(l.createdAt).toISOString().slice(0, 10) === f.value.date)
+    rows.value = list
+    total.value = r.data?.total || 0
+  } catch (e) { toast(e.message, 'err') }
+}
+function params() { return { kw: f.value.kw.trim(), module: f.value.module, page: page.value } }
+onMounted(() => load())
+async function exportCsv() {
+  try { await API.exportAudit(params()); toast('导出已完成') } catch (e) { toast(e.message, 'err') }
+}
+const pages = () => Math.max(1, Math.ceil(total.value / size))
+function go(p) { page.value = Math.min(pages(), Math.max(1, p)); load() }
 </script>
 <template>
   <div>
     <div class="proto-hint">审计日志仅追加写入，应用账号无 UPDATE / DELETE 权限，保留 ≥ 180 天。<span class="code" style="margin-left:8px">FR-SEC-01 / FR-ADMIN-08</span></div>
     <div class="card">
       <div class="toolbar">
-        <input v-model="f.kw" placeholder="操作人 / IP / 关键词" style="width:210px">
-        <select v-model="f.module"><option value="">全部模块</option><option>用户管理</option><option>角色权限</option><option>消息审计</option><option>内容安全</option><option>系统设置</option></select>
-        <input type="date" v-model="f.date">
-        <button class="btn" @click="toast('已按条件检索')">查询</button>
+        <input v-model="f.kw" placeholder="操作人 / 关键词" style="width:210px" @keyup.enter="load(true)">
+        <select v-model="f.module" @change="load(true)"><option value="">全部模块</option><option v-for="m in modules" :key="m[0]" :value="m[0]">{{ m[1] }}</option></select>
+        <input type="date" v-model="f.date" @change="load(true)">
+        <button class="btn" @click="load(true)">查询</button>
         <span class="sp"></span>
-        <button class="btn" @click="toast('导出任务已提交（演示）')">导出日志</button>
+        <button class="btn" @click="exportCsv">导出日志</button>
       </div>
       <table class="tbl">
-        <thead><tr><th>时间</th><th>操作人</th><th>模块</th><th>操作内容</th><th>来源 IP</th><th>结果</th></tr></thead>
+        <thead><tr><th>时间</th><th>操作人</th><th>模块</th><th>操作</th><th>对象</th><th>详情</th></tr></thead>
         <tbody>
-          <tr v-for="(l, i) in filtered" :key="i">
-            <td>{{ l.t }}</td><td>{{ l.u }}</td><td><span class="code">{{ l.m }}</span></td>
-            <td>{{ l.a }}</td><td>{{ l.ip }}</td>
-            <td><span class="state" :class="l.r === '成功' ? 'ok' : 'danger'">{{ l.r }}</span></td>
+          <tr v-for="l in rows" :key="l.id">
+            <td>{{ fmt(l.createdAt) }}</td><td>{{ l.uid }}</td><td><span class="code">{{ moduleOf(l.action) }}</span></td>
+            <td>{{ actText(l.action) }}</td><td>{{ l.target || '—' }}</td><td class="muted">{{ l.detail || '—' }}</td>
           </tr>
-          <tr v-if="!filtered.length"><td colspan="6" class="loading">暂无审计记录</td></tr>
+          <tr v-if="!rows.length"><td colspan="6" class="loading">暂无审计记录</td></tr>
         </tbody>
       </table>
-      <div class="pager">共 1,284 条 <button>‹</button><button class="on">1</button><button>2</button><button>3</button><button>›</button></div>
+      <div class="pager">共 {{ total }} 条
+        <button :disabled="page <= 1" @click="go(page - 1)">‹</button><button class="on">{{ page }}</button>
+        <button :disabled="page >= pages()" @click="go(page + 1)">›</button>
+        <span class="muted" style="margin-left:8px">/ {{ pages() }} 页</span>
+      </div>
     </div>
   </div>
 </template>

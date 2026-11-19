@@ -37,6 +37,7 @@ type PushPayload struct {
 	FromName    string `json:"fromName"`
 	Type        string `json:"type"`
 	Content     string `json:"content"`
+	Extra       string `json:"extra,omitempty"`
 	SendTime    int64  `json:"sendTime"`
 }
 
@@ -70,7 +71,7 @@ func (h *Hub) handle(c *Client, f *Frame) {
 			ClientMsgID: req.ClientMsgID, MsgID: msg.MsgID, Seq: msg.Seq, SendTime: msg.CreatedAt,
 		})}
 		h.PushMessage(c.UID, msg.ConvID, req.ConvType, toUID, req.ClientMsgID,
-			msg.MsgID, req.Type, msg.Content, msg.Seq, msg.CreatedAt)
+			msg.MsgID, req.Type, msg.Content, msg.Extra, msg.Seq, msg.CreatedAt)
 	case "PUSH_ACK":
 		// 送达确认，记录即可
 	case "SYNC":
@@ -81,7 +82,7 @@ func (h *Hub) handle(c *Client, f *Frame) {
 		if json.Unmarshal(f.Payload, &req) != nil {
 			return
 		}
-		msgs := h.Msg.ListMessages(req.ConvID, 200)
+		msgs := h.Msg.ListMessages(c.UID, req.ConvID, 200)
 		c.send <- &Frame{Cmd: "SYNC_ACK", SeqNo: f.SeqNo, Code: 0, Payload: mustJSON(map[string]interface{}{
 			"convId": req.ConvID, "messages": msgs,
 		})}
@@ -214,25 +215,25 @@ func (h *Hub) DisplayName(uid string) string {
 // PushMessage 把已落库的消息实时推送给对端/群成员，并同步给发送者的其它设备。
 // WebSocket 与 HTTP 两条发送通道共用；standard 形态同时发布 JetStream 事件，
 // 由集群内各节点消费后向本节点在线用户投递。
-func (h *Hub) PushMessage(fromUID, convID, convType, toUID, clientMsgID, msgID, msgType, content string, seq, createdAt int64) {
+func (h *Hub) PushMessage(fromUID, convID, convType, toUID, clientMsgID, msgID, msgType, content, extra string, seq, createdAt int64) {
 	// 本节点在线用户立即投递
-	h.deliver(fromUID, convID, convType, toUID, clientMsgID, msgID, msgType, content, seq, createdAt)
+	h.deliver(fromUID, convID, convType, toUID, clientMsgID, msgID, msgType, content, extra, seq, createdAt)
 	// 发布事件给其它网关节点（单节点部署时事件仍会持久化到 JetStream）
 	if h.MQ != nil {
 		h.MQ.PublishMessage(mq.MessageEvent{
 			NodeID: h.NodeID, MsgID: msgID, ClientMsgID: clientMsgID,
 			ConvID: convID, ConvType: convType, FromUID: fromUID, ToUID: toUID,
-			Type: msgType, Content: content, Seq: seq, SendTime: createdAt,
+			Type: msgType, Content: content, Extra: extra, Seq: seq, SendTime: createdAt,
 		})
 	}
 }
 
 // deliver 仅做本节点在线投递，不产生 MQ 事件（避免跨节点循环扩散）
-func (h *Hub) deliver(fromUID, convID, convType, toUID, clientMsgID, msgID, msgType, content string, seq, createdAt int64) {
+func (h *Hub) deliver(fromUID, convID, convType, toUID, clientMsgID, msgID, msgType, content, extra string, seq, createdAt int64) {
 	push := &Frame{Cmd: "PUSH", Payload: mustJSON(PushPayload{
 		MsgID: msgID, ClientMsgID: clientMsgID, ConvID: convID, ConvType: convType,
 		Seq: seq, FromUID: fromUID, FromName: h.DisplayName(fromUID), Type: msgType,
-		Content: content, SendTime: createdAt,
+		Content: content, Extra: extra, SendTime: createdAt,
 	})}
 	// 单聊推给对端，群聊推给全部群成员
 	for _, target := range h.Msg.PushTargets(convID, convType, fromUID, toUID) {

@@ -166,12 +166,15 @@ func (a *AdminService) Notices() []model.Notice {
 	return list
 }
 
-func (a *AdminService) CreateNotice(title, content, author string) (*model.Notice, error) {
+func (a *AdminService) CreateNotice(title, content, author, scope string, pinned int) (*model.Notice, error) {
 	if title == "" || content == "" {
 		return nil, fmt.Errorf("标题和内容不能为空")
 	}
+	if scope == "" {
+		scope = "全员"
+	}
 	now := model.Now()
-	n := model.Notice{Title: title, Content: content, Author: author, Status: 1, CreatedAt: now, UpdatedAt: now}
+	n := model.Notice{Title: title, Content: content, Author: author, Scope: scope, Pinned: pinned, Status: 1, CreatedAt: now, UpdatedAt: now}
 	if err := a.S.DB.Create(&n).Error; err != nil {
 		return nil, err
 	}

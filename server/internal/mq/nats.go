@@ -38,6 +38,7 @@ type MessageEvent struct {
 	ToUID       string `json:"toUid"`
 	Type        string `json:"type"`
 	Content     string `json:"content"`
+	Extra       string `json:"extra,omitempty"`
 	Seq         int64  `json:"seq"`
 	SendTime    int64  `json:"sendTime"`
 }

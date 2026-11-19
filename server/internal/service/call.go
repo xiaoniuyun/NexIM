@@ -22,6 +22,7 @@ func (c *CallService) Start(callID, convID, callerUID, calleeUID, callType strin
 	c.S.DB.Create(&model.Call{
 		CallID: callID, ConvID: convID, CallerUID: callerUID, CalleeUID: calleeUID,
 		CallType: callType, Status: 1, CreatedAt: model.Now(),
+		RoomID: callID, Mode: "P2P", Members: 2,
 	})
 }
 
@@ -59,6 +60,31 @@ func (c *CallService) End(callID string) {
 	}
 	c.S.DB.Model(&model.Call{}).Where("call_id = ?", callID).
 		Updates(map[string]interface{}{"status": 3, "ended_at": now, "duration": duration})
+}
+
+// ForceEnd 管理端强制挂断：标记强制结束并计算时长
+func (c *CallService) ForceEnd(callID string) error {
+	var call model.Call
+	if err := c.S.DB.Where("call_id = ?", callID).First(&call).Error; err != nil {
+		return err
+	}
+	now := model.Now()
+	duration := call.Duration
+	if call.AnsweredAt > 0 && call.Status != 3 && call.Status != 4 {
+		duration = int((now - call.AnsweredAt) / 1000)
+	}
+	return c.S.DB.Model(&model.Call{}).Where("call_id = ?", callID).
+		Updates(map[string]interface{}{
+			"status": 3, "ended_at": now, "duration": duration, "force_ended": 1,
+		}).Error
+}
+
+// ReportQuality 保存客户端上报的通话质量采样
+func (c *CallService) ReportQuality(callID string, mos, loss float64, rtt, jitter int) error {
+	return c.S.DB.Model(&model.Call{}).Where("call_id = ?", callID).
+		Updates(map[string]interface{}{
+			"mos": mos, "packet_loss": loss, "rtt": rtt, "jitter": jitter,
+		}).Error
 }
 
 // Records 当前用户的通话记录（主叫或被叫），按时间倒序

@@ -1,4 +1,5 @@
-const API_BASE = '/api/v1'
+// Electron 桌面端由 preload 注入服务地址；浏览器端保持同源相对路径
+const API_BASE = (typeof window !== 'undefined' && window.neximConfig && window.neximConfig.apiBase) || '/api/v1'
 
 // 标签页优先：同一浏览器可同时登录多个账号（各自标签页独立会话），
 // localStorage 仅作为新开标签页的继承来源。
@@ -44,13 +45,20 @@ export async function api(path, opts = {}) {
 }
 
 export function wsUrl() {
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
   const p = new URLSearchParams({
     token: getToken(),
     device: localStorage.getItem('h5_device') || 'h5',
     platform: 'H5'
   })
+  const custom = typeof window !== 'undefined' && window.neximConfig && window.neximConfig.wsUrl
+  if (custom) return custom + (custom.includes('?') ? '&' : '?') + p
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${proto}//${location.host}/ws?${p}`
+}
+
+// 文件下载/预览地址：<img>/<a> 无法携带 Authorization，改用 query token
+export function fileUrl(fileId) {
+  return API_BASE + '/files/' + encodeURIComponent(fileId) + '/download?token=' + encodeURIComponent(getToken())
 }
 
 export const API = {
@@ -58,6 +66,7 @@ export const API = {
   register: (username, password, nickname) => api('/auth/register', { method: 'POST', body: { username, password, nickname } }),
   logout: () => api('/auth/logout', { method: 'POST' }),
   devices: () => api('/auth/devices'),
+  deleteDevice: id => api('/auth/devices/' + encodeURIComponent(id), { method: 'DELETE' }),
   permissions: () => api('/auth/permissions'),
   users: () => api('/users'),
   userSearch: q => api('/users/search?q=' + encodeURIComponent(q)),
@@ -68,6 +77,7 @@ export const API = {
   depts: () => api('/depts'),
   deptMembers: id => api('/depts/' + id + '/members'),
   conversations: () => api('/conversations'),
+  deleteConv: id => api('/conversations/' + encodeURIComponent(id), { method: 'DELETE' }),
   messages: convId => api('/conversations/' + encodeURIComponent(convId) + '/messages'),
   convSettings: (id, body) => api('/conversations/' + encodeURIComponent(id) + '/settings', { method: 'PATCH', body }),
   readAll: () => api('/conversations/read-all', { method: 'POST' }),
@@ -79,8 +89,19 @@ export const API = {
   forward: (msgId, convIds, note) => api('/messages/forward', { method: 'POST', body: { msgId, convIds, note } }),
   rtcConfig: () => api('/rtc/config'),
   calls: (limit = 50) => api('/calls?limit=' + limit),
+  reportQuality: (callId, body) => api('/calls/' + encodeURIComponent(callId) + '/quality', { method: 'POST', body }),
+  favorites: () => api('/favorites'),
+  favorite: msgId => api('/favorites', { method: 'POST', body: { msgId } }),
+  favoriteRemove: id => api('/favorites/' + id, { method: 'DELETE' }),
+  blacklist: () => api('/contacts/blacklist'),
+  blockUser: uid => api('/contacts/blacklist', { method: 'POST', body: { uid } }),
+  unblockUser: uid => api('/contacts/blacklist/' + encodeURIComponent(uid), { method: 'DELETE' }),
   groups: () => api('/groups'),
+  groupDetail: id => api('/groups/' + encodeURIComponent(id)),
+  groupMembers: id => api('/groups/' + encodeURIComponent(id) + '/members'),
   groupCreate: body => api('/groups', { method: 'POST', body }),
+  groupInvite: (id, uids) => api('/groups/' + encodeURIComponent(id) + '/invite', { method: 'POST', body: { members: uids } }),
+  groupLeave: (id, uid) => api('/groups/' + encodeURIComponent(id) + '/members/' + encodeURIComponent(uid), { method: 'DELETE' }),
   files: () => api('/files'),
   fileUpload: fd => api('/files/upload', { method: 'POST', body: fd }),
   notices: () => api('/notices')

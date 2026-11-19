@@ -62,10 +62,38 @@ export const API = {
   deleteDept: id => api(`/admin/depts/${id}`, { method: 'DELETE' }),
 
   groups: () => api('/groups'),
-  audit: () => api('/admin/audit'),
-  messageAudit: () => api('/admin/audit/messages'),
+  adminGroups: (params = {}) => api('/admin/groups?' + qs(params)),
+  groupDetail: id => api('/groups/' + encodeURIComponent(id)),
+  groupMembers: id => api('/groups/' + encodeURIComponent(id) + '/members'),
+  setGroupStatus: (id, status) => api(`/admin/groups/${id}/status`, { method: 'PUT', body: { status } }),
+  dissolveGroup: id => api(`/admin/groups/${id}`, { method: 'DELETE' }),
+  exportGroups: params => downloadFile('/admin/groups-export?' + qs(params), 'nexim-groups.csv'),
+
+  calls: (params = {}) => api('/admin/calls?' + qs(params)),
+  endCall: id => api(`/admin/calls/${id}/end`, { method: 'POST' }),
+  exportCalls: params => downloadFile('/admin/calls-export?' + qs(params), 'nexim-calls.csv'),
+  rtcQuality: () => api('/admin/rtc/quality'),
+
+  loginLogs: (params = {}) => api('/admin/login-logs?' + qs(params)),
+  exportLoginLogs: params => downloadFile('/admin/login-logs-export?' + qs(params), 'nexim-login-logs.csv'),
+  banIP: (ip, minutes = 30) => api('/admin/login-logs/ban', { method: 'POST', body: { ip, minutes } }),
+
+  audit: (params = {}) => api('/admin/audit?' + qs(params)),
+  exportAudit: params => downloadFile('/admin/audit/export?' + qs(params), 'nexim-audit-logs.csv'),
+  messageAudit: (params = {}) => api('/admin/audit/messages?' + qs(params)),
+  exportMessages: params => downloadFile('/admin/audit/messages/export?' + qs(params), 'nexim-message-audit.csv'),
   notices: () => api('/admin/notices'),
   createNotice: body => api('/admin/notices', { method: 'POST', body }),
+  updateNotice: (id, body) => api(`/admin/notices/${id}`, { method: 'PUT', body }),
   sensitive: () => api('/admin/sensitive-words'),
-  addSensitive: word => api('/admin/sensitive-words', { method: 'POST', body: { word } })
+  addSensitive: word => api('/admin/sensitive-words', { method: 'POST', body: { word } }),
+  deleteSensitive: word => api('/admin/sensitive-words/' + encodeURIComponent(word), { method: 'DELETE' }),
+  bulkSensitive: text => api('/admin/sensitive-words/bulk', { method: 'POST', body: { text } }),
+  sensitiveStrategy: () => api('/admin/sensitive/strategy'),
+  setSensitiveStrategy: strategy => api('/admin/sensitive/strategy', { method: 'PUT', body: { strategy } }),
+  sensitiveHits: (page = 1, size = 20) => api(`/admin/sensitive/hits?page=${page}&size=${size}`),
+  clearSensitiveHits: () => api('/admin/sensitive/hits', { method: 'DELETE' }),
+
+  settings: () => api('/admin/settings'),
+  saveSettings: body => api('/admin/settings', { method: 'PUT', body })
 }

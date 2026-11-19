@@ -163,7 +163,7 @@ func (h *Hub) OnRemoteMessage(ev mq.MessageEvent) {
 		return
 	}
 	h.deliver(ev.FromUID, ev.ConvID, ev.ConvType, ev.ToUID, ev.ClientMsgID,
-		ev.MsgID, ev.Type, ev.Content, ev.Seq, ev.SendTime)
+		ev.MsgID, ev.Type, ev.Content, ev.Extra, ev.Seq, ev.SendTime)
 }
 
 func (c *Client) WritePump() {

@@ -10,6 +10,7 @@ import (
 
 	"nexim/server/internal/model"
 	"nexim/server/internal/pkg"
+	"nexim/server/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,7 +66,7 @@ func (rt *Router) messageForward(c *gin.Context) {
 			continue
 		}
 		clientID := "fwd_" + src.MsgID + "_" + convID
-		if _, err := rt.Msg.Send(me, convID, "single", conv.PeerID, "text", content, "", clientID); err == nil {
+		if _, err := rt.Msg.Send(me, convID, strconv.Itoa(conv.ConvType), conv.PeerID, "text", content, "", clientID); err == nil {
 			ok++
 		}
 	}
@@ -315,12 +316,14 @@ func (rt *Router) adminGrantRole(c *gin.Context) {
 func (rt *Router) adminAudit(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	pkg.OK(c, rt.Admin.AuditList(page, size))
+	pkg.OK(c, rt.Admin.AuditLogs(service.AuditQuery{Module: c.Query("module"), Keyword: c.Query("kw")}, page, size))
 }
 func (rt *Router) adminMessageAudit(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	pkg.OK(c, rt.Admin.MessageAudit(page, size))
+	mt, _ := strconv.Atoi(c.Query("type"))
+	st, _ := strconv.Atoi(c.Query("status"))
+	pkg.OK(c, rt.Admin.MessageAuditFiltered(c.Query("kw"), mt, st, page, size))
 }
 func (rt *Router) adminNotices(c *gin.Context) {
 	pkg.OK(c, rt.Admin.Notices())
@@ -330,6 +333,8 @@ func (rt *Router) adminCreateNotice(c *gin.Context) {
 		Title   string `json:"title" binding:"required"`
 		Content string `json:"content" binding:"required"`
 		Author  string `json:"author"`
+		Scope   string `json:"scope"`
+		Pinned  int    `json:"pinned"`
 	}
 	if c.ShouldBindJSON(&req) != nil {
 		pkg.Fail(c, 400, 1001, "参数错误")
@@ -338,7 +343,7 @@ func (rt *Router) adminCreateNotice(c *gin.Context) {
 	if req.Author == "" {
 		req.Author = "系统管理员"
 	}
-	n, err := rt.Admin.CreateNotice(req.Title, req.Content, req.Author)
+	n, err := rt.Admin.CreateNotice(req.Title, req.Content, req.Author, req.Scope, req.Pinned)
 	if err != nil {
 		pkg.Fail(c, 400, 4000, err.Error())
 		return

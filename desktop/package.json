@@ -1,0 +1,59 @@
+{
+  "name": "nexim-desktop",
+  "version": "1.0.0",
+  "description": "NexIM 桌面客户端（Electron + Vue 3，复用 H5 业务层）",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "dev:web": "vite",
+    "dev:electron": "electron . --dev",
+    "dev": "vite",
+    "build": "vite build",
+    "icons": "node scripts/gen-icon.js",
+    "start": "npm run build && electron .",
+    "pack": "npm run icons && npm run build && electron-builder --dir",
+    "dist": "npm run icons && npm run build && electron-builder"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2",
+    "pinia": "^2.3.0",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "electron": "^45.4.1",
+    "electron-builder": "^26.0.12",
+    "vite": "^6.0.7"
+  },
+  "build": {
+    "appId": "im.nex.desktop",
+    "productName": "NexIM",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "icon": "build/icon.png",
+    "win": {
+      "target": ["nsis"]
+    },
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.social-networking"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Network"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://updates.nex.im/desktop"
+      }
+    ]
+  }
+}

@@ -50,6 +50,7 @@ func New(cfg *config.Config, log *zap.Logger) (*Store, error) {
 	if err := s.seed(); err != nil {
 		return nil, err
 	}
+	s.seedSensitive()
 
 	// 消息库：standard 形态落 ScyllaDB，lite 形态落 MySQL
 	if strings.EqualFold(cfg.DB.MessageDriver, "scylla") {
@@ -75,7 +76,8 @@ func (s *Store) migrate() error {
 		&model.User{}, &model.Device{}, &model.Conversation{}, &model.Message{},
 		&model.Friend{}, &model.FriendApply{}, &model.Dept{}, &model.AuditLog{},
 		&model.Group{}, &model.GroupMember{}, &model.FileRecord{}, &model.Notice{},
-		&model.Role{}, &model.UserRole{}, &model.Call{},
+		&model.Role{}, &model.UserRole{}, &model.Call{}, &model.Favorite{},
+		&model.SensitiveHit{}, &model.SystemSetting{}, &model.LoginLog{}, &model.Blacklist{},
 	); err != nil {
 		return err
 	}
@@ -320,6 +322,21 @@ func (s *Store) ensureRoles() error {
 		}
 	}
 	return nil
+}
+
+// seedSensitive 初始化敏感词库与默认策略（仅当 Redis 中为空时写入，避免覆盖运营配置）
+func (s *Store) seedSensitive() {
+	if n, err := s.RDB.SCard(s.Ctx, "sensitive:words:v1").Result(); err == nil && n == 0 {
+		words := []string{"违禁词A", "敏感词B", "广告词C", "赌博", "诈骗"}
+		args := make([]interface{}, 0, len(words))
+		for _, w := range words {
+			args = append(args, w)
+		}
+		_ = s.RDB.SAdd(s.Ctx, "sensitive:words:v1", args...).Err()
+	}
+	if _, err := s.RDB.Get(s.Ctx, "sensitive:strategy").Result(); err == redis.Nil {
+		_ = s.RDB.Set(s.Ctx, "sensitive:strategy", "block", 0).Err()
+	}
 }
 
 // Now 返回毫秒时间戳

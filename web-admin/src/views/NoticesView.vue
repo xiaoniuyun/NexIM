@@ -20,6 +20,7 @@ const fmt = ts => ts ? new Date(ts).toLocaleString() : '—'
 function formBody(n) {
   return `<div class="field"><label>公告标题</label><input id="no-title" value="${n?.title || ''}"></div>
     <div class="field"><label>定向范围</label><select id="no-scope">${scopes.map(s => `<option ${n?.scope === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+    <div class="field"><label><input type="checkbox" id="no-pin" ${n?.pinned ? 'checked' : ''}> 置顶展示</label></div>
     ${n ? '' : '<div class="field"><label>定时发布（可选）</label><input type="datetime-local" id="no-time"><div class="fh">留空则立即发布</div></div>'}
     <div class="field"><label>正文（支持富文本与附件）</label><textarea id="no-content" rows="5">${n?.content || ''}</textarea></div>`
 }
@@ -30,9 +31,10 @@ function create() {
       const title = document.getElementById('no-title').value.trim()
       const content = document.getElementById('no-content').value.trim()
       const scope = document.getElementById('no-scope').value
+      const pinned = document.getElementById('no-pin').checked ? 1 : 0
       const time = document.getElementById('no-time')?.value
       if (!title || !content) { toast('标题和正文不能为空', 'err'); return false }
-      try { await API.createNotice({ title, content, scope }); toast(time ? '公告已设为定时发布' : '公告发布成功，已推送至目标用户'); load() }
+      try { await API.createNotice({ title, content, scope, pinned }); toast(time ? '公告已设为定时发布' : '公告发布成功，已推送至目标用户'); load() }
       catch (e) { toast(e.message, 'err'); return false }
     }
   })
@@ -40,18 +42,26 @@ function create() {
 function edit(n) {
   modal.value.open({
     title: '编辑公告', body: formBody(n), okText: '保存',
-    onOk: () => {
-      n.title = document.getElementById('no-title').value.trim()
-      n.scope = document.getElementById('no-scope').value
-      n.content = document.getElementById('no-content').value.trim()
-      toast('公告已保存并重新推送，保留原有已读状态')
+    onOk: async () => {
+      const body = {
+        title: document.getElementById('no-title').value.trim(),
+        scope: document.getElementById('no-scope').value,
+        content: document.getElementById('no-content').value.trim(),
+        pinned: document.getElementById('no-pin').checked ? 1 : 0
+      }
+      if (!body.title || !body.content) { toast('标题和正文不能为空', 'err'); return false }
+      try { await API.updateNotice(n.id, body); toast('公告已保存并重新推送'); load() }
+      catch (e) { toast(e.message, 'err'); return false }
     }
   })
 }
 function offline(n) {
   modal.value.open({
     title: '下线公告', body: `<p>确认下线公告「${n.title}」？下线后用户端将不再展示。</p>`, okText: '下线', danger: true,
-    onOk: () => { n.status = 2; toast('公告已下线') }
+    onOk: async () => {
+      try { await API.updateNotice(n.id, { status: 2 }); toast('公告已下线'); load() }
+      catch (e) { toast(e.message, 'err'); return false }
+    }
   })
 }
 </script>
@@ -72,7 +82,7 @@ function offline(n) {
             <td><div class="u-cell">{{ n.pinned ? '📌' : '' }}<b>{{ n.title }}</b><span v-if="n.pinned" class="tag" style="margin-left:4px">置顶</span></div></td>
             <td>{{ n.scope || '全员' }}</td>
             <td><span class="state" :class="n.status === 2 ? 'off' : n.status === 0 ? 'warn' : 'ok'">{{ statusText(n) }}</span></td>
-            <td>{{ fmt(n.createdAt) }}</td><td>{{ n.readRate || '86%' }}</td>
+            <td>{{ fmt(n.createdAt) }}</td><td>—</td>
             <td style="white-space:nowrap">
               <button class="btn sm" @click="edit(n)">编辑</button>
               <button v-if="n.status !== 2" class="btn sm danger" @click="offline(n)">下线</button>
