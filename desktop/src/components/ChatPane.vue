@@ -241,10 +241,14 @@ function closePopovers(e) {
 }
 
 onMounted(() => {
+  chat.setViewing(true)
   window.addEventListener('click', closePopovers)
   scrollBottom()
 })
-onBeforeUnmount(() => window.removeEventListener('click', closePopovers))
+onBeforeUnmount(() => {
+  chat.setViewing(false)
+  window.removeEventListener('click', closePopovers)
+})
 </script>
 
 <template>

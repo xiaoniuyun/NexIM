@@ -53,6 +53,7 @@ const mentionList = ref([])
 let msgTimer = null
 let convTimer = null
 onMounted(async () => {
+  chat.setViewing(true)
   await chat.openConv(convId.value)
   scrollBottom()
   msgTimer = setInterval(async () => {
@@ -63,6 +64,7 @@ onMounted(async () => {
   convTimer = setInterval(() => { if (!document.hidden) chat.loadConversations() }, 5000)
 })
 onUnmounted(() => {
+  chat.setViewing(false)
   if (msgTimer) clearInterval(msgTimer)
   if (convTimer) clearInterval(convTimer)
 })

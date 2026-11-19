@@ -37,6 +37,13 @@ async function openConv(convId) {
   await chat.openConv(convId)
 }
 
+function go(key) {
+  const prev = pane.value
+  pane.value = key
+  // 从其他页面切回消息时，重新打开当前会话并补发已读
+  if (key === 'msg' && prev !== 'msg' && chat.currentConv) chat.openConv(chat.currentConv)
+}
+
 function onSearchEvent() { searchOpen.value = true }
 function onOpenEvent(e) { openConv(e.detail) }
 
@@ -61,7 +68,7 @@ const unread = computed(() => chat.unreadTotal)
       <button
         v-for="n in navs" :key="n.key"
         class="rail-btn" :class="{ on: pane === n.key }"
-        :title="n.label" @click="pane = n.key"
+        :title="n.label" @click="go(n.key)"
       >
         <Icon :name="n.icon" :size="21" />
         <span v-if="n.key === 'msg' && unread > 0" class="rail-badge">{{ unread > 99 ? '99+' : unread }}</span>

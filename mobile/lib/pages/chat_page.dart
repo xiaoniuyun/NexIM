@@ -24,17 +24,21 @@ class _ChatPageState extends State<ChatPage> {
   final _scroll = ScrollController();
   bool _uploading = false;
   int _lastCount = -1;
+  late final AppState _app;
 
   @override
   void initState() {
     super.initState();
+    _app = context.read<AppState>();
+    _app.setChatVisible(true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppState>().openConv(widget.conv.convId);
+      _app.openConv(widget.conv.convId);
     });
   }
 
   @override
   void dispose() {
+    _app.setChatVisible(false);
     _input.dispose();
     _scroll.dispose();
     super.dispose();

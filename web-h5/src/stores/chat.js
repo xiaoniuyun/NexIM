@@ -12,6 +12,8 @@ export const useChatStore = defineStore('chat', () => {
   const messages = ref([])
   const currentConv = ref('')
   const connected = ref(false)
+  // 是否停留在聊天界面：只有正在查看时才自动回执已读，避免列表页角标被误清零
+  const viewing = ref(false)
   // 对端已读回执：convId -> 最近一次已读时间
   const readMap = ref({})
   // 通话信令回调：由 call store 注册，避免 store 之间循环依赖
@@ -118,7 +120,10 @@ export const useChatStore = defineStore('chat', () => {
       sendFrame('AUTH', {})
       // 建连/重连后补齐会话与当前会话消息，避免离线期间消息丢失
       loadConversations()
-      if (currentConv.value) fetchMessages(currentConv.value)
+      if (currentConv.value) {
+        fetchMessages(currentConv.value)
+        if (viewing.value) markConvRead(currentConv.value)
+      }
     }
     ws.onmessage = e => {
       lastFrameAt = Date.now()
@@ -132,8 +137,16 @@ export const useChatStore = defineStore('chat', () => {
             content: p.content, extra: parseExtra(p.extra), createdAt: p.sendTime, status: 1,
             mine: p.fromUid === auth.user?.uid
           })
+          if (viewing.value && p.fromUid !== auth.user?.uid) {
+            const c = convs.value.find(x => x.convId === p.convId)
+            if (c) c.unread = 0
+            markConvRead(p.convId)
+          } else {
+            loadConversations()
+          }
+        } else {
+          loadConversations()
         }
-        loadConversations()
       } else if (f.cmd === 'SEND_ACK') {
         const p = f.payload || {}
         if (f.code === 0 && p.clientMsgId) {
@@ -188,6 +201,11 @@ export const useChatStore = defineStore('chat', () => {
   async function openConv(convId) {
     currentConv.value = convId
     await fetchMessages(convId)
+    markConvRead(convId)
+  }
+  // 将会话标记为已读并同步刷新会话列表，保证角标及时清零
+  function markConvRead(convId) {
+    if (!convId) return
     sendFrame('READ', { convId })
     API.markRead(convId).catch(() => {}).then(loadConversations)
   }
@@ -262,14 +280,17 @@ export const useChatStore = defineStore('chat', () => {
     }
     return convId
   }
+  function setViewing(v) {
+    viewing.value = !!v
+  }
   function reset() {
-    convs.value = []; messages.value = []; currentConv.value = ''; readMap.value = {}
+    convs.value = []; messages.value = []; currentConv.value = ''; readMap.value = {}; viewing.value = false
     disconnect()
   }
 
   return {
-    socket, convs, messages, currentConv, connected, unreadTotal, readMap,
-    connect, disconnect, sendFrame, loadConversations, openConv, sendText, sendMedia, removeLocal,
+    socket, convs, messages, currentConv, connected, viewing, unreadTotal, readMap,
+    connect, disconnect, sendFrame, loadConversations, openConv, setViewing, sendText, sendMedia, removeLocal,
     syncMessages, ensureConv, reset, onSignal
   }
 })

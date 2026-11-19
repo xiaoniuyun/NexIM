@@ -22,6 +22,8 @@ class AppState extends ChangeNotifier {
   List<Conv> convs = [];
   List<Msg> messages = [];
   String currentConvId = '';
+  // 是否停留在聊天页：只有正在查看时才自动回执已读
+  bool chatVisible = false;
   bool connected = false;
   String lastError = '';
 
@@ -133,23 +135,34 @@ class AppState extends ChangeNotifier {
     final p = f['payload'] is Map ? Map<String, dynamic>.from(f['payload']) : <String, dynamic>{};
     switch (cmd) {
       case 'PUSH':
-        if (p['convId'] == currentConvId) {
+        final convId = '${p['convId'] ?? ''}';
+        final fromUid = '${p['fromUid'] ?? ''}';
+        final inCurrent = convId == currentConvId;
+        if (inCurrent) {
           upsert(Msg(
             msgId: '${p['msgId'] ?? ''}',
             clientMsgId: '${p['clientMsgId'] ?? ''}',
-            convId: '${p['convId'] ?? ''}',
+            convId: convId,
             seq: (p['seq'] as num?)?.toInt() ?? 0,
-            fromUid: '${p['fromUid'] ?? ''}',
+            fromUid: fromUid,
             fromName: '${p['fromName'] ?? ''}',
             type: normType(p['type']),
             content: '${p['content'] ?? ''}',
             extra: parseExtra(p['extra']),
             createdAt: (p['sendTime'] as num?)?.toInt() ?? 0,
-            mine: '${p['fromUid'] ?? ''}' == myUid,
+            mine: fromUid == myUid,
           ));
           Store.saveMessages(currentConvId, messages);
         }
-        loadConvs();
+        if (inCurrent && chatVisible && fromUid != myUid) {
+          // 用户正停留在该会话，收到新消息立即回执已读，避免角标持续累加
+          final c = convs.where((x) => x.convId == convId).firstOrNull;
+          if (c != null) c.unread = 0;
+          notifyListeners();
+          _markConvRead(convId);
+        } else {
+          loadConvs();
+        }
         break;
       case 'SEND_ACK':
         if (f['code'] == 0 && p['clientMsgId'] != null) {
@@ -204,6 +217,14 @@ class AppState extends ChangeNotifier {
     messages = Store.readMessages(convId, myUid);
     notifyListeners();
     await fetchMessages(convId);
+    _markConvRead(convId);
+  }
+
+  void setChatVisible(bool visible) {
+    chatVisible = visible;
+  }
+
+  void _markConvRead(String convId) {
     ws.send('READ', {'convId': convId});
     unawaited(Api.post('/messages/read', {'convId': convId}).then((_) => loadConvs()).catchError((_) => null));
   }
