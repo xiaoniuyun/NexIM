@@ -36,6 +36,12 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // AGP 9.3 的 lint 在部分 JDK 17 环境下解析 JavaDoc 会崩溃，release 构建跳过 lint
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
 }
 
 kotlin {

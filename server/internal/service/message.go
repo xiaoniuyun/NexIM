@@ -53,6 +53,11 @@ func (m *MessageService) Send(fromUID, convID, convType, toID, msgType, content,
 		return nil, err
 	}
 
+	// 单聊未携带 toUid（历史客户端或会话 peer 缺失）时从 convId 解析对端，保证会话与推送目标完整
+	if toID == "" && convTypeCode(convType) == 1 {
+		toID = peerFromConvID(convID, fromUID)
+	}
+
 	seq, err := m.nextSeq(convID)
 	if err != nil {
 		return nil, err
@@ -126,6 +131,9 @@ func (m *MessageService) upsertConversation(convID string, convType int, fromUID
 			}
 		} else if err == nil {
 			updates := map[string]interface{}{"last_msg_id": msgID, "last_msg": content, "last_msg_at": now, "max_seq": seq}
+			if c.PeerID == "" && peer != "" {
+				updates["peer_id"] = peer
+			}
 			if owner != fromUID {
 				updates["unread"] = gorm.Expr("unread + 1")
 			}
@@ -203,6 +211,15 @@ func (m *MessageService) Conversations(uid string) []model.Conversation {
 	blocked := m.BlockedMap(uid)
 	out := convs[:0]
 	for i := range convs {
+		// 历史会话 peer_id 缺失时从 convId 解析并回填，避免会话列表出现空对端
+		if convs[i].ConvType == 1 && convs[i].PeerID == "" {
+			if p := peerFromConvID(convs[i].ConvID, convs[i].OwnerUID); p != "" {
+				convs[i].PeerID = p
+				m.S.DB.Model(&model.Conversation{}).
+					Where("conv_id = ? AND owner_uid = ?", convs[i].ConvID, convs[i].OwnerUID).
+					Update("peer_id", p)
+			}
+		}
 		if convs[i].ConvType == 2 {
 			var g model.Group
 			if m.S.DB.Where("group_id = ?", convs[i].PeerID).First(&g).Error == nil {
@@ -210,6 +227,9 @@ func (m *MessageService) Conversations(uid string) []model.Conversation {
 				convs[i].PeerAvatar = g.Avatar
 			}
 			out = append(out, convs[i])
+			continue
+		}
+		if convs[i].PeerID == "" {
 			continue
 		}
 		if blocked[convs[i].PeerID] {
@@ -267,6 +287,24 @@ func groupIDOf(convID, toID string) string {
 		return toID
 	}
 	return strings.TrimPrefix(convID, "conv_")
+}
+
+// convUIDPattern 匹配会话 ID 中的用户 ID（形如 u_1001 / u_1795066626962）
+var convUIDPattern = regexp.MustCompile(`u_[A-Za-z0-9]+`)
+
+// peerFromConvID 从单聊会话 ID（c_<uidA>_<uidB> 或 conv_<uidA>_<uidB>）解析对端；
+// 自聊会话（两端相同）返回自身，无法解析时返回空串
+func peerFromConvID(convID, ownerUID string) string {
+	ids := convUIDPattern.FindAllString(convID, -1)
+	for _, id := range ids {
+		if id != ownerUID {
+			return id
+		}
+	}
+	if len(ids) > 0 {
+		return ownerUID
+	}
+	return ""
 }
 
 func convTypeCode(s string) int {

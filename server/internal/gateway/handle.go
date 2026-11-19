@@ -67,6 +67,10 @@ func (h *Hub) handle(c *Client, f *Frame) {
 			c.send <- &Frame{Cmd: "SEND_ACK", SeqNo: f.SeqNo, Code: 4000, Message: err.Error()}
 			return
 		}
+		// Send 内部可能从 convId 补齐对端，推送以落库后的 ToID 为准
+		if msg.ToID != "" {
+			toUID = msg.ToID
+		}
 		c.send <- &Frame{Cmd: "SEND_ACK", SeqNo: f.SeqNo, Code: 0, Payload: mustJSON(SendAck{
 			ClientMsgID: req.ClientMsgID, MsgID: msg.MsgID, Seq: msg.Seq, SendTime: msg.CreatedAt,
 		})}
@@ -95,15 +99,7 @@ func (h *Hub) handle(c *Client, f *Frame) {
 		}
 		_ = h.Msg.MarkRead(c.UID, req.ConvID)
 		c.send <- &Frame{Cmd: "READ_ACK", SeqNo: f.SeqNo, Code: 0}
-		// 通知对端已读
-		if len(req.ConvID) > 0 {
-			var conv model.Conversation
-			if h.S.DB.Where("conv_id = ? AND owner_uid = ?", req.ConvID, c.UID).First(&conv).Error == nil && conv.PeerID != "" {
-				h.PushToUser(conv.PeerID, &Frame{Cmd: "NOTICE_PUSH", Payload: mustJSON(map[string]interface{}{
-					"kind": "read", "convId": req.ConvID, "uid": c.UID,
-				})})
-			}
-		}
+		h.NotifyRead(c.UID, req.ConvID)
 	case "REVOKE":
 		var req struct {
 			MsgID string `json:"msgId"`
@@ -116,7 +112,7 @@ func (h *Hub) handle(c *Client, f *Frame) {
 			return
 		}
 		c.send <- &Frame{Cmd: "REVOKE_ACK", SeqNo: f.SeqNo, Code: 0}
-		h.broadcastRevoke(req.MsgID)
+		h.BroadcastRevoke(req.MsgID)
 	case "CALL_INVITE":
 		var req struct {
 			CallID   string `json:"callId"`
@@ -243,7 +239,22 @@ func (h *Hub) deliver(fromUID, convID, convType, toUID, clientMsgID, msgID, msgT
 	h.PushToUser(fromUID, push)
 }
 
-func (h *Hub) broadcastRevoke(msgID string) {
+// NotifyRead 向单聊对端推送「已读」通知；WebSocket 与 HTTP 两条通道共用
+func (h *Hub) NotifyRead(uid, convID string) {
+	if convID == "" {
+		return
+	}
+	var conv model.Conversation
+	if h.S.DB.Where("conv_id = ? AND owner_uid = ?", convID, uid).First(&conv).Error != nil || conv.PeerID == "" {
+		return
+	}
+	h.PushToUser(conv.PeerID, &Frame{Cmd: "NOTICE_PUSH", Payload: mustJSON(map[string]interface{}{
+		"kind": "read", "convId": convID, "uid": uid,
+	})})
+}
+
+// BroadcastRevoke 向消息对端及会话相关用户推送撤回通知；WebSocket 与 HTTP 两条通道共用
+func (h *Hub) BroadcastRevoke(msgID string) {
 	var msg model.Message
 	if h.S.DB.Where("msg_id = ?", msgID).First(&msg).Error != nil {
 		return

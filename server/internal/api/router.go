@@ -525,6 +525,7 @@ func (rt *Router) markRead(c *gin.Context) {
 		return
 	}
 	_ = rt.Msg.MarkRead(uid(c), req.ConvID)
+	rt.Hub.NotifyRead(uid(c), req.ConvID)
 	pkg.OK(c, nil)
 }
 
@@ -555,6 +556,10 @@ func (rt *Router) sendMessage(c *gin.Context) {
 		pkg.Fail(c, 400, 4000, err.Error())
 		return
 	}
+	// Send 内部可能从 convId 补齐对端，推送以落库后的 ToID 为准
+	if msg.ToID != "" {
+		toUID = msg.ToID
+	}
 	rt.Hub.PushMessage(me, msg.ConvID, req.ConvType, toUID, req.ClientMsgID,
 		msg.MsgID, req.Type, msg.Content, msg.Extra, msg.Seq, msg.CreatedAt)
 	pkg.OK(c, gin.H{
@@ -575,6 +580,7 @@ func (rt *Router) revoke(c *gin.Context) {
 		pkg.Fail(c, 400, 4006, err.Error())
 		return
 	}
+	rt.Hub.BroadcastRevoke(req.MsgID)
 	pkg.OK(c, nil)
 }
 
