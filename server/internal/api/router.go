@@ -124,24 +124,34 @@ func (rt *Router) Engine() *gin.Engine {
 			auth.POST("/files/upload", rt.fileUpload)
 			auth.DELETE("/files/:id", rt.fileDelete)
 
-			// 管理后台（简化鉴权：登录用户可访问，前端按角色控制）
+			// 管理后台：服务端按权限码校验（与前端菜单/按钮共用同一份权限目录）
 			adm := auth.Group("/admin")
 			{
-				adm.GET("/dashboard", rt.adminDashboard)
-				adm.GET("/users", rt.adminUsers)
-				adm.POST("/users", rt.adminCreateUser)
-				adm.PUT("/users/:id", rt.adminUpdateUser)
-				adm.DELETE("/users/:id", rt.adminDeleteUser)
-				adm.POST("/users/:id/reset-password", rt.adminResetPwd)
-				adm.GET("/roles", rt.adminRoles)
-				adm.POST("/roles/grant", rt.adminGrantRole)
-				adm.GET("/audit", rt.adminAudit)
-				adm.GET("/audit/messages", rt.adminMessageAudit)
-				adm.GET("/notices", rt.adminNotices)
-				adm.POST("/notices", rt.adminCreateNotice)
-				adm.PUT("/notices/:id", rt.adminUpdateNotice)
-				adm.GET("/sensitive-words", rt.adminSensitiveWords)
-				adm.POST("/sensitive-words", rt.adminAddSensitiveWord)
+				adm.GET("/dashboard", rt.requirePerm("dashboard:view"), rt.adminDashboard)
+				adm.GET("/users", rt.requirePerm("user:list"), rt.adminUsers)
+				adm.GET("/users-export", rt.requirePerm("user:export"), rt.adminUsersExport)
+				adm.POST("/users", rt.requirePerm("user:create"), rt.adminCreateUser)
+				adm.PUT("/users/:id", rt.requirePerm("user:edit"), rt.adminUpdateUser)
+				adm.DELETE("/users/:id", rt.requirePerm("user:disable"), rt.adminDeleteUser)
+				adm.POST("/users/:id/reset-password", rt.requirePerm("user:reset-pwd"), rt.adminResetPwd)
+				adm.PUT("/users/:id/roles", rt.requirePerm("rbac:role:grant"), rt.adminSetUserRoles)
+				adm.GET("/user-permissions/:id", rt.requirePerm("rbac:perm:preview"), rt.adminUserPermissions)
+				adm.GET("/roles", rt.requirePerm("rbac:role:list"), rt.adminRoles)
+				adm.GET("/permissions", rt.requirePerm("rbac:role:list"), rt.adminPermissions)
+				adm.POST("/roles", rt.requirePerm("rbac:role:create"), rt.adminCreateRole)
+				adm.PUT("/roles/:id", rt.requirePerm("rbac:role:edit"), rt.adminUpdateRole)
+				adm.DELETE("/roles/:id", rt.requirePerm("rbac:role:delete"), rt.adminDeleteRole)
+				adm.POST("/roles/grant", rt.requirePerm("rbac:role:grant"), rt.adminGrantRole)
+				adm.POST("/depts", rt.requirePerm("dept:create"), rt.adminCreateDept)
+				adm.PUT("/depts/:id", rt.requirePerm("dept:edit"), rt.adminUpdateDept)
+				adm.DELETE("/depts/:id", rt.requirePerm("dept:delete"), rt.adminDeleteDept)
+				adm.GET("/audit", rt.requirePerm("log:list"), rt.adminAudit)
+				adm.GET("/audit/messages", rt.requirePerm("audit:message:list"), rt.adminMessageAudit)
+				adm.GET("/notices", rt.requirePerm("notice:publish"), rt.adminNotices)
+				adm.POST("/notices", rt.requirePerm("notice:publish"), rt.adminCreateNotice)
+				adm.PUT("/notices/:id", rt.requirePerm("notice:publish"), rt.adminUpdateNotice)
+				adm.GET("/sensitive-words", rt.requirePerm("sensitive:config"), rt.adminSensitiveWords)
+				adm.POST("/sensitive-words", rt.requirePerm("sensitive:config"), rt.adminAddSensitiveWord)
 			}
 		}
 	}
@@ -186,6 +196,13 @@ func (rt *Router) authMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		// 禁用账号即时阻断（无需等待令牌过期）
+		var active model.User
+		if rt.S.DB.Select("status").Where("uid = ?", claims.UID).First(&active).Error == nil && active.Status != 1 {
+			pkg.Fail(c, 401, 2003, "账号已禁用")
+			c.Abort()
+			return
+		}
 		c.Set("uid", claims.UID)
 		c.Set("claims", claims)
 		c.Next()
@@ -194,11 +211,28 @@ func (rt *Router) authMiddleware() gin.HandlerFunc {
 
 func uid(c *gin.Context) string { return c.GetString("uid") }
 
+// requirePerm 服务端 RBAC 校验：与 /auth/permissions 下发的权限码同源，* 通配放行
+func (rt *Router) requirePerm(code string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !service.HasPerm(rt.S, uid(c), code) {
+			pkg.Fail(c, 403, 3001, "无权限执行此操作："+code)
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 func (rt *Router) WSHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	claims, err := pkg.ParseToken(rt.C.Auth.JWTSecret, token)
 	if err != nil || rt.Auth.CheckBlacklist(claims.ID) {
 		http.Error(w, "unauthorized", 401)
+		return
+	}
+	var active model.User
+	if rt.S.DB.Select("status").Where("uid = ?", claims.UID).First(&active).Error == nil && active.Status != 1 {
+		http.Error(w, "account disabled", 401)
 		return
 	}
 	deviceID := r.URL.Query().Get("device")
@@ -386,7 +420,7 @@ func (rt *Router) depts(c *gin.Context) {
 	pkg.OK(c, rt.Contact.Depts())
 }
 func (rt *Router) deptTree(c *gin.Context) {
-	pkg.OK(c, rt.Contact.Depts())
+	pkg.OK(c, rt.Admin.DeptTree())
 }
 func (rt *Router) deptMembers(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)

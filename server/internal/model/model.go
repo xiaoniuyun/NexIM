@@ -10,6 +10,8 @@ type User struct {
 	Nickname     string `gorm:"size:64" json:"nickname"`
 	Avatar       string `gorm:"size:256" json:"avatar"`
 	DeptID       int64  `gorm:"default:0" json:"deptId"`
+	Phone        string `gorm:"size:32" json:"phone"`
+	Title        string `gorm:"size:64" json:"title"`
 	Status       int    `gorm:"default:1" json:"status"`
 	LastLoginAt  int64  `gorm:"default:0" json:"lastLoginAt"`
 	CreatedAt    int64  `json:"createdAt"`
@@ -96,10 +98,13 @@ type FriendApply struct {
 }
 
 type Dept struct {
-	ID       int64  `gorm:"primaryKey;autoIncrement" json:"id"`
-	ParentID int64  `json:"parentId"`
-	Name     string `gorm:"size:64" json:"name"`
-	Path     string `gorm:"size:128;index" json:"path"`
+	ID        int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	ParentID  int64  `gorm:"default:0" json:"parentId"`
+	Name      string `gorm:"size:64" json:"name"`
+	Path      string `gorm:"size:128;index" json:"path"`
+	Sort      int    `gorm:"default:0" json:"sort"`
+	LeaderUID string `gorm:"size:32" json:"leaderUid"`
+	Status    int    `gorm:"default:1" json:"status"`
 }
 
 type AuditLog struct {

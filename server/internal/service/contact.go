@@ -12,9 +12,12 @@ type ContactService struct{ S *store.Store }
 func NewContact(s *store.Store) *ContactService { return &ContactService{S: s} }
 
 type ContactVO struct {
+	ID       int64  `json:"id"`
 	UID      string `json:"uid"`
 	Username string `json:"username"`
 	Nickname string `json:"nickname"`
+	Phone    string `json:"phone"`
+	Title    string `json:"title"`
 	Avatar   string `json:"avatar"`
 	DeptID   int64  `json:"deptId"`
 	DeptName string `json:"deptName"`
@@ -49,16 +52,26 @@ func (c *ContactService) Users(keyword string) []ContactVO {
 
 func (c *ContactService) Depts() []model.Dept {
 	var ds []model.Dept
-	c.S.DB.Order("path, id").Find(&ds)
+	c.S.DB.Where("status = 1").Order("path, sort, id").Find(&ds)
 	return ds
 }
 
+// DeptMembers 支持按物化路径包含所有下级部门成员（数据范围「本部门及下级」）
 func (c *ContactService) DeptMembers(deptID int64) []ContactVO {
 	var users []model.User
 	if deptID == 0 {
 		c.S.DB.Where("status = 1").Find(&users)
 	} else {
-		c.S.DB.Where("status = 1 AND dept_id = ?", deptID).Find(&users)
+		ids := []int64{deptID}
+		var d model.Dept
+		if c.S.DB.Where("id = ?", deptID).First(&d).Error == nil && d.Path != "" {
+			var subs []model.Dept
+			c.S.DB.Where("path LIKE ? AND id <> ?", d.Path+"%", deptID).Find(&subs)
+			for _, s := range subs {
+				ids = append(ids, s.ID)
+			}
+		}
+		c.S.DB.Where("status = 1 AND dept_id IN ?", ids).Find(&users)
 	}
 	out := []ContactVO{}
 	for i := range users {
@@ -116,5 +129,6 @@ func (c *ContactService) toVO(u *model.User) ContactVO {
 	if _, e := c.S.RDB.Get(c.S.Ctx, "online:"+u.UID).Result(); e == nil {
 		online = true
 	}
-	return ContactVO{UID: u.UID, Username: u.Username, Nickname: u.Nickname, Avatar: u.Avatar, DeptID: u.DeptID, DeptName: deptName, Online: online}
+	return ContactVO{ID: u.ID, UID: u.UID, Username: u.Username, Nickname: u.Nickname,
+		Phone: u.Phone, Title: u.Title, Avatar: u.Avatar, DeptID: u.DeptID, DeptName: deptName, Online: online}
 }

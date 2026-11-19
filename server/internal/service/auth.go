@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"nexim/server/internal/config"
@@ -38,8 +39,17 @@ func (a *AuthService) Login(username, password, deviceID, platform string) (map[
 		return nil, fmt.Errorf("账号或密码错误")
 	}
 
-	roles := []string{"user"}
-	if u.Username == "linxiao" {
+	// 角色/权限来自 RBAC 表；admin 标记供管理后台登录判断（拥有任一菜单权限即可进入）
+	e := ComputeEffect(a.S, u.UID)
+	roles := append([]string{"user"}, e.RoleCodes...)
+	isAdmin := HasPerm(a.S, u.UID, "*")
+	for _, p := range e.Permissions {
+		if p == "dashboard:view" || strings.HasPrefix(p, "menu:") {
+			isAdmin = true
+			break
+		}
+	}
+	if isAdmin {
 		roles = append(roles, "admin")
 	}
 	access, _, err := pkg.SignToken(a.C.Auth.JWTSecret, u.UID, u.Username, deviceID, roles, a.C.Auth.AccessTokenTTL)
@@ -67,7 +77,7 @@ func (a *AuthService) Login(username, password, deviceID, platform string) (map[
 	return map[string]interface{}{
 		"accessToken": access, "refreshToken": refresh,
 		"uid": u.UID, "username": u.Username, "nickname": u.Nickname,
-		"avatar": u.Avatar, "roles": roles, "permissions": []string{}, "dataScope": "all",
+		"avatar": u.Avatar, "roles": roles, "permissions": e.Permissions, "dataScope": e.DataScope,
 	}, nil
 }
 
@@ -119,15 +129,12 @@ func (a *AuthService) Logout(jti string, exp int64) error {
 	return a.S.RDB.Set(a.S.Ctx, "token:blacklist:"+jti, "1", ttl).Err()
 }
 
+// Permissions 下发用户最终权限（角色并集），前端菜单/按钮与服务端中间件共用同一份数据
 func (a *AuthService) Permissions(uid string) map[string]interface{} {
-	perms := []string{"conv:list", "message:list", "message:send", "user:list", "dept:list"}
-	var u model.User
-	if a.S.DB.Where("uid = ?", uid).First(&u).Error == nil && u.Username == "linxiao" {
-		perms = append(perms, "dashboard:view", "menu:users", "rbac:role:grant", "audit:message:list")
-	}
+	e := ComputeEffect(a.S, uid)
 	return map[string]interface{}{
-		"permissions": perms, "dataScope": "all",
-		"menus": []map[string]string{{"name": "消息", "path": "/im"}, {"name": "通讯录", "path": "/contacts"}},
+		"permissions": e.Permissions, "roleCodes": e.RoleCodes, "roles": e.RoleNames,
+		"dataScope": e.DataScope, "version": e.Version, "menus": MenusOf(e),
 	}
 }
 

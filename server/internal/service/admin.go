@@ -48,7 +48,7 @@ func (a *AdminService) UserList(page, size int) map[string]interface{} {
 	return map[string]interface{}{"total": total, "list": users, "page": page, "size": size}
 }
 
-func (a *AdminService) CreateUser(username, password, nickname string, deptID int64) (*model.User, error) {
+func (a *AdminService) CreateUser(username, password, nickname string, deptID int64, phone, title string) (*model.User, error) {
 	if username == "" || password == "" {
 		return nil, fmt.Errorf("账号和密码不能为空")
 	}
@@ -60,7 +60,8 @@ func (a *AdminService) CreateUser(username, password, nickname string, deptID in
 	h, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	now := model.Now()
 	u := model.User{UID: fmt.Sprintf("u_%d", now), Username: username, Nickname: nickname,
-		PasswordHash: string(h), Avatar: "#4f6ef7", DeptID: deptID, Status: 1, CreatedAt: now, UpdatedAt: now}
+		PasswordHash: string(h), Avatar: "#4f6ef7", DeptID: deptID, Phone: phone, Title: title,
+		Status: 1, CreatedAt: now, UpdatedAt: now}
 	if nickname == "" {
 		u.Nickname = username
 	}

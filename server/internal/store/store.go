@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -123,24 +124,36 @@ func (s *Store) seed() error {
 	var count int64
 	s.DB.Model(&model.User{}).Count(&count)
 	if count > 0 {
-		return nil
+		return s.finalizeSeed()
 	}
 	now := model.Now()
 	depts := []model.Dept{
-		{ParentID: 0, Name: "总部", Path: "/1/"},
-		{ParentID: 1, Name: "研发中心", Path: "/1/3/"},
-		{ParentID: 1, Name: "产品部", Path: "/1/5/"},
-		{ParentID: 1, Name: "市场部", Path: "/1/8/"},
+		{ParentID: 0, Name: "总部"},
+		{ParentID: 1, Name: "研发中心"},
+		{ParentID: 1, Name: "产品部"},
+		{ParentID: 1, Name: "市场部"},
 	}
 	s.DB.Create(&depts)
+	// 物化路径由真实自增 ID 生成，避免历史种子里路径与 ID 不一致
+	for i := range depts {
+		base := "/"
+		for _, p := range depts {
+			if p.ID == depts[i].ParentID {
+				base = p.Path
+				break
+			}
+		}
+		depts[i].Path = base + strconv.FormatInt(depts[i].ID, 10) + "/"
+		s.DB.Model(&model.Dept{}).Where("id = ?", depts[i].ID).Update("path", depts[i].Path)
+	}
 
 	users := []model.User{
-		{UID: "u_1001", Username: "linxiao", Nickname: "林晓", Avatar: "#4f6ef7", DeptID: 3, Status: 1, CreatedAt: now, UpdatedAt: now},
-		{UID: "u_1002", Username: "zhangwei", Nickname: "张伟", Avatar: "#3ba7d8", DeptID: 3, Status: 1, CreatedAt: now, UpdatedAt: now},
-		{UID: "u_1003", Username: "zhaolin", Nickname: "赵琳", Avatar: "#f2994a", DeptID: 3, Status: 1, CreatedAt: now, UpdatedAt: now},
-		{UID: "u_1004", Username: "ligong", Nickname: "李工", Avatar: "#3ba58c", DeptID: 3, Status: 1, CreatedAt: now, UpdatedAt: now},
-		{UID: "u_1005", Username: "chenjing", Nickname: "陈静", Avatar: "#a05ce6", DeptID: 5, Status: 1, CreatedAt: now, UpdatedAt: now},
-		{UID: "u_1006", Username: "heyu", Nickname: "何雨", Avatar: "#e9834a", DeptID: 8, Status: 1, CreatedAt: now, UpdatedAt: now},
+		{UID: "u_1001", Username: "linxiao", Nickname: "林晓", Avatar: "#4f6ef7", DeptID: depts[1].ID, Status: 1, CreatedAt: now, UpdatedAt: now},
+		{UID: "u_1002", Username: "zhangwei", Nickname: "张伟", Avatar: "#3ba7d8", DeptID: depts[1].ID, Status: 1, CreatedAt: now, UpdatedAt: now},
+		{UID: "u_1003", Username: "zhaolin", Nickname: "赵琳", Avatar: "#f2994a", DeptID: depts[1].ID, Status: 1, CreatedAt: now, UpdatedAt: now},
+		{UID: "u_1004", Username: "ligong", Nickname: "李工", Avatar: "#3ba58c", DeptID: depts[1].ID, Status: 1, CreatedAt: now, UpdatedAt: now},
+		{UID: "u_1005", Username: "chenjing", Nickname: "陈静", Avatar: "#a05ce6", DeptID: depts[2].ID, Status: 1, CreatedAt: now, UpdatedAt: now},
+		{UID: "u_1006", Username: "heyu", Nickname: "何雨", Avatar: "#e9834a", DeptID: depts[3].ID, Status: 1, CreatedAt: now, UpdatedAt: now},
 	}
 	for i := range users {
 		h, _ := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
@@ -154,13 +167,8 @@ func (s *Store) seed() error {
 		s.DB.Create(&model.Friend{UID: uid, FriendUID: "u_1001", Status: 1, CreatedAt: now})
 	}
 
-	// 角色
-	roles := []model.Role{
-		{Code: "SUPER_ADMIN", Name: "超级管理员", Permissions: `["*"]`, DataScope: "all", Version: 1},
-		{Code: "USER", Name: "普通用户", Permissions: `["conv:list","message:list","message:send"]`, DataScope: "self", Version: 1},
-		{Code: "DEPT_ADMIN", Name: "部门管理员", Permissions: `["conv:list","user:list","dept:list"]`, DataScope: "dept", Version: 1},
-	}
-	s.DB.Create(&roles)
+	// 角色（内置角色权限码与权限目录一致；新安装或旧库升级均由 ensureRoles 兜底）
+	s.ensureRoles()
 	var adminRole model.Role
 	s.DB.Where("code = ?", "SUPER_ADMIN").First(&adminRole)
 	var linxiao model.User
@@ -193,6 +201,124 @@ func (s *Store) seed() error {
 	})
 
 	s.Log.Info("seed data created", zap.Int("users", len(users)))
+	return s.finalizeSeed()
+}
+
+// finalizeSeed 启动时幂等修复历史演示数据：部门引用 → 内置角色 → 物化路径
+func (s *Store) finalizeSeed() error {
+	if err := s.fixUserDeptRefs(); err != nil {
+		return err
+	}
+	if err := s.ensureRoles(); err != nil {
+		return err
+	}
+	return s.fixDeptPaths()
+}
+
+// fixUserDeptRefs 修复历史种子中「按路径编号」而非真实部门 ID 的用户引用
+func (s *Store) fixUserDeptRefs() error {
+	var depts []model.Dept
+	if err := s.DB.Find(&depts).Error; err != nil {
+		return err
+	}
+	alias := map[int64]int64{}
+	for _, d := range depts {
+		parts := strings.Split(strings.Trim(d.Path, "/"), "/")
+		if len(parts) == 0 {
+			continue
+		}
+		oldID, err := strconv.ParseInt(parts[len(parts)-1], 10, 64)
+		if err == nil && oldID != d.ID {
+			alias[oldID] = d.ID
+		}
+	}
+	if len(alias) == 0 {
+		return nil
+	}
+	var users []model.User
+	if err := s.DB.Find(&users).Error; err != nil {
+		return err
+	}
+	for _, u := range users {
+		if real, ok := alias[u.DeptID]; ok {
+			if err := s.DB.Model(&model.User{}).Where("id = ?", u.ID).Update("dept_id", real).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// fixDeptPaths 依据 parent_id 重算全部物化路径，保证「本部门及下级」查询正确
+func (s *Store) fixDeptPaths() error {
+	var depts []model.Dept
+	if err := s.DB.Order("id").Find(&depts).Error; err != nil {
+		return err
+	}
+	byID := map[int64]model.Dept{}
+	for _, d := range depts {
+		byID[d.ID] = d
+	}
+	var pathOf func(int64, int) string
+	pathOf = func(id int64, depth int) string {
+		d, ok := byID[id]
+		if !ok || depth > 16 {
+			return ""
+		}
+		base := "/"
+		if d.ParentID != 0 {
+			base = pathOf(d.ParentID, depth+1)
+		}
+		if base == "" {
+			return ""
+		}
+		return base + strconv.FormatInt(id, 10) + "/"
+	}
+	for _, d := range depts {
+		p := pathOf(d.ID, 0)
+		if p != "" && p != d.Path {
+			if err := s.DB.Model(&model.Dept{}).Where("id = ?", d.ID).Update("path", p).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// builtinRoles 内置角色定义：权限码全部来自 service.PermCatalog
+func builtinRoles() []model.Role {
+	return []model.Role{
+		{Code: "SUPER_ADMIN", Name: "超级管理员", Permissions: `["*"]`, DataScope: "all", Version: 1},
+		{Code: "OPS_ADMIN", Name: "运营管理员", Permissions: `["dashboard:view","menu:users","menu:depts","menu:roles","user:list","user:create","user:edit","user:export","dept:list","dept:create","dept:edit","rbac:role:list","rbac:role:grant"]`, DataScope: "all", Version: 1},
+		{Code: "AUDITOR", Name: "审计员", Permissions: `["dashboard:view","menu:audit","menu:logs","audit:message:list","audit:message:export","log:list","log:export","rtc:record:list"]`, DataScope: "all", Version: 1},
+		{Code: "DEPT_ADMIN", Name: "部门管理员", Permissions: `["dashboard:view","menu:users","menu:depts","user:list","dept:list"]`, DataScope: "deptAndSub", Version: 1},
+		{Code: "USER", Name: "普通用户", Permissions: `[]`, DataScope: "self", Version: 1},
+	}
+}
+
+// ensureRoles 幂等补齐内置角色；旧库中的历史权限码（conv:* 等）迁移到新目录
+func (s *Store) ensureRoles() error {
+	for _, seed := range builtinRoles() {
+		var r model.Role
+		err := s.DB.Where("code = ?", seed.Code).First(&r).Error
+		if err != nil {
+			if createErr := s.DB.Create(&seed).Error; createErr != nil {
+				return createErr
+			}
+			continue
+		}
+		if seed.Code == "SUPER_ADMIN" {
+			continue
+		}
+		if strings.Contains(r.Permissions, "conv:") || strings.Contains(r.Permissions, "message:") || r.DataScope == "" {
+			if err := s.DB.Model(&r).Updates(map[string]interface{}{
+				"permissions": seed.Permissions, "data_scope": seed.DataScope,
+				"version": gorm.Expr("version + 1"),
+			}).Error; err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 

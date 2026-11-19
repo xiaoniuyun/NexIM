@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -211,25 +212,32 @@ func (rt *Router) adminDashboard(c *gin.Context) {
 	pkg.OK(c, rt.Admin.Dashboard())
 }
 func (rt *Router) adminUsers(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
-	pkg.OK(c, rt.Admin.UserList(page, size))
+	pkg.OK(c, rt.Admin.UserListEx(userQueryFrom(c)))
 }
 func (rt *Router) adminCreateUser(c *gin.Context) {
 	var req struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-		Nickname string `json:"nickname"`
-		DeptID   int64  `json:"deptId"`
+		Username string  `json:"username" binding:"required"`
+		Password string  `json:"password" binding:"required"`
+		Nickname string  `json:"nickname"`
+		DeptID   int64   `json:"deptId"`
+		Phone    string  `json:"phone"`
+		Title    string  `json:"title"`
+		RoleIDs  []int64 `json:"roleIds"`
 	}
 	if c.ShouldBindJSON(&req) != nil {
 		pkg.Fail(c, 400, 1001, "参数错误")
 		return
 	}
-	u, err := rt.Admin.CreateUser(req.Username, req.Password, req.Nickname, req.DeptID)
+	u, err := rt.Admin.CreateUser(req.Username, req.Password, req.Nickname, req.DeptID, req.Phone, req.Title)
 	if err != nil {
 		pkg.Fail(c, 400, 4000, err.Error())
 		return
+	}
+	if len(req.RoleIDs) > 0 {
+		if err := rt.Admin.SetUserRoles(u.UID, req.RoleIDs); err != nil {
+			pkg.Fail(c, 400, 4000, err.Error())
+			return
+		}
 	}
 	rt.Admin.Audit(uid(c), "user:create", u.UID, req.Username)
 	pkg.OK(c, u)
@@ -241,13 +249,37 @@ func (rt *Router) adminUpdateUser(c *gin.Context) {
 		pkg.Fail(c, 400, 1001, "参数错误")
 		return
 	}
-	_ = rt.Admin.UpdateUser(id, req)
+	if err := rt.Admin.UpdateUserSafe(id, req); err != nil {
+		pkg.Fail(c, 400, 4000, err.Error())
+		return
+	}
+	if raw, ok := req["roleIds"]; ok {
+		var u model.User
+		ids := []int64{}
+		if arr, ok := raw.([]interface{}); ok {
+			for _, x := range arr {
+				n, _ := strconv.ParseInt(fmt.Sprint(x), 10, 64)
+				if n > 0 {
+					ids = append(ids, n)
+				}
+			}
+		}
+		if rt.S.DB.Where("id = ?", id).First(&u).Error == nil {
+			if err := rt.Admin.SetUserRoles(u.UID, ids); err != nil {
+				pkg.Fail(c, 400, 4000, err.Error())
+				return
+			}
+		}
+	}
 	rt.Admin.Audit(uid(c), "user:edit", strconv.FormatInt(id, 10), "")
 	pkg.OK(c, nil)
 }
 func (rt *Router) adminDeleteUser(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	_ = rt.Admin.DeleteUser(id)
+	if err := rt.Admin.SetUserStatus(id, 3); err != nil {
+		pkg.Fail(c, 400, 4000, err.Error())
+		return
+	}
 	rt.Admin.Audit(uid(c), "user:disable", strconv.FormatInt(id, 10), "")
 	pkg.OK(c, nil)
 }
@@ -262,7 +294,7 @@ func (rt *Router) adminResetPwd(c *gin.Context) {
 	pkg.OK(c, gin.H{"password": pwd})
 }
 func (rt *Router) adminRoles(c *gin.Context) {
-	pkg.OK(c, rt.Admin.Roles())
+	pkg.OK(c, rt.Admin.RoleList())
 }
 func (rt *Router) adminGrantRole(c *gin.Context) {
 	var req struct {
@@ -273,7 +305,11 @@ func (rt *Router) adminGrantRole(c *gin.Context) {
 		pkg.Fail(c, 400, 1001, "参数错误")
 		return
 	}
-	_ = rt.Admin.GrantRole(req.UID, req.RoleID)
+	if err := rt.Admin.GrantRoleEx(req.UID, req.RoleID); err != nil {
+		pkg.Fail(c, 400, 4000, err.Error())
+		return
+	}
+	rt.Admin.Audit(uid(c), "rbac:role:grant", req.UID, strconv.FormatInt(req.RoleID, 10))
 	pkg.OK(c, nil)
 }
 func (rt *Router) adminAudit(c *gin.Context) {

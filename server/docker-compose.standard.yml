@@ -46,7 +46,7 @@ services:
 
   # 标准版消息库：ScyllaDB（宽表，按 conv_id 分区、seq 聚类）
   scylla:
-    image: scylladb/scylla:5.4
+    image: scylladb/scylla:latest
     container_name: nexim-scylla
     restart: unless-stopped
     command: ["--smp", "1", "--memory", "1G", "--overprovisioned", "1", "--developer-mode", "1", "--api-address", "0.0.0.0"]

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { toasts } from './toast'
@@ -12,13 +12,19 @@ const cmdRef = ref(null)
 const bellOpen = ref(false)
 
 const menu = [
-  { group: '概览', items: [['dashboard', '工作台', '▦']] },
-  { group: '用户与组织', items: [['users', '用户管理', '👥'], ['depts', '组织架构', '🏢'], ['groups', '群组管理', '💬'], ['login-logs', '登录日志', '📋']] },
-  { group: '权限治理', items: [['roles', '角色权限', '🛡️'], ['perm-preview', '权限预览', '🔑'], ['logs', '操作日志', '📜']] },
-  { group: '内容与安全', items: [['audit', '消息审计', '👁️'], ['sensitive', '内容安全', '🚩'], ['notices', '公告管理', '🔔']] },
-  { group: '音视频', items: [['calls', '通话记录', '📞'], ['rtc-quality', '质量监控', '📊']] },
-  { group: '系统', items: [['settings', '系统设置', '⚙️']] }
+  { group: '概览', items: [['dashboard', '工作台', '▦', 'dashboard:view']] },
+  { group: '用户与组织', items: [['users', '用户管理', '👥', 'menu:users'], ['depts', '组织架构', '🏢', 'menu:depts'], ['groups', '群组管理', '💬', 'menu:groups'], ['login-logs', '登录日志', '📋', 'menu:logs']] },
+  { group: '权限治理', items: [['roles', '角色权限', '🛡️', 'menu:roles'], ['perm-preview', '权限预览', '🔑', 'menu:roles'], ['logs', '操作日志', '📜', 'menu:logs']] },
+  { group: '内容与安全', items: [['audit', '消息审计', '👁️', 'menu:audit'], ['sensitive', '内容安全', '🚩', 'menu:sensitive'], ['notices', '公告管理', '🔔', 'menu:notices']] },
+  { group: '音视频', items: [['calls', '通话记录', '📞', 'menu:calls'], ['rtc-quality', '质量监控', '📊', 'menu:calls']] },
+  { group: '系统', items: [['settings', '系统设置', '⚙️', 'menu:settings']] }
 ]
+// 菜单按 /auth/permissions 下发的权限码过滤（超级管理员 * 全放行）
+const visibleMenu = computed(() => auth.can('*')
+  ? menu
+  : menu.map(g => ({ ...g, items: g.items.filter(it => auth.can(it[3])) })).filter(g => g.items.length))
+const scopeNames = { all: '全部数据', deptAndSub: '本部门及下级', dept: '本部门', self: '仅本人', custom: '自定义部门' }
+onMounted(() => { if (auth.isLogin) auth.refreshPerms() })
 const isLoginPage = computed(() => route.name === 'login')
 const title = computed(() => route.meta.title || '工作台')
 const alarms = [
@@ -35,14 +41,14 @@ async function logout() { await auth.logout(); router.replace('/login') }
       <aside class="admin-side">
         <div class="as-brand"><span class="lg">N</span><span>NexIM Console<small style="display:block;font-size:10px;font-weight:400;opacity:.7">运营管理后台</small></span></div>
         <div id="adminMenu">
-          <template v-for="g in menu" :key="g.group">
+          <template v-for="g in visibleMenu" :key="g.group">
             <div class="as-group">{{ g.group }}</div>
             <button v-for="it in g.items" :key="it[0]" :class="{ on: '/' + it[0] === route.path }" @click="router.push('/' + it[0])">
               <span>{{ it[2] }}</span><span>{{ it[1] }}</span>
             </button>
           </template>
         </div>
-        <div class="as-foot">当前登录：{{ auth.user?.nickname || '超级管理员' }}<br>权限版本 v12 · 全部数据范围<br>所有写操作均记录审计日志</div>
+        <div class="as-foot">当前登录：{{ auth.user?.nickname || '超级管理员' }}<br>权限版本 v{{ auth.version }} · {{ scopeNames[auth.dataScope] || '仅本人' }}范围<br>所有写操作均记录审计日志</div>
       </aside>
       <div class="admin-main">
         <div class="admin-top">
