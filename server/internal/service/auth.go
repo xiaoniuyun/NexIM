@@ -77,7 +77,9 @@ func (a *AuthService) Login(username, password, deviceID, platform string) (map[
 	return map[string]interface{}{
 		"accessToken": access, "refreshToken": refresh,
 		"uid": u.UID, "username": u.Username, "nickname": u.Nickname,
-		"avatar": u.Avatar, "roles": roles, "permissions": e.Permissions, "dataScope": e.DataScope,
+		"avatar": u.Avatar, "signature": u.Signature, "gender": u.Gender,
+		"phone": u.Phone, "title": u.Title, "deptId": u.DeptID,
+		"roles": roles, "permissions": e.Permissions, "dataScope": e.DataScope,
 	}, nil
 }
 

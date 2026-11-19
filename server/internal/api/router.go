@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"nexim/server/internal/config"
 	"nexim/server/internal/gateway"
@@ -88,6 +89,8 @@ func (rt *Router) Engine() *gin.Engine {
 			auth.DELETE("/auth/devices/:deviceId", rt.deleteDevice)
 
 			auth.GET("/users/search", rt.userSearch)
+			auth.GET("/users/me", rt.myProfile)
+			auth.PUT("/users/me", rt.updateMyProfile)
 			auth.GET("/users", rt.users)
 			auth.GET("/users/:id/profile", rt.userProfile)
 
@@ -447,6 +450,69 @@ func (rt *Router) userProfile(c *gin.Context) {
 		pkg.OK(c, u[0])
 	} else {
 		pkg.OK(c, nil)
+	}
+}
+
+// myProfile 返回当前登录用户的完整资料
+func (rt *Router) myProfile(c *gin.Context) {
+	pkg.OK(c, rt.myProfileData(uid(c)))
+}
+
+// updateMyProfile 更新昵称、头像、性别、个性签名等基础资料
+func (rt *Router) updateMyProfile(c *gin.Context) {
+	var req struct {
+		Nickname  string `json:"nickname"`
+		Avatar    string `json:"avatar"`
+		Signature string `json:"signature"`
+		Gender    int    `json:"gender"`
+	}
+	if c.ShouldBindJSON(&req) != nil {
+		pkg.Fail(c, 400, 1001, "参数错误")
+		return
+	}
+	req.Nickname = strings.TrimSpace(req.Nickname)
+	req.Signature = strings.TrimSpace(req.Signature)
+	if n := utf8.RuneCountInString(req.Nickname); n < 1 || n > 32 {
+		pkg.Fail(c, 400, 1001, "昵称需为 1-32 个字符")
+		return
+	}
+	if utf8.RuneCountInString(req.Signature) > 120 {
+		pkg.Fail(c, 400, 1001, "个性签名不能超过 120 个字符")
+		return
+	}
+	if req.Gender < 0 || req.Gender > 2 {
+		pkg.Fail(c, 400, 1001, "性别取值不合法")
+		return
+	}
+	if len(req.Avatar) > 256 {
+		pkg.Fail(c, 400, 1001, "头像地址过长")
+		return
+	}
+	updates := map[string]interface{}{
+		"nickname": req.Nickname, "avatar": req.Avatar,
+		"signature": req.Signature, "gender": req.Gender, "updated_at": model.Now(),
+	}
+	if err := rt.S.DB.Model(&model.User{}).Where("uid = ?", uid(c)).Updates(updates).Error; err != nil {
+		pkg.Fail(c, 500, 9000, "保存失败")
+		return
+	}
+	pkg.OK(c, rt.myProfileData(uid(c)))
+}
+
+func (rt *Router) myProfileData(uidStr string) map[string]interface{} {
+	var u model.User
+	if err := rt.S.DB.Where("uid = ?", uidStr).First(&u).Error; err != nil {
+		return nil
+	}
+	deptName := ""
+	var d model.Dept
+	if rt.S.DB.Where("id = ?", u.DeptID).First(&d).Error == nil {
+		deptName = d.Name
+	}
+	return map[string]interface{}{
+		"uid": u.UID, "username": u.Username, "nickname": u.Nickname,
+		"avatar": u.Avatar, "signature": u.Signature, "gender": u.Gender,
+		"phone": u.Phone, "title": u.Title, "deptId": u.DeptID, "deptName": deptName,
 	}
 }
 func (rt *Router) friends(c *gin.Context) {

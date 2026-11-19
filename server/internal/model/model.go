@@ -9,6 +9,9 @@ type User struct {
 	PasswordHash string `gorm:"size:128" json:"-"`
 	Nickname     string `gorm:"size:64" json:"nickname"`
 	Avatar       string `gorm:"size:256" json:"avatar"`
+	// 个人资料扩展：file:<fileId> 表示上传的头像图片，历史值可能为颜色
+	Signature    string `gorm:"size:255;default:''" json:"signature"`
+	Gender       int    `gorm:"default:0" json:"gender"` // 0未知 1男 2女
 	DeptID       int64  `gorm:"default:0" json:"deptId"`
 	Phone        string `gorm:"size:32" json:"phone"`
 	Title        string `gorm:"size:64" json:"title"`

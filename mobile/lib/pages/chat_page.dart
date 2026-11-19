@@ -1,8 +1,14 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:record/record.dart';
 
 import '../app/app_state.dart';
 import '../app/call_state.dart';
@@ -25,6 +31,15 @@ class _ChatPageState extends State<ChatPage> {
   bool _uploading = false;
   int _lastCount = -1;
   late final AppState _app;
+  // 语音录制与播放
+  final AudioRecorder _recorder = AudioRecorder();
+  final AudioPlayer _player = AudioPlayer();
+  bool _recording = false;
+  int _recSec = 0;
+  DateTime? _recStart;
+  Timer? _recTimer;
+  String? _playingId;
+  StreamSubscription? _playerSub;
 
   @override
   void initState() {
@@ -38,10 +53,106 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    _playerSub?.cancel();
+    _recTimer?.cancel();
+    _recorder.dispose();
+    _player.dispose();
     _app.setChatVisible(false);
     _input.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  // ===== 语音消息 =====
+  Future<void> _toggleRecord() async {
+    if (_recording) {
+      await _stopRecord();
+      return;
+    }
+    if (!await _recorder.hasPermission()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('没有麦克风权限')));
+      }
+      return;
+    }
+    try {
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 96000, sampleRate: 44100),
+        path: path,
+      );
+      _recStart = DateTime.now();
+      if (mounted) setState(() { _recording = true; _recSec = 0; });
+      _recTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() => _recSec++);
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('录音失败：$e')));
+      }
+    }
+  }
+
+  Future<void> _stopRecord() async {
+    _recTimer?.cancel();
+    _recTimer = null;
+    final path = await _recorder.stop();
+    if (mounted) setState(() => _recording = false);
+    if (path == null) return;
+    final secs = ((DateTime.now().difference(_recStart ?? DateTime.now()).inMilliseconds) / 1000).round().clamp(1, 600);
+    final file = File(path);
+    final size = await file.length();
+    if (size < 800) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('录音时间太短')));
+      }
+      try { await file.delete(); } catch (_) {}
+      return;
+    }
+    setState(() => _uploading = true);
+    try {
+      final rec = await Api.upload('/files/upload', path, fields: {'convId': widget.conv.convId});
+      _app.sendMedia('voice', '${rec['name'] ?? '语音消息'}', {
+        'fileId': rec['fileId'],
+        'name': rec['name'] ?? '语音消息',
+        'size': rec['size'] ?? size,
+        'mime': rec['mimeType'] ?? 'audio/mp4',
+        'duration': secs,
+      });
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('语音发送失败：$e')));
+      }
+    } finally {
+      try { await file.delete(); } catch (_) {}
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Future<void> _togglePlay(Msg m) async {
+    final extra = m.extra is Map ? Map<String, dynamic>.from(m.extra) : <String, dynamic>{};
+    final fid = '${extra['fileId'] ?? ''}';
+    if (fid.isEmpty) return;
+    if (_playingId == m.msgId) {
+      await _player.stop();
+      if (mounted) setState(() => _playingId = null);
+      return;
+    }
+    try {
+      await _player.stop();
+      await _player.play(UrlSource(Api.fileUrl(fid)));
+      _playerSub?.cancel();
+      _playerSub = _player.onPlayerComplete.listen((_) {
+        if (mounted) setState(() => _playingId = null);
+      });
+      if (mounted) setState(() => _playingId = m.msgId);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('播放失败：$e')));
+      }
+    }
   }
 
   Future<void> _send() async {
@@ -344,13 +455,21 @@ class _ChatPageState extends State<ChatPage> {
         ],
       );
     } else if (m.type == 'voice') {
-      content = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.graphic_eq, color: textColor),
-          const SizedBox(width: 6),
-          Text('[语音]', style: TextStyle(color: textColor, fontSize: 13)),
-        ],
+      final dur = (extra['duration'] as num?)?.toInt() ?? 0;
+      final fid = '${extra['fileId'] ?? ''}';
+      final playing = _playingId == m.msgId;
+      content = InkWell(
+        onTap: fid.isEmpty ? null : () => _togglePlay(m),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(playing ? Icons.pause_circle_filled : Icons.play_circle_fill, color: textColor, size: 28),
+            const SizedBox(width: 6),
+            Text(dur > 0 ? '$dur″' : '语音', style: TextStyle(color: textColor, fontSize: 14)),
+            const SizedBox(width: 8),
+            Icon(Icons.graphic_eq, color: textColor, size: 18),
+          ],
+        ),
       );
     } else {
       content = Text(m.content, style: TextStyle(color: textColor, fontSize: 15, height: 1.35));
@@ -378,7 +497,11 @@ class _ChatPageState extends State<ChatPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!mine) ...[
-            Avatar(name: m.fromName.isNotEmpty ? m.fromName : widget.conv.title, size: 34),
+            Avatar(
+              name: m.fromName.isNotEmpty ? m.fromName : widget.conv.title,
+              url: widget.conv.isGroup ? '' : widget.conv.peerAvatar,
+              size: 34,
+            ),
             const SizedBox(width: 8),
           ],
           Flexible(
@@ -439,7 +562,7 @@ class _ChatPageState extends State<ChatPage> {
                 maxLines: 4,
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
-                  hintText: '输入消息…',
+                  hintText: _recording ? '正在录音 $_recSec″，点击红色按钮结束' : '输入消息…',
                   isDense: true,
                   filled: true,
                   fillColor: const Color(0xFFF1F3F6),
@@ -452,6 +575,12 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
             const SizedBox(width: 4),
+            IconButton(
+              tooltip: _recording ? '结束录音' : '语音消息',
+              onPressed: _uploading ? null : () => _toggleRecord(),
+              icon: Icon(_recording ? Icons.stop_circle : Icons.mic_none),
+              color: _recording ? Colors.red : null,
+            ),
             IconButton.filled(
               onPressed: _send,
               icon: const Icon(Icons.send, size: 20),

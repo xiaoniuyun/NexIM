@@ -38,12 +38,15 @@ function logout() {
     <button class="icon-btn" @click="router.push('/settings')">⚙️</button>
   </div>
   <div class="h5-body">
-    <div class="profile-card">
-      <Avatar :name="auth.user?.nickname || 'U'" size="lg" color="rgba(255,255,255,.25)" />
+    <div class="profile-card" @click="router.push('/profile')">
+      <Avatar :name="auth.user?.nickname || 'U'" :src="auth.user?.avatar" size="lg" color="rgba(255,255,255,.25)" />
       <div>
         <div class="pc-name">{{ auth.user?.nickname || '用户' }}</div>
-        <div class="pc-sub">@{{ auth.user?.username }} &nbsp;·&nbsp; UID {{ auth.user?.uid }}</div>
+        <div class="pc-sub">{{ auth.user?.signature || ('@' + auth.user?.username + ' · UID ' + auth.user?.uid) }}</div>
       </div>
+    </div>
+    <div class="group-block">
+      <button class="gb-row" @click="router.push('/profile')">✏️ 编辑资料<span class="gb-r">昵称 / 头像 / 签名 ›</span></button>
     </div>
     <div class="group-block">
       <div class="gb-row" style="color:var(--muted);font-size:11px">{{ t('status') }}</div>

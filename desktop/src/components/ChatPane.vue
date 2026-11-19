@@ -38,6 +38,15 @@ const pinned = ref(pinnedSet())
 const muted = ref(mutedSet())
 const emojis = ['😀', '😄', '😂', '😊', '😍', '🤔', '😎', '👍', '👏', '🙏', '🎉', '❤️', '🔥', '✅', '💡', '🚀', '📌', '😅', '🤝', '😴', '🙌']
 
+// 语音录制
+const recording = ref(false)
+const recSeconds = ref(0)
+let recorder = null
+let recChunks = []
+let recStream = null
+let recTimer = null
+let recStartedAt = 0
+
 const conv = computed(() => chat.convs.find(c => c.convId === chat.currentConv) || null)
 const isGroup = computed(() => conv.value?.convType === 2)
 const title = computed(() => conv.value?.peerName || '选择一个会话')
@@ -97,6 +106,66 @@ async function onDrop(e) {
 function openFile(m) {
   if (!m.extra?.fileId) return
   window.open(fileUrl(m.extra.fileId), '_blank')
+}
+
+// ===== 语音消息 =====
+async function toggleRecord() {
+  if (recording.value) { stopRecord(); return }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+    return toast('当前环境不支持录音', 'err')
+  }
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+      : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : ''
+    recorder = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined)
+    recChunks = []
+    recorder.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data) }
+    recorder.onstop = () => finishRecord()
+    recStartedAt = Date.now()
+    recSeconds.value = 0
+    recorder.start()
+    recording.value = true
+    recTimer = setInterval(() => { recSeconds.value = Math.floor((Date.now() - recStartedAt) / 1000) }, 300)
+  } catch (err) {
+    toast('无法访问麦克风：' + (err.message || ''), 'err')
+    releaseStream()
+  }
+}
+function stopRecord() {
+  if (recTimer) { clearInterval(recTimer); recTimer = null }
+  recording.value = false
+  try { if (recorder && recorder.state !== 'inactive') recorder.stop() } catch (_) {}
+}
+function releaseStream() {
+  if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null }
+}
+async function finishRecord() {
+  const secs = Math.max(1, Math.round((Date.now() - recStartedAt) / 1000))
+  const mime = (recorder && recorder.mimeType) || 'audio/webm'
+  const blob = new Blob(recChunks, { type: mime })
+  recChunks = []
+  recorder = null
+  releaseStream()
+  if (blob.size < 800) return toast('录音时间太短', 'err')
+  const ext = mime.indexOf('mp4') >= 0 ? 'm4a' : 'webm'
+  const file = new File([blob], 'voice_' + Date.now() + '.' + ext, { type: mime })
+  if (!chat.currentConv) return toast('请先选择会话', 'err')
+  const fd = new FormData()
+  fd.append('file', file)
+  fd.append('convId', chat.currentConv)
+  try {
+    const r = await API.fileUpload(fd)
+    const rec = r.data || {}
+    chat.sendMedia('voice', rec.name || file.name, {
+      fileId: rec.fileId, name: rec.name || file.name,
+      size: rec.size || blob.size, mime, duration: secs
+    })
+    toast('语音已发送')
+  } catch (err) {
+    toast(err.message || '语音发送失败', 'err')
+  }
 }
 function insertEmoji(e) { text.value += e }
 
@@ -247,6 +316,8 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   chat.setViewing(false)
+  stopRecord()
+  releaseStream()
   window.removeEventListener('click', closePopovers)
 })
 </script>
@@ -262,7 +333,7 @@ onBeforeUnmount(() => {
     <template v-else>
       <header class="chat-head">
         <div class="chat-title">
-          <Avatar :name="title" size="md" />
+          <Avatar :name="title" :src="conv?.peerAvatar" size="md" />
           <div>
             <div class="ct-name">
               {{ title }}
@@ -311,7 +382,7 @@ onBeforeUnmount(() => {
             <div class="sys-msg">{{ m.content }}</div>
           </template>
           <template v-else>
-            <Avatar v-if="!m.mine" :name="m.fromName || m.fromUid" size="sm" />
+            <Avatar v-if="!m.mine" :name="m.fromName || m.fromUid" :src="isGroup ? '' : conv.peerAvatar" size="sm" />
             <div class="msg-body">
               <div v-if="!m.mine && isGroup" class="msg-from">{{ m.fromName || m.fromUid }}</div>
               <div class="bubble" :class="{ revoked: m.status === 2 }">
@@ -354,7 +425,7 @@ onBeforeUnmount(() => {
                 <button class="danger" @click="delMsg(m)">删除</button>
               </div>
             </div>
-            <Avatar v-if="m.mine" :name="auth.user?.nickname || '我'" size="sm" />
+            <Avatar v-if="m.mine" :name="auth.user?.nickname || '我'" :src="auth.user?.avatar" size="sm" />
           </template>
         </div>
         <div v-if="!msgs.length" class="empty-tip">暂无消息，发送第一条消息开始聊天</div>
@@ -364,6 +435,7 @@ onBeforeUnmount(() => {
         <div class="composer-tools">
           <button class="icon-btn" title="表情" @click="showEmoji = !showEmoji; showAttach = false">☺</button>
           <button class="icon-btn" title="附件" @click="showAttach = !showAttach; showEmoji = false">📎</button>
+          <button class="icon-btn" :class="{ recording }" :title="recording ? `结束录音 ${recSeconds}″` : '语音消息'" @click="toggleRecord">{{ recording ? '⏺' : '🎙' }}</button>
           <button class="icon-btn" :disabled="!desk" title="截图并发送（Ctrl+Shift+A）" @click="sendScreenshot(chat)">✂</button>
           <span class="sp"></span>
           <span class="muted">{{ chat.connected ? 'Enter 发送 · Shift+Enter 换行' : '离线：消息将在重连后补发' }}</span>
@@ -376,6 +448,7 @@ onBeforeUnmount(() => {
           <button @click="pick('image')">图片</button>
           <button @click="pick('video')">视频</button>
           <button @click="pick('file')">文件</button>
+          <button @click="showAttach = false; toggleRecord()">语音消息</button>
           <button @click="toggleMention">@ 提醒</button>
         </div>
         <div v-if="showMention" class="mention-panel">
@@ -406,7 +479,7 @@ onBeforeUnmount(() => {
       <div class="sec-title">成员 · {{ members.length }} 人</div>
       <div class="member-list">
         <div v-for="m in members" :key="m.uid" class="member-row">
-          <Avatar :name="m.nickname || m.uid" size="sm" />
+          <Avatar :name="m.nickname || m.uid" :src="m.avatar" size="sm" />
           <span style="flex:1">{{ m.nickname || m.uid }}</span>
           <span v-if="m.role === 'owner'" class="tag">群主</span>
           <button v-else-if="isOwner" class="btn sm danger" @click="kickGroupMember(m)">移出</button>
@@ -423,7 +496,7 @@ onBeforeUnmount(() => {
       <div class="member-list">
         <label v-for="f in friends" :key="f.uid" class="member-row check">
           <input v-model="inviteIds" type="checkbox" :value="f.uid">
-          <Avatar :name="f.nickname || f.uid" size="sm" />
+          <Avatar :name="f.nickname || f.uid" :src="f.avatar" size="sm" />
           <span>{{ f.nickname || f.uid }}</span>
         </label>
         <div v-if="!friends.length" class="empty-tip">暂无可邀请的好友</div>

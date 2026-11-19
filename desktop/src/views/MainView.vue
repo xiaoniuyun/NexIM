@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '@h5/stores/auth'
+import { avatarUrl } from '@h5/api'
 import { useChatStore } from '@h5/stores/chat'
 import Icon from '../components/Icon.vue'
 import ConvColumn from '../components/ConvColumn.vue'
@@ -19,6 +20,7 @@ const auth = useAuthStore()
 const chat = useChatStore()
 const pane = ref('msg')
 const searchOpen = ref(false)
+const myAvatar = computed(() => avatarUrl(auth.user?.avatar))
 
 const navs = [
   { key: 'msg', icon: 'chat', label: '消息' },
@@ -29,6 +31,31 @@ const navs = [
   { key: 'notices', icon: 'bell', label: '通知公告' },
   { key: 'stats', icon: 'chart', label: '统计' }
 ]
+
+const listWidth = ref(Number(localStorage.getItem('nexim_list_width')) || 304)
+const dragging = ref(false)
+let dragStartX = 0
+let dragStartW = 0
+
+function startDrag(e) {
+  dragging.value = true
+  dragStartX = e.clientX
+  dragStartW = listWidth.value
+  window.addEventListener('mousemove', onDrag)
+  window.addEventListener('mouseup', stopDrag)
+  document.body.style.userSelect = 'none'
+}
+function onDrag(e) {
+  // 限制 240-480px，避免把对话区挤没
+  listWidth.value = Math.min(480, Math.max(240, dragStartW + e.clientX - dragStartX))
+}
+function stopDrag() {
+  dragging.value = false
+  window.removeEventListener('mousemove', onDrag)
+  window.removeEventListener('mouseup', stopDrag)
+  document.body.style.userSelect = ''
+  localStorage.setItem('nexim_list_width', String(listWidth.value))
+}
 
 async function openConv(convId) {
   if (!convId) return
@@ -56,6 +83,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('nexim:search', onSearchEvent)
   window.removeEventListener('nexim:open-conv', onOpenEvent)
+  stopDrag()
 })
 
 const unread = computed(() => chat.unreadTotal)
@@ -78,11 +106,17 @@ const unread = computed(() => chat.unreadTotal)
         <Icon name="settings" :size="21" />
       </button>
       <button class="rail-avatar" :title="auth.user?.nickname" @click="pane = 'settings'">
-        {{ (auth.user?.nickname || '我').slice(0, 1) }}
+        <img v-if="myAvatar" :src="myAvatar" alt="头像">
+        <template v-else>{{ (auth.user?.nickname || '我').slice(0, 1) }}</template>
       </button>
     </nav>
 
-    <ConvColumn v-if="pane === 'msg'" class="list-col" @open="openConv" @search="searchOpen = true" />
+    <ConvColumn
+      v-if="pane === 'msg'" class="list-col"
+      :style="{ width: listWidth + 'px' }"
+      @open="openConv" @search="searchOpen = true"
+    />
+    <div v-if="pane === 'msg'" class="splitter" :class="{ dragging }" title="拖拽调整宽度" @mousedown.prevent="startDrag"></div>
 
     <main class="main-col">
       <ChatPane v-if="pane === 'msg'" />

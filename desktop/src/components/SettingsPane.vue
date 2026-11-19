@@ -24,6 +24,13 @@ const showBlock = ref(false)
 const blockKw = ref('')
 const allUsers = ref([])
 const perms = ref([])
+// 个人资料编辑
+const showEdit = ref(false)
+const editForm = ref({ nickname: '', signature: '', gender: 0, avatar: '' })
+const avatarPick = ref(null)
+const uploading = ref(false)
+const savingProfile = ref(false)
+const genders = [{ label: '保密', value: 0 }, { label: '男', value: 1 }, { label: '女', value: 2 }]
 
 const hasAdmin = computed(() => perms.value.length > 0)
 const adminUrl = computed(() => {
@@ -42,6 +49,7 @@ const blockCandidates = computed(() => {
 onMounted(async () => {
   loadBlocked()
   loadPerms()
+  auth.refreshProfile()
   if (!desk) return
   try {
     const c = await desk.getConfig()
@@ -81,6 +89,60 @@ async function unblock(b) {
 }
 function openAdmin() {
   window.open(adminUrl.value, '_blank')
+}
+
+function openEdit() {
+  const u = auth.user || {}
+  editForm.value = {
+    nickname: u.nickname || '',
+    signature: u.signature || '',
+    gender: Number(u.gender) || 0,
+    avatar: u.avatar || ''
+  }
+  showEdit.value = true
+}
+function pickAvatar() {
+  if (uploading.value || !avatarPick.value) return
+  avatarPick.value.value = ''
+  avatarPick.value.click()
+}
+async function onAvatarPick(e) {
+  const file = e.target.files && e.target.files[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) return toast('头像不能超过 5MB', 'err')
+  const fd = new FormData()
+  fd.append('file', file)
+  uploading.value = true
+  try {
+    const r = await API.fileUpload(fd)
+    const fileId = r.data?.fileId
+    if (!fileId) throw new Error('上传失败')
+    editForm.value.avatar = 'file:' + fileId
+    toast('头像已上传，记得保存')
+  } catch (err) {
+    toast(err.message || '头像上传失败', 'err')
+  } finally {
+    uploading.value = false
+  }
+}
+async function saveProfile() {
+  const nickname = editForm.value.nickname.trim()
+  if (!nickname) return toast('昵称不能为空', 'err')
+  savingProfile.value = true
+  try {
+    await auth.updateProfile({
+      nickname,
+      signature: editForm.value.signature.trim(),
+      gender: editForm.value.gender,
+      avatar: editForm.value.avatar
+    })
+    toast('资料已保存')
+    showEdit.value = false
+  } catch (err) {
+    toast(err.message || '保存失败', 'err')
+  } finally {
+    savingProfile.value = false
+  }
 }
 
 function toggleNotify() {
@@ -136,11 +198,12 @@ async function logout() {
     <header class="pane-head"><h2>设置</h2></header>
     <div class="pane-body scroll">
       <div class="card profile-card">
-        <Avatar :name="auth.user?.nickname || '我'" size="lg" />
+        <Avatar :name="auth.user?.nickname || '我'" :src="auth.user?.avatar" size="lg" />
         <div class="profile-main">
           <div class="profile-name">{{ auth.user?.nickname }} <span class="muted">@{{ auth.user?.username }}</span></div>
-          <div class="muted">{{ auth.user?.uid }} · {{ auth.status }}</div>
+          <div class="muted">{{ auth.user?.signature || '这个人很懒，什么都没留下' }}</div>
         </div>
+        <button class="btn" @click="openEdit">编辑资料</button>
         <button class="btn" @click="openDevices">已登录设备</button>
       </div>
 
@@ -185,7 +248,7 @@ async function logout() {
         </div>
         <div class="member-list">
           <div v-for="b in blocked" :key="b.uid" class="member-row">
-            <Avatar :name="b.nickname || b.uid" size="sm" />
+            <Avatar :name="b.nickname || b.uid" :src="b.avatar" size="sm" />
             <div style="flex:1">
               <div>{{ b.nickname || b.uid }} <span class="muted">@{{ b.username }}</span></div>
               <div class="sr-desc">已屏蔽对方消息</div>
@@ -215,6 +278,27 @@ async function logout() {
       <div class="row-end"><button class="btn danger" @click="logout">退出登录</button></div>
     </div>
 
+    <Modal v-if="showEdit" title="编辑资料" width="420px" @close="showEdit = false">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        <Avatar :name="editForm.nickname || '我'" :src="editForm.avatar" size="lg" />
+        <button class="btn" :disabled="uploading" @click="pickAvatar">{{ uploading ? '上传中…' : '更换头像' }}</button>
+        <span class="muted">支持 5MB 以内图片</span>
+      </div>
+      <label class="field" style="margin-bottom:14px"><span>昵称</span><input v-model="editForm.nickname" maxlength="32" placeholder="请输入昵称"></label>
+      <div class="field" style="margin-bottom:14px">
+        <span>性别</span>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button v-for="g in genders" :key="g.value" class="btn sm" :class="{ primary: editForm.gender === g.value }" @click="editForm.gender = g.value">{{ g.label }}</button>
+        </div>
+      </div>
+      <label class="field" style="margin-bottom:14px"><span>个性签名</span><input v-model="editForm.signature" maxlength="120" placeholder="介绍一下自己"></label>
+      <input ref="avatarPick" type="file" accept="image/*" hidden @change="onAvatarPick">
+      <template #footer>
+        <button class="btn" @click="showEdit = false">取消</button>
+        <button class="btn primary" :disabled="savingProfile" @click="saveProfile">{{ savingProfile ? '保存中…' : '保存' }}</button>
+      </template>
+    </Modal>
+
     <Modal v-if="showDevices" title="已登录设备" width="460px" @close="showDevices = false">
       <div class="member-list">
         <div v-for="d in devices" :key="d.deviceId" class="member-row">
@@ -235,7 +319,7 @@ async function logout() {
       <input v-model="blockKw" class="pane-search modal-search" placeholder="搜索姓名 / 账号">
       <div class="member-list">
         <div v-for="u in blockCandidates" :key="u.uid" class="member-row">
-          <Avatar :name="u.nickname || u.uid" size="sm" />
+          <Avatar :name="u.nickname || u.uid" :src="u.avatar" size="sm" />
           <div style="flex:1">
             <div>{{ u.nickname }} <span class="muted">@{{ u.username }}</span></div>
             <div class="sr-desc">{{ u.deptName || '' }}</div>

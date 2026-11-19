@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/api.dart';
 import '../core/util.dart';
 
 class Avatar extends StatelessWidget {
@@ -12,6 +13,8 @@ class Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = name.isEmpty ? 'U' : name.substring(0, 1);
+    // 后端头像字段 file:<fileId> 表示上传的图片，其余（颜色等历史值）按首字母渲染
+    final src = url.startsWith('file:') ? Api.fileUrl(url.substring(5)) : url;
     final fallback = Container(
       width: size,
       height: size,
@@ -25,11 +28,11 @@ class Avatar extends StatelessWidget {
         style: TextStyle(color: Colors.white, fontSize: size * 0.42, fontWeight: FontWeight.w600),
       ),
     );
-    if (url.isEmpty) return fallback;
+    if (src.isEmpty) return fallback;
     return ClipRRect(
       borderRadius: BorderRadius.circular(size * 0.28),
       child: Image.network(
-        url,
+        src,
         width: size,
         height: size,
         fit: BoxFit.cover,

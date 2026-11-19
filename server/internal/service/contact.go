@@ -17,9 +17,11 @@ type ContactVO struct {
 	Username string `json:"username"`
 	Nickname string `json:"nickname"`
 	Phone    string `json:"phone"`
-	Title    string `json:"title"`
-	Avatar   string `json:"avatar"`
-	DeptID   int64  `json:"deptId"`
+	Title     string `json:"title"`
+	Avatar    string `json:"avatar"`
+	Signature string `json:"signature"`
+	Gender    int    `json:"gender"`
+	DeptID    int64  `json:"deptId"`
 	DeptName string `json:"deptName"`
 	Online   bool   `json:"online"`
 }
@@ -130,5 +132,6 @@ func (c *ContactService) toVO(u *model.User) ContactVO {
 		online = true
 	}
 	return ContactVO{ID: u.ID, UID: u.UID, Username: u.Username, Nickname: u.Nickname,
-		Phone: u.Phone, Title: u.Title, Avatar: u.Avatar, DeptID: u.DeptID, DeptName: deptName, Online: online}
+		Phone: u.Phone, Title: u.Title, Avatar: u.Avatar, Signature: u.Signature, Gender: u.Gender,
+		DeptID: u.DeptID, DeptName: deptName, Online: online}
 }

@@ -17,6 +17,7 @@ const routes = [
   { path: '/files', name: 'files', component: () => import('./views/FilesView.vue'), meta: { tab: 'discover', auth: true } },
   { path: '/favorites', name: 'favorites', component: () => import('./views/FavoritesView.vue'), meta: { tab: 'discover', auth: true } },
   { path: '/mine', name: 'mine', component: () => import('./views/MineView.vue'), meta: { tab: 'mine', auth: true } },
+  { path: '/profile', name: 'profile', component: () => import('./views/ProfileView.vue'), meta: { tab: 'mine', auth: true } },
   { path: '/settings', name: 'settings', component: () => import('./views/SettingsView.vue'), meta: { tab: 'mine', auth: true } },
   { path: '/:pathMatch(.*)*', redirect: '/convs' }
 ]

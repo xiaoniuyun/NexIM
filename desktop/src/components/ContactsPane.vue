@@ -224,7 +224,7 @@ async function leaveGroup(g) {
     <div class="pane-body scroll">
       <template v-if="tab === 'friends'">
         <div v-for="u in filtered" :key="u.uid" class="row-card" @click="chatWith(u)">
-          <Avatar :name="u.nickname || u.uid" size="md" />
+          <Avatar :name="u.nickname || u.uid" :src="u.avatar" size="md" />
           <div class="row-main">
             <div class="row-name">{{ u.nickname }} <span class="muted">@{{ u.username }}</span></div>
             <div class="row-sub">{{ u.deptName || '未分配部门' }}<span v-if="u.title"> · {{ u.title }}</span></div>
@@ -255,7 +255,7 @@ async function leaveGroup(g) {
         </div>
         <div class="sec-title">成员 · {{ deptMembers.length }} 人</div>
         <div v-for="u in deptMembers" :key="u.uid" class="row-card" @click="chatWith(u)">
-          <Avatar :name="u.nickname || u.uid" size="md" />
+          <Avatar :name="u.nickname || u.uid" :src="u.avatar" size="md" />
           <div class="row-main">
             <div class="row-name">{{ u.nickname }} <span class="muted">@{{ u.username }}</span></div>
             <div class="row-sub">{{ u.deptName || '' }}</div>
@@ -283,7 +283,7 @@ async function leaveGroup(g) {
       <input v-model="addKw" class="pane-search modal-search" placeholder="搜索姓名 / 账号">
       <div class="member-list">
         <div v-for="u in addCandidates" :key="u.uid" class="member-row">
-          <Avatar :name="u.nickname || u.uid" size="sm" />
+          <Avatar :name="u.nickname || u.uid" :src="u.avatar" size="sm" />
           <div style="flex:1">
             <div>{{ u.nickname }} <span class="muted">@{{ u.username }}</span></div>
             <div class="sr-desc">{{ u.deptName || '' }}</div>
@@ -303,7 +303,7 @@ async function leaveGroup(g) {
       <div class="member-list">
         <label v-for="u in friends" :key="u.uid" class="member-row check">
           <input type="checkbox" :checked="picked.includes(u.uid)" @change="togglePick(u.uid)">
-          <Avatar :name="u.nickname || u.uid" size="sm" />
+          <Avatar :name="u.nickname || u.uid" :src="u.avatar" size="sm" />
           <span>{{ u.nickname }} <span class="muted">@{{ u.username }}</span></span>
         </label>
         <div v-if="!friends.length" class="empty-tip">暂无好友可邀请</div>

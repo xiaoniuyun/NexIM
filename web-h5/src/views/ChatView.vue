@@ -30,6 +30,15 @@ const filePick = ref(null)
 const pickKind = ref('file')
 const uploading = ref(false)
 
+// 语音录制
+const recording = ref(false)
+const recSeconds = ref(0)
+let recorder = null
+let recChunks = []
+let recStream = null
+let recTimer = null
+let recStartedAt = 0
+
 // 消息操作 / 转发
 const showActions = ref(false)
 const actionMsg = ref(null)
@@ -65,6 +74,8 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   chat.setViewing(false)
+  stopRecord()
+  releaseStream()
   if (msgTimer) clearInterval(msgTimer)
   if (convTimer) clearInterval(convTimer)
 })
@@ -117,6 +128,7 @@ function attach(kind) {
   if (kind === 'emoji') { showEmoji.value = !showEmoji.value; return }
   if (kind === 'at') { openMention(); return }
   if (kind === 'call-audio') { startCall('audio'); return }
+  if (kind === 'voice') { toggleRecord(); return }
   pickKind.value = kind
   const input = filePick.value
   if (!input) return
@@ -151,6 +163,68 @@ async function onFilePick(e) {
 function openFile(m) {
   if (!m.extra?.fileId) return
   window.open(fileUrl(m.extra.fileId), '_blank')
+}
+
+// ===== 语音消息 =====
+async function toggleRecord() {
+  if (recording.value) { stopRecord(); return }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+    toast('当前浏览器不支持录音', 'err')
+    return
+  }
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+      : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : ''
+    recorder = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined)
+    recChunks = []
+    recorder.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data) }
+    recorder.onstop = () => finishRecord()
+    recStartedAt = Date.now()
+    recSeconds.value = 0
+    recorder.start()
+    recording.value = true
+    recTimer = setInterval(() => { recSeconds.value = Math.floor((Date.now() - recStartedAt) / 1000) }, 300)
+  } catch (err) {
+    toast('无法访问麦克风：' + (err.message || ''), 'err')
+    releaseStream()
+  }
+}
+
+function stopRecord() {
+  if (recTimer) { clearInterval(recTimer); recTimer = null }
+  recording.value = false
+  try { if (recorder && recorder.state !== 'inactive') recorder.stop() } catch (_) {}
+}
+
+function releaseStream() {
+  if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null }
+}
+
+async function finishRecord() {
+  const secs = Math.max(1, Math.round((Date.now() - recStartedAt) / 1000))
+  const mime = (recorder && recorder.mimeType) || 'audio/webm'
+  const blob = new Blob(recChunks, { type: mime })
+  recChunks = []
+  recorder = null
+  releaseStream()
+  if (blob.size < 800) { toast('录音时间太短', 'err'); return }
+  const ext = mime.indexOf('mp4') >= 0 ? 'm4a' : 'webm'
+  const file = new File([blob], 'voice_' + Date.now() + '.' + ext, { type: mime })
+  const fd = new FormData()
+  fd.append('file', file)
+  fd.append('convId', convId.value)
+  try {
+    const r = await API.fileUpload(fd)
+    const rec = r.data || {}
+    chat.sendMedia('voice', rec.name || file.name, {
+      fileId: rec.fileId, name: rec.name || file.name,
+      size: rec.size || blob.size, mime, duration: secs
+    })
+  } catch (err) {
+    toast(err.message || '语音发送失败', 'err')
+  }
 }
 
 // ===== 消息操作 =====
@@ -293,7 +367,7 @@ function pickTarget(id) {
   <div ref="msgList" class="chat-msgs">
     <div class="time-sep">{{ new Date().toLocaleDateString() }}</div>
     <div v-for="(m, i) in chat.messages" :key="m.msgId || i" class="msg-row" :class="{ mine: m.mine }" :data-mid="m.msgId">
-      <Avatar v-if="!m.mine" :name="m.fromName || '?'" size="xs" />
+      <Avatar v-if="!m.mine" :name="m.fromName || '?'" :src="isGroup ? '' : conv.peerAvatar" size="xs" />
       <div class="m-wrap">
         <div v-if="!m.mine" class="msg-sender">{{ m.fromName }}</div>
         <div v-if="m.status === 2" class="bubble msg-status-revoked">消息已撤回</div>
@@ -315,7 +389,11 @@ function pickTarget(id) {
             <span v-else>📄<div><div class="fname">{{ m.content }}</div><div class="fsize">点击下载</div></div></span>
             <button class="media-more" @click.stop="openActions(m)">⋯</button>
           </div>
-          <div v-else-if="m.type === 'voice'" class="bubble">🎙️ 语音 {{ m.extra?.duration ? m.extra.duration + '″' : '' }}</div>
+          <div v-else-if="m.type === 'voice'" class="bubble voice">
+            <audio v-if="m.extra?.fileId" :src="fileUrl(m.extra.fileId)" controls preload="none"></audio>
+            <span v-else>🎙️ 语音 {{ m.extra?.duration ? m.extra.duration + '″' : '' }}</span>
+            <button class="media-more" @click.stop="openActions(m)">⋯</button>
+          </div>
           <div v-else class="bubble" @click="openActions(m)">{{ m.content }}</div>
         </template>
         <div class="msg-meta">
@@ -324,7 +402,7 @@ function pickTarget(id) {
           <span v-else-if="m.mine">{{ m.read ? '已读' : '已送达' }}</span>
         </div>
       </div>
-      <Avatar v-if="m.mine" :name="auth.user?.nickname || '我'" size="xs" />
+      <Avatar v-if="m.mine" :name="auth.user?.nickname || '我'" :src="auth.user?.avatar" size="xs" />
     </div>
   </div>
 
@@ -341,6 +419,7 @@ function pickTarget(id) {
       <button :disabled="uploading" @click="attach('image')"><span class="at-icon">🖼️</span>{{ uploading ? '上传中…' : t('image') }}</button>
       <button :disabled="uploading" @click="attach('video')"><span class="at-icon">🎬</span>{{ t('video') }}</button>
       <button :disabled="uploading" @click="attach('file')"><span class="at-icon">📎</span>{{ t('file') }}</button>
+      <button :class="{ recording }" @click="attach('voice')"><span class="at-icon">🎙️</span>{{ recording ? '结束录音' : '语音消息' }}</button>
       <button @click="attach('call-audio')"><span class="at-icon">📞</span>语音通话</button>
       <button @click="attach('emoji')"><span class="at-icon">😊</span>表情</button>
     </div>
@@ -348,7 +427,8 @@ function pickTarget(id) {
       <button class="icon-btn" @click="showAttach = !showAttach">＋</button>
       <button class="icon-btn" @click="showEmoji = !showEmoji">😊</button>
       <button class="icon-btn" @click="openMention">@</button>
-      <input v-model="text" :placeholder="t('inputMsg')" @keyup.enter="send">
+      <input v-model="text" :placeholder="recording ? '正在录音，再次点击麦克风结束' : t('inputMsg')" @keyup.enter="send">
+      <button class="icon-btn" :class="{ recording }" title="语音消息" @click="toggleRecord">{{ recording ? '⏺' : '🎙️' }}</button>
       <button class="send-btn" @click="send">➤</button>
     </div>
   </div>

@@ -74,7 +74,7 @@ function onKey(e) { if (e.key === 'Escape') emit('close') }
             <section v-if="convHits.length">
               <div class="sec-title">会话</div>
               <div v-for="c in convHits" :key="c.convId" class="hit-row" @click="openConv(c.convId)">
-                <Avatar :name="c.peerName || c.convId" size="sm" />
+                <Avatar :name="c.peerName || c.convId" :src="c.peerAvatar" size="sm" />
                 <span class="hit-name">{{ c.peerName || c.convId }}</span>
                 <span class="muted">{{ c.lastMsg }}</span>
               </div>
@@ -82,7 +82,7 @@ function onKey(e) { if (e.key === 'Escape') emit('close') }
             <section v-if="friendHits.length">
               <div class="sec-title">联系人</div>
               <div v-for="u in friendHits" :key="u.uid" class="hit-row" @click="chatWith(u)">
-                <Avatar :name="u.nickname || u.uid" size="sm" />
+                <Avatar :name="u.nickname || u.uid" :src="u.avatar" size="sm" />
                 <span class="hit-name">{{ u.nickname }}</span>
                 <span class="muted">@{{ u.username }}</span>
               </div>

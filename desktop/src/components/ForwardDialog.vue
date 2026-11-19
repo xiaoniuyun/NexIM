@@ -35,7 +35,7 @@ async function submit() {
     <div class="forward-list">
       <label v-for="c in chat.convs" :key="c.convId" class="forward-row">
         <input v-model="ids" type="checkbox" :value="c.convId">
-        <Avatar :name="c.peerName || c.convId" size="sm" />
+        <Avatar :name="c.peerName || c.convId" :src="c.peerAvatar" size="sm" />
         <span>{{ c.peerName || c.convId }}</span>
         <span v-if="c.convType === 2" class="tag">群</span>
       </label>

@@ -93,6 +93,10 @@ class AppState extends ChangeNotifier {
       'username': data['username'],
       'nickname': data['nickname'],
       'avatar': data['avatar'],
+      'signature': data['signature'] ?? '',
+      'gender': data['gender'] ?? 0,
+      'phone': data['phone'] ?? '',
+      'title': data['title'] ?? '',
       'roles': data['roles'] ?? [],
     };
     await Store.setStr('token', Api.token);
@@ -108,6 +112,26 @@ class AppState extends ChangeNotifier {
       await Api.post('/auth/logout');
     } catch (_) {}
     logoutLocal();
+  }
+
+  // 合并个人资料变更（昵称/头像/性别/签名）并持久化
+  Future<void> applyProfile(Map<String, dynamic> data) async {
+    if (data.isEmpty) return;
+    user = {...?user, ...data};
+    await Store.setStr('user', jsonEncode(user));
+    notifyListeners();
+  }
+
+  Future<void> updateProfile(Map<String, dynamic> patch) async {
+    final data = await Api.put('/users/me', patch);
+    await applyProfile(Map<String, dynamic>.from(data));
+  }
+
+  Future<void> refreshProfile() async {
+    try {
+      final data = await Api.get('/users/me');
+      await applyProfile(Map<String, dynamic>.from(data));
+    } catch (_) {}
   }
 
   void logoutLocal() {

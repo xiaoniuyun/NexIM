@@ -26,11 +26,26 @@ export const useAuthStore = defineStore('auth', () => {
     refresh.value = data.refreshToken
     user.value = {
       uid: data.uid, username: data.username, nickname: data.nickname,
-      avatar: data.avatar, roles: data.roles || []
+      avatar: data.avatar, signature: data.signature || '', gender: data.gender || 0,
+      phone: data.phone || '', title: data.title || '', roles: data.roles || []
     }
     writeAuth('h5_token', token.value)
     writeAuth('h5_refresh', refresh.value)
     writeAuth('h5_user', JSON.stringify(user.value))
+  }
+  // 合并个人资料变更（昵称/头像/性别/签名）并持久化
+  function applyProfile(data) {
+    if (!data) return
+    user.value = { ...(user.value || {}), ...data }
+    writeAuth('h5_user', JSON.stringify(user.value))
+  }
+  async function updateProfile(patch) {
+    const r = await API.updateMe(patch)
+    applyProfile(r.data || patch)
+    return user.value
+  }
+  async function refreshProfile() {
+    try { const r = await API.me(); applyProfile(r.data) } catch (_) {}
   }
   function clearAuth() {
     token.value = ''; refresh.value = ''; user.value = null
@@ -50,5 +65,5 @@ export const useAuthStore = defineStore('auth', () => {
   }
   function setStatus(s) { status.value = s; localStorage.setItem('h5_status', s) }
 
-  return { token, refresh, user, device, status, isLogin, applyAuth, clearAuth, login, register, logout, setStatus }
+  return { token, refresh, user, device, status, isLogin, applyAuth, applyProfile, updateProfile, refreshProfile, clearAuth, login, register, logout, setStatus }
 })

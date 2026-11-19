@@ -5,6 +5,7 @@ import '../app/app_state.dart';
 import '../core/api.dart';
 import '../core/util.dart';
 import '../widgets/avatar.dart';
+import 'edit_profile_page.dart';
 
 class MePage extends StatelessWidget {
   const MePage({super.key});
@@ -29,8 +30,14 @@ class MePage extends StatelessWidget {
                     children: [
                       Text(nickname, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
                       const SizedBox(height: 4),
-                      Text('@${app.user?['username'] ?? ''}',
-                          style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                      Text(
+                        '${app.user?['signature'] ?? ''}'.isEmpty
+                            ? '@${app.user?['username'] ?? ''}'
+                            : '${app.user?['signature']}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.grey, fontSize: 13),
+                      ),
                     ],
                   ),
                 ),
@@ -49,6 +56,16 @@ class MePage extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.edit_outlined),
+            title: const Text('编辑资料'),
+            subtitle: const Text('昵称 / 头像 / 性别 / 个性签名'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EditProfilePage()),
+            ),
+          ),
           ListTile(
             leading: const Icon(Icons.dns_outlined),
             title: const Text('服务端地址'),

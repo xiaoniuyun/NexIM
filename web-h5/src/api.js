@@ -61,6 +61,12 @@ export function fileUrl(fileId) {
   return API_BASE + '/files/' + encodeURIComponent(fileId) + '/download?token=' + encodeURIComponent(getToken())
 }
 
+// 头像字段：file:<fileId> 表示上传的图片，历史颜色值或无值返回空（由 Avatar 渲染首字母）
+export function avatarUrl(avatar) {
+  const v = String(avatar || '')
+  return v.startsWith('file:') ? fileUrl(v.slice(5)) : ''
+}
+
 export const API = {
   login: (account, password, deviceId) => api('/auth/login', { method: 'POST', body: { account, password, deviceId, platform: 'H5' } }),
   register: (username, password, nickname) => api('/auth/register', { method: 'POST', body: { username, password, nickname } }),
@@ -68,6 +74,8 @@ export const API = {
   devices: () => api('/auth/devices'),
   deleteDevice: id => api('/auth/devices/' + encodeURIComponent(id), { method: 'DELETE' }),
   permissions: () => api('/auth/permissions'),
+  me: () => api('/users/me'),
+  updateMe: body => api('/users/me', { method: 'PUT', body }),
   users: () => api('/users'),
   userSearch: q => api('/users/search?q=' + encodeURIComponent(q)),
   friends: () => api('/friends'),

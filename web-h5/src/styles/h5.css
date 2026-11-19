@@ -54,6 +54,7 @@ input:focus,textarea:focus{border-color:var(--brand)}
 
 /* 头像 */
 .avatar{width:42px;height:42px;border-radius:12px;color:#fff;font-weight:700;font-size:14px;display:grid;place-items:center;flex:none}
+img.avatar{object-fit:cover;background:#e8ecf5}
 .avatar.xs{width:28px;height:28px;border-radius:9px;font-size:10px}
 .avatar.sm{width:32px;height:32px;border-radius:10px;font-size:11px}
 .avatar.lg{width:54px;height:54px;border-radius:16px;font-size:19px}
@@ -105,6 +106,11 @@ input:focus,textarea:focus{border-color:var(--brand)}
   font-size:13px;line-height:1.6;box-shadow:0 2px 7px rgba(30,45,90,.05);word-break:break-word;
 }
 .msg-row.mine .bubble{background:linear-gradient(135deg,var(--brand),#6a72f8);color:#fff;border-radius:13px 4px 13px 13px}
+.bubble.voice{display:flex;align-items:center;gap:7px}
+.bubble.voice audio{width:200px;height:34px;max-width:60vw}
+.icon-btn.recording{color:var(--danger);animation:recpulse 1s infinite}
+.attach-panel button.recording{color:var(--danger)}
+@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.45}}
 .msg-meta{display:flex;gap:6px;font-size:9.5px;color:#aab3c4;margin-top:5px}
 .msg-row.mine .msg-meta{justify-content:flex-end}
 .bubble.file{display:flex;align-items:center;gap:9px;min-width:170px}
@@ -146,7 +152,17 @@ input:focus,textarea:focus{border-color:var(--brand)}
 .qentry .qe-t{font-size:13px;font-weight:600}
 .qentry .qe-s{font-size:10.5px;color:var(--muted);margin-top:3px}
 .qentry .qe-arrow{margin-left:auto;color:#aab3c4}
-.profile-card{background:linear-gradient(135deg,#5c6ff5,#8659ef);border-radius:16px;padding:20px;color:#fff;display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.profile-card{background:linear-gradient(135deg,#5c6ff5,#8659ef);border-radius:16px;padding:20px;color:#fff;display:flex;gap:14px;align-items:center;margin-bottom:14px;cursor:pointer}
+.pe-avatar{display:flex;align-items:center;gap:14px;padding:16px;background:var(--card);border-radius:14px;margin-bottom:12px}
+.pe-avatar .avatar.lg{width:64px;height:64px;border-radius:18px;font-size:22px}
+.pe-name{font-size:15px;font-weight:700}
+.pe-change{margin-top:8px}
+.pe-field{padding:12px 14px;border-bottom:1px solid #f2f4f9}
+.pe-field:last-child{border-bottom:0}
+.pe-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:7px}
+.pe-field input,.pe-field textarea{width:100%;border:0;background:#f4f6fb;border-radius:9px;padding:9px 11px;font-size:13px;resize:none}
+.pe-field .status-opts{padding:0}
+.pe-static{font-size:12px;color:var(--muted)}
 .profile-card .pc-name{font-size:16px;font-weight:700}
 .profile-card .pc-sub{font-size:11px;opacity:.85;margin-top:5px}
 .group-block{background:var(--card);border-radius:13px;overflow:hidden;margin-bottom:12px}

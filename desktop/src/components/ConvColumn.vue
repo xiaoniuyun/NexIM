@@ -115,7 +115,7 @@ onBeforeUnmount(() => window.removeEventListener('click', closeMenu))
         @contextmenu="openMenu($event, c)"
       >
         <div class="conv-avatar">
-          <Avatar :name="displayName(c)" size="md" />
+          <Avatar :name="displayName(c)" :src="c.peerAvatar" size="md" />
           <span v-if="(c.unread || 0) > 0" class="badge">{{ c.unread > 99 ? '99+' : c.unread }}</span>
         </div>
         <div class="conv-main">
