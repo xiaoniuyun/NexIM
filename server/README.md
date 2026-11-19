@@ -227,8 +227,21 @@ $env:CONFIG_PATH="configs/config.yaml"; .\nexim-server.exe
 # 另开终端启动静态服务托管 web/，并配置 /api 与 /ws 代理到 :8080/:8081
 ```
 
+## 测试
+
+```bash
+cd server
+go test ./... -count=1                                   # 全量单测 + 集成测试
+go test ./internal/api -run TestAdminIntegration -v    # 只跑端到端集成测试
+```
+
+- 单元测试：`internal/api/router_test.go`（gin 路由注册冲突）、`internal/storage/s3_test.go`（SigV4 签名、对象键编码、凭据校验）。
+- 集成测试 `internal/api/integration_test.go`：自动创建独立库 `nexim_itest`（Redis 用 DB 15），经 `httptest` 驱动真实 Router 与服务端 RBAC 中间件，覆盖登录与权限下发、用户筛选/分页/角色部门关联、角色 CRUD 与权限版本、组织树 CRUD 与物化路径重算、授权 200 / 未授权 403 / 解绑后缓存失效、账号启停即时拦截、CSV 导出；结束后自动删除测试库。
+- 中间件不可用时集成用例自动 `Skip`，纯代码环境 `go test ./...` 仍然通过；连接参数可用 `NEXIM_TEST_MYSQL_DSN`（服务器级 DSN，以 `/` 结尾）与 `NEXIM_TEST_REDIS_ADDR` 覆盖。
+
 ## 验证结果
 
+- `go build ./...`、`go vet ./...`、`go test ./... -count=1`：通过（含 RBAC 端到端集成测试）
 - `go build ./...`、`go vet ./...`：通过
 - `docker compose config`：通过（含 `h5` 服务）
 - Vue H5：`npm run build` 通过（51 模块，产物 `web-h5/dist`）；浏览器实测渲染正常
