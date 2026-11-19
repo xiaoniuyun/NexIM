@@ -7,6 +7,9 @@ import ConvColumn from '../components/ConvColumn.vue'
 import ChatPane from '../components/ChatPane.vue'
 import ContactsPane from '../components/ContactsPane.vue'
 import FilesPane from '../components/FilesPane.vue'
+import FavoritesPane from '../components/FavoritesPane.vue'
+import CallsPane from '../components/CallsPane.vue'
+import NoticesPane from '../components/NoticesPane.vue'
 import StatsPane from '../components/StatsPane.vue'
 import SettingsPane from '../components/SettingsPane.vue'
 import GlobalSearch from '../components/GlobalSearch.vue'
@@ -21,6 +24,9 @@ const navs = [
   { key: 'msg', icon: 'chat', label: '消息' },
   { key: 'contacts', icon: 'contacts', label: '通讯录' },
   { key: 'files', icon: 'folder', label: '文件' },
+  { key: 'favorites', icon: 'star', label: '收藏' },
+  { key: 'calls', icon: 'phone', label: '通话' },
+  { key: 'notices', icon: 'bell', label: '通知公告' },
   { key: 'stats', icon: 'chart', label: '统计' }
 ]
 
@@ -74,7 +80,10 @@ const unread = computed(() => chat.unreadTotal)
     <main class="main-col">
       <ChatPane v-if="pane === 'msg'" />
       <ContactsPane v-else-if="pane === 'contacts'" @open-conv="openConv" />
-      <FilesPane v-else-if="pane === 'files'" />
+      <FilesPane v-else-if="pane === 'files'" @open-conv="openConv" />
+      <FavoritesPane v-else-if="pane === 'favorites'" @open-conv="openConv" />
+      <CallsPane v-else-if="pane === 'calls'" />
+      <NoticesPane v-else-if="pane === 'notices'" />
       <StatsPane v-else-if="pane === 'stats'" />
       <SettingsPane v-else-if="pane === 'settings'" />
     </main>

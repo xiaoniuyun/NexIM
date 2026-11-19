@@ -185,8 +185,18 @@ func (c *Client) WritePump() {
 			}
 		case <-ticker.C:
 			c.mu.Lock()
-			c.Conn.WriteJSON(&Frame{Cmd: "HEARTBEAT", ServerTime: model.Now()})
+			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			// 浏览器会自动回 Pong，用于刷新读超时；仅靠 HEARTBEAT 文本帧无法保活连接
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				c.mu.Unlock()
+				return
+			}
+			// HEARTBEAT 帧供客户端做连接假死检测
+			err := c.Conn.WriteJSON(&Frame{Cmd: "HEARTBEAT", ServerTime: model.Now()})
 			c.mu.Unlock()
+			if err != nil {
+				return
+			}
 		}
 	}
 }

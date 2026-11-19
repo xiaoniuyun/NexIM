@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import Avatar from '@h5/components/Avatar.vue'
 import { useAuthStore } from '@h5/stores/auth'
 import { useChatStore } from '@h5/stores/chat'
@@ -19,8 +19,29 @@ const wsUrl = ref('')
 const updateState = ref('')
 const savingServer = ref(false)
 const version = window.neximConfig?.version || desk?.version || '1.0.0'
+const blocked = ref([])
+const showBlock = ref(false)
+const blockKw = ref('')
+const allUsers = ref([])
+const perms = ref([])
+
+const hasAdmin = computed(() => perms.value.length > 0)
+const adminUrl = computed(() => {
+  const base = apiBase.value || window.neximConfig?.apiBase || '/api/v1'
+  return base.replace(/\/api\/v\d+\/?$/, '') + '/admin/'
+})
+const blockCandidates = computed(() => {
+  const q = blockKw.value.trim().toLowerCase()
+  const ids = new Set(blocked.value.map(b => b.uid))
+  return allUsers.value
+    .filter(u => u.uid !== auth.user?.uid && !ids.has(u.uid))
+    .filter(u => !q || String(u.nickname || '').toLowerCase().includes(q) || String(u.username || '').toLowerCase().includes(q))
+    .slice(0, 20)
+})
 
 onMounted(async () => {
+  loadBlocked()
+  loadPerms()
   if (!desk) return
   try {
     const c = await desk.getConfig()
@@ -29,6 +50,38 @@ onMounted(async () => {
     autoLaunch.value = await desk.getAutoLaunch()
   } catch (_) {}
 })
+
+async function loadBlocked() {
+  try { const r = await API.blacklist(); blocked.value = r.data || [] } catch (_) {}
+}
+async function loadPerms() {
+  try {
+    const r = await API.permissions()
+    perms.value = r.data?.menus || []
+  } catch (_) {}
+}
+async function openBlock() {
+  showBlock.value = true
+  blockKw.value = ''
+  try { const r = await API.users(); allUsers.value = r.data || [] } catch (_) {}
+}
+async function doBlock(u) {
+  try {
+    await API.blockUser(u.uid)
+    toast(`已将 ${u.nickname || u.uid} 加入黑名单`)
+    await loadBlocked()
+  } catch (e) { toast(e.message, 'err') }
+}
+async function unblock(b) {
+  try {
+    await API.unblockUser(b.uid)
+    blocked.value = blocked.value.filter(x => x.uid !== b.uid)
+    toast('已移出黑名单')
+  } catch (e) { toast(e.message, 'err') }
+}
+function openAdmin() {
+  window.open(adminUrl.value, '_blank')
+}
 
 function toggleNotify() {
   notifyOn.value = !notifyOn.value
@@ -126,6 +179,32 @@ async function logout() {
       </div>
 
       <div class="card">
+        <div class="card-head">
+          <h3>隐私与安全</h3>
+          <button class="btn sm" @click="openBlock">+ 添加黑名单</button>
+        </div>
+        <div class="member-list">
+          <div v-for="b in blocked" :key="b.uid" class="member-row">
+            <Avatar :name="b.nickname || b.uid" size="sm" />
+            <div style="flex:1">
+              <div>{{ b.nickname || b.uid }} <span class="muted">@{{ b.username }}</span></div>
+              <div class="sr-desc">已屏蔽对方消息</div>
+            </div>
+            <button class="btn sm" @click="unblock(b)">移出</button>
+          </div>
+          <div v-if="!blocked.length" class="empty-tip">暂无黑名单用户</div>
+        </div>
+      </div>
+
+      <div v-if="hasAdmin" class="card">
+        <div class="card-head"><h3>管理后台</h3><span class="muted">当前账号拥有管理权限</span></div>
+        <div class="toolbar">
+          <button class="btn primary" @click="openAdmin">打开管理后台</button>
+          <span class="muted">{{ adminUrl }}</span>
+        </div>
+      </div>
+
+      <div class="card">
         <h3>快捷键</h3>
         <div class="kv"><span>全局搜索</span><span class="kbd">Ctrl + K</span></div>
         <div class="kv"><span>截图并发送</span><span class="kbd">Ctrl + Shift + A</span></div>
@@ -150,6 +229,22 @@ async function logout() {
         <div v-if="!devices.length" class="empty-tip">暂无设备记录</div>
       </div>
       <template #footer><button class="btn" @click="showDevices = false">关闭</button></template>
+    </Modal>
+
+    <Modal v-if="showBlock" title="添加黑名单" width="440px" @close="showBlock = false">
+      <input v-model="blockKw" class="pane-search modal-search" placeholder="搜索姓名 / 账号">
+      <div class="member-list">
+        <div v-for="u in blockCandidates" :key="u.uid" class="member-row">
+          <Avatar :name="u.nickname || u.uid" size="sm" />
+          <div style="flex:1">
+            <div>{{ u.nickname }} <span class="muted">@{{ u.username }}</span></div>
+            <div class="sr-desc">{{ u.deptName || '' }}</div>
+          </div>
+          <button class="btn sm danger" @click="doBlock(u)">拉黑</button>
+        </div>
+        <div v-if="!blockCandidates.length" class="empty-tip">没有可选联系人</div>
+      </div>
+      <template #footer><button class="btn" @click="showBlock = false">关闭</button></template>
     </Modal>
   </div>
 </template>

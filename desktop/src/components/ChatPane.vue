@@ -25,6 +25,7 @@ const showSearch = ref(false)
 const showMention = ref(false)
 const mentionList = ref([])
 const members = ref([])
+const groupInfo = ref(null)
 const friends = ref([])
 const inviteIds = ref([])
 const searchKw = ref('')
@@ -42,6 +43,12 @@ const isGroup = computed(() => conv.value?.convType === 2)
 const title = computed(() => conv.value?.peerName || '选择一个会话')
 const msgs = computed(() => chat.messages)
 const canCall = computed(() => conv.value && conv.value.convType === 1)
+const isOwner = computed(() => isGroup.value && groupInfo.value?.ownerUid === auth.user?.uid)
+const lastMineId = computed(() => {
+  for (let i = msgs.value.length - 1; i >= 0; i--) if (msgs.value[i].mine) return msgs.value[i].msgId
+  return ''
+})
+const peerRead = computed(() => !!(conv.value && chat.readMap[conv.value.convId]))
 
 function scrollBottom(smooth = false) {
   nextTick(() => {
@@ -141,9 +148,31 @@ function jumpTo(msgId) {
 async function openMembers() {
   if (!isGroup.value) return
   try {
-    const r = await API.groupMembers(conv.value.peerId)
+    const [d, r] = await Promise.all([API.groupDetail(conv.value.peerId), API.groupMembers(conv.value.peerId)])
+    groupInfo.value = d.data || null
     members.value = r.data || []
     showMembers.value = true
+  } catch (e) { toast(e.message, 'err') }
+}
+async function kickGroupMember(m) {
+  if (!confirm(`将「${m.nickname || m.uid}」移出群聊？`)) return
+  try {
+    await API.groupLeave(conv.value.peerId, m.uid)
+    const r = await API.groupMembers(conv.value.peerId)
+    members.value = r.data || []
+    const d = await API.groupDetail(conv.value.peerId)
+    groupInfo.value = d.data || groupInfo.value
+    toast('已移出成员')
+  } catch (e) { toast(e.message, 'err') }
+}
+async function dissolveCurrentGroup() {
+  if (!confirm('解散后群成员将无法继续在群内发言，确认解散？')) return
+  try {
+    await API.groupDissolve(conv.value.peerId)
+    showMembers.value = false
+    chat.currentConv = ''
+    await chat.loadConversations()
+    toast('群聊已解散')
   } catch (e) { toast(e.message, 'err') }
 }
 async function openInvite() {
@@ -311,6 +340,7 @@ onBeforeUnmount(() => window.removeEventListener('click', closePopovers))
                 <span>{{ fullTime(m.createdAt) }}</span>
                 <span v-if="m.pending" class="muted">· 发送中</span>
                 <span v-if="m.status === 3" class="danger">· 发送失败</span>
+                <span v-else-if="m.mine && m.msgId === lastMineId && peerRead && Number(m.createdAt) <= (chat.readMap[conv.convId] || 0)" class="state ok">· 已读</span>
               </div>
               <div class="msg-actions" v-if="m.status !== 2">
                 <button @click="copyMsg(m)">复制</button>
@@ -366,15 +396,23 @@ onBeforeUnmount(() => window.removeEventListener('click', closePopovers))
       <div v-if="dragOver" class="drop-mask">松开鼠标发送文件</div>
     </template>
 
-    <Modal v-if="showMembers" :title="`群成员 · ${members.length} 人`" width="380px" @close="showMembers = false">
+    <Modal v-if="showMembers" :title="groupInfo?.name || `群成员 · ${members.length} 人`" width="420px" @close="showMembers = false">
+      <div class="sec-title">群公告</div>
+      <div class="group-notice">{{ groupInfo?.notice || '暂无群公告' }}</div>
+      <div class="sec-title">成员 · {{ members.length }} 人</div>
       <div class="member-list">
         <div v-for="m in members" :key="m.uid" class="member-row">
           <Avatar :name="m.nickname || m.uid" size="sm" />
-          <span>{{ m.nickname || m.uid }}</span>
+          <span style="flex:1">{{ m.nickname || m.uid }}</span>
           <span v-if="m.role === 'owner'" class="tag">群主</span>
+          <button v-else-if="isOwner" class="btn sm danger" @click="kickGroupMember(m)">移出</button>
         </div>
       </div>
-      <template #footer><button class="btn" @click="showMembers = false">关闭</button></template>
+      <template #footer>
+        <button v-if="isOwner" class="btn danger" @click="dissolveCurrentGroup">解散群聊</button>
+        <button class="btn" @click="openInvite(); showMembers = false">邀请成员</button>
+        <button class="btn" @click="showMembers = false">关闭</button>
+      </template>
     </Modal>
 
     <Modal v-if="showInvite" title="邀请成员" width="420px" @close="showInvite = false">

@@ -61,11 +61,35 @@ func (g *GroupService) Create(uid, name string, memberUIDs []string) (*model.Gro
 	for _, muid := range memberUIDs {
 		g.S.DB.Create(&model.GroupMember{GroupID: groupID, UID: muid, Role: "member", JoinedAt: now})
 	}
+	// 建群即写入所有成员的会话记录，成员登录后无需等待第一条消息即可在会话列表看到群聊
+	g.ensureConversations(groupID, name, append([]string{uid}, memberUIDs...), now)
 	return &grp, nil
+}
+
+func (g *GroupService) ensureConversations(groupID, name string, uids []string, now int64) {
+	convID := "conv_" + groupID
+	seen := map[string]bool{}
+	for _, muid := range uids {
+		if muid == "" || seen[muid] {
+			continue
+		}
+		seen[muid] = true
+		var cnt int64
+		g.S.DB.Model(&model.Conversation{}).Where("conv_id = ? AND owner_uid = ?", convID, muid).Count(&cnt)
+		if cnt > 0 {
+			continue
+		}
+		g.S.DB.Create(&model.Conversation{
+			ConvID: convID, ConvType: 2, OwnerUID: muid, PeerID: groupID,
+			PeerName: name, LastMsg: "群聊已创建", LastMsgAt: now,
+		})
+	}
 }
 
 func (g *GroupService) Invite(groupID string, uids []string) error {
 	now := model.Now()
+	var grp model.Group
+	g.S.DB.Where("group_id = ?", groupID).First(&grp)
 	for _, uid := range uids {
 		var cnt int64
 		g.S.DB.Model(&model.GroupMember{}).Where("group_id = ? AND uid = ?", groupID, uid).Count(&cnt)
@@ -74,6 +98,7 @@ func (g *GroupService) Invite(groupID string, uids []string) error {
 			g.S.DB.Model(&model.Group{}).Where("group_id = ?", groupID).Update("member_count", gorm.Expr("member_count + 1"))
 		}
 	}
+	g.ensureConversations(groupID, grp.Name, uids, now)
 	return nil
 }
 
@@ -82,9 +107,14 @@ func (g *GroupService) RemoveMember(groupID, uid string) error {
 		return err
 	}
 	g.S.DB.Model(&model.Group{}).Where("group_id = ?", groupID).Update("member_count", gorm.Expr("member_count - 1"))
+	g.S.DB.Where("conv_id = ? AND owner_uid = ?", "conv_"+groupID, uid).Delete(&model.Conversation{})
 	return nil
 }
 
 func (g *GroupService) Dissolve(groupID string) error {
-	return g.S.DB.Model(&model.Group{}).Where("group_id = ?", groupID).Update("status", 3).Error
+	if err := g.S.DB.Model(&model.Group{}).Where("group_id = ?", groupID).Update("status", 3).Error; err != nil {
+		return err
+	}
+	g.S.DB.Where("conv_id = ?", "conv_"+groupID).Delete(&model.Conversation{})
+	return nil
 }

@@ -102,7 +102,9 @@ export const API = {
   groupCreate: body => api('/groups', { method: 'POST', body }),
   groupInvite: (id, uids) => api('/groups/' + encodeURIComponent(id) + '/invite', { method: 'POST', body: { members: uids } }),
   groupLeave: (id, uid) => api('/groups/' + encodeURIComponent(id) + '/members/' + encodeURIComponent(uid), { method: 'DELETE' }),
+  groupDissolve: id => api('/groups/' + encodeURIComponent(id), { method: 'DELETE' }),
   files: () => api('/files'),
   fileUpload: fd => api('/files/upload', { method: 'POST', body: fd }),
+  fileDelete: id => api('/files/' + encodeURIComponent(id), { method: 'DELETE' }),
   notices: () => api('/notices')
 }

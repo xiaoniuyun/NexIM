@@ -12,8 +12,29 @@ export const useChatStore = defineStore('chat', () => {
   const messages = ref([])
   const currentConv = ref('')
   const connected = ref(false)
+  // 对端已读回执：convId -> 最近一次已读时间
+  const readMap = ref({})
   // 通话信令回调：由 call store 注册，避免 store 之间循环依赖
   let signalHandler = null
+  // 连接存活检测：服务端每 30s 推送 HEARTBEAT，超过 75s 无任何帧判定连接假死
+  let lastFrameAt = 0
+  let watchdog = null
+  function stopWatchdog() {
+    if (watchdog) { clearInterval(watchdog); watchdog = null }
+  }
+  function startWatchdog() {
+    stopWatchdog()
+    watchdog = setInterval(() => {
+      if (!socket.value || socket.value.readyState > 1) return
+      if (Date.now() - lastFrameAt > 75000) {
+        const dead = socket.value
+        socket.value = null
+        try { dead.close() } catch (_) {}
+        connected.value = false
+        connect()
+      }
+    }, 20000)
+  }
   function onSignal(fn) { signalHandler = fn }
 
   const unreadTotal = computed(() => convs.value.reduce((s, c) => s + (c.unread || 0), 0))
@@ -92,12 +113,15 @@ export const useChatStore = defineStore('chat', () => {
     socket.value = ws
     ws.onopen = () => {
       connected.value = true
+      lastFrameAt = Date.now()
+      startWatchdog()
       sendFrame('AUTH', {})
       // 建连/重连后补齐会话与当前会话消息，避免离线期间消息丢失
       loadConversations()
       if (currentConv.value) fetchMessages(currentConv.value)
     }
     ws.onmessage = e => {
+      lastFrameAt = Date.now()
       let f; try { f = JSON.parse(e.data) } catch (_) { return }
       if (f.cmd === 'PUSH') {
         const p = f.payload || {}
@@ -125,6 +149,15 @@ export const useChatStore = defineStore('chat', () => {
         if (m) m.status = 2
         loadConversations()
       } else if (f.cmd === 'NOTICE_PUSH' || f.cmd === 'PRESENCE_PUSH') {
+        const p = f.payload || {}
+        if (f.cmd === 'NOTICE_PUSH' && p.kind === 'read' && p.convId) {
+          let at = Date.now()
+          if (p.convId === currentConv.value) {
+            const mine = messages.value.filter(m => m.mine)
+            if (mine.length) at = Number(mine[mine.length - 1].createdAt) || at
+          }
+          readMap.value = { ...readMap.value, [p.convId]: at }
+        }
         loadConversations()
       } else if (f.cmd && f.cmd.indexOf('CALL_') === 0) {
         if (signalHandler) signalHandler(f)
@@ -134,6 +167,7 @@ export const useChatStore = defineStore('chat', () => {
     }
     ws.onclose = () => {
       connected.value = false
+      stopWatchdog()
       if (auth.isLogin) setTimeout(connect, 3000)
     }
   }
@@ -143,6 +177,7 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
   function disconnect() {
+    stopWatchdog()
     if (socket.value) { socket.value.onclose = null; socket.value.close(); socket.value = null }
     connected.value = false
   }
@@ -228,12 +263,12 @@ export const useChatStore = defineStore('chat', () => {
     return convId
   }
   function reset() {
-    convs.value = []; messages.value = []; currentConv.value = ''
+    convs.value = []; messages.value = []; currentConv.value = ''; readMap.value = {}
     disconnect()
   }
 
   return {
-    socket, convs, messages, currentConv, connected, unreadTotal,
+    socket, convs, messages, currentConv, connected, unreadTotal, readMap,
     connect, disconnect, sendFrame, loadConversations, openConv, sendText, sendMedia, removeLocal,
     syncMessages, ensureConv, reset, onSignal
   }
