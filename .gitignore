@@ -3,7 +3,7 @@
 *.log
 # 可执行文件
 *.exe
-# 前端/构建输出目录（web-h5/dist、web-admin/dist 等）
+# 前端/构建输出目录（web-admin/dist、desktop/dist 等）
 dist/
 
 # go:embed 需要目录存在：仅保留空目录占位，dist 内容不入库（本地用 scripts/sync-web 生成）

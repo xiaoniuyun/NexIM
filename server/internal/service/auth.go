@@ -111,7 +111,7 @@ func (a *AuthService) Register(username, password, nickname string) (map[string]
 	if err := a.S.DB.Create(&u).Error; err != nil {
 		return nil, err
 	}
-	return a.Login(username, password, "", "H5")
+	return a.Login(username, password, "", "DESKTOP")
 }
 
 func (a *AuthService) Refresh(refreshToken string) (map[string]interface{}, error) {

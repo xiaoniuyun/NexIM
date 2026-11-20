@@ -1,8 +1,8 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { API, fileUrl } from '@h5/api'
-import LineIcon from '@h5/components/LineIcon.vue'
-import { toast } from '@h5/toast'
+import { API, fileUrl } from '@/shared/api'
+import LineIcon from '@/shared/components/LineIcon.vue'
+import { toast } from '@/shared/toast'
 import { fullTime } from '../composables/useDesktop'
 
 const emit = defineEmits(['open-conv'])

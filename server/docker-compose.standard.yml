@@ -110,7 +110,7 @@ services:
       timeout: 3s
       retries: 30
 
-  # 单二进制（API/WS/H5/Admin），standard profile
+  # 单二进制（API/WS/Admin），standard profile
   server:
     build:
       context: ..

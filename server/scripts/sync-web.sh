@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 将 web-h5 / web-admin 的构建产物同步到 server/assets，供 go:embed 打包进二进制
+# 将 web-admin 的构建产物同步到 server/webassets/dist，供 go:embed 打包进二进制
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -11,6 +11,5 @@ sync_dist() {
   echo "synced $src -> $dst"
 }
 
-sync_dist "$ROOT/../web-h5/dist" "$ROOT/webassets/dist/h5"
 sync_dist "$ROOT/../web-admin/dist" "$ROOT/webassets/dist/admin"
 echo "Web assets synced. Now run: go build -o nexim-server ./cmd/server"

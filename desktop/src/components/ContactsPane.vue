@@ -1,11 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import Avatar from '@h5/components/Avatar.vue'
+import Avatar from '@/shared/components/Avatar.vue'
 import Modal from './Modal.vue'
-import { API } from '@h5/api'
-import { useAuthStore } from '@h5/stores/auth'
-import { useChatStore } from '@h5/stores/chat'
-import { toast } from '@h5/toast'
+import { API } from '@/shared/api'
+import { useAuthStore } from '@/shared/stores/auth'
+import { useChatStore } from '@/shared/stores/chat'
+import { toast } from '@/shared/toast'
 
 const emit = defineEmits(['open-conv'])
 const auth = useAuthStore()

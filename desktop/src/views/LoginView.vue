@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import { useAuthStore } from '@h5/stores/auth'
-import { toast } from '@h5/toast'
+import { useAuthStore } from '@/shared/stores/auth'
+import { toast } from '@/shared/toast'
 import { desk } from '../composables/useDesktop'
 
 const auth = useAuthStore()

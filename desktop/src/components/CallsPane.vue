@@ -1,10 +1,10 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { API } from '@h5/api'
-import { useAuthStore } from '@h5/stores/auth'
-import { useChatStore } from '@h5/stores/chat'
-import { useCallStore } from '@h5/stores/call'
-import { toast } from '@h5/toast'
+import { API } from '@/shared/api'
+import { useAuthStore } from '@/shared/stores/auth'
+import { useChatStore } from '@/shared/stores/chat'
+import { useCallStore } from '@/shared/stores/call'
+import { toast } from '@/shared/toast'
 import { fullTime } from '../composables/useDesktop'
 
 const auth = useAuthStore()

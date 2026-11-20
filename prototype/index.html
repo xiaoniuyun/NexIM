@@ -57,7 +57,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0
 .note-item b{color:var(--brand);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .center-wrap{display:flex;justify-content:center;align-items:flex-start;min-height:760px}
 
-/* ---------- H5 手机 ---------- */
+/* ---------- 移动端手机视图（Android / iOS） ---------- */
 .phone{width:352px;height:724px;background:#fff;border-radius:38px;border:9px solid #20263a;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;display:flex;flex-direction:column}
 .phone::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:112px;height:20px;background:#20263a;border-radius:0 0 16px 16px;z-index:6}
 .statusbar{height:36px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px;font-weight:700;color:#20263a;background:#fff}
@@ -463,7 +463,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0
 .phone.app-ios .send-btn{background:#0a84ff;box-shadow:none}
 .phone.app-ios .sec-title{padding-left:16px}
 
-/* ---------- 通讯录通栏平铺（H5 / Android / iOS 共用） ---------- */
+/* ---------- 通讯录通栏平铺（Android / iOS 共用） ---------- */
 .h5-body.contacts-body{padding:0 0 12px}
 .h5-body.contacts-body .h5-search{margin:12px 12px 10px;border-radius:10px}
 .h5-body.contacts-body .sec-title{padding:9px 16px 5px;background:#fafbfe}
@@ -551,59 +551,26 @@ body.dark .contact-pick{border-color:#232c42}
     <div>NexIM<small id="brandSub">企业级即时通讯平台</small></div>
   </div>
   <div class="seg" id="viewTabs">
-    <button data-act="switch-view" data-view="h5" class="on">H5 移动端</button>
-    <button data-act="switch-view" data-view="android">Android（Flutter）</button>
+    <button data-act="switch-view" data-view="android" class="on">Android（Flutter · 主推）</button>
+    <button data-act="switch-view" data-view="desktop">桌面（Electron · 完整实现）</button>
     <button data-act="switch-view" data-view="ios">iOS（Flutter）</button>
-    <button data-act="switch-view" data-view="desktop">桌面（Electron）</button>
     <button data-act="switch-view" data-view="admin">Vue 管理后台</button>
   </div>
   <div class="top-right">
     <button class="btn sm" data-act="lang-toggle" style="padding:5px 10px" title="Switch Language">🌐 <span id="langLabel">中文</span></button>
-    <span class="pill" id="syncPill"><i class="dot"></i>已同步 · 5 端在线</span>
-    <span class="pill blue">原型 v1.9 · 实现现状对齐 2026-11-20</span>
+    <span class="pill" id="syncPill"><i class="dot"></i>已同步 · Android / 桌面 / iOS / 后台</span>
+    <span class="pill blue">原型 v1.9 · Android 主推 / H5 已移除</span>
     <button class="icon-btn" id="themeBtn" data-act="toggle-theme" title="切换深浅色主题"></button>
   </div>
 </header>
 
 <main class="stage">
-  <!-- ========== H5 ========== -->
-  <section class="view" id="view-h5">
-    <div class="layout">
-      <aside class="panel">
-        <h3>H5 移动端页面</h3>
-        <p class="sub">移动浏览器 / PWA / 企业微信内嵌，点击切换页面。与桌面端共享同一份会话数据。</p>
-        <div class="page-list" id="h5PageList"></div>
-        <div class="chips"><span class="chip b">Vue 3</span><span class="chip">JavaScript</span><span class="chip">Pinia</span><span class="chip">自研 CSS</span></div>
-      </aside>
-      <div class="center-wrap"><div class="phone">
-        <div class="statusbar"><span>9:41</span><span class="sb-r">5G &nbsp;▮▮▮ &nbsp;78%</span></div>
-        <div id="h5Screen" class="h5-body" style="flex:1;display:flex;flex-direction:column;padding:0"></div>
-        <div class="tabbar" id="h5Tabbar"></div>
-        <div class="home-bar"></div>
-      </div></div>
-      <aside class="panel">
-        <h3>业务规则对照</h3>
-        <p class="sub">对应《业务需求文档》需求编号，鼠标操作即可体验交互。</p>
-        <div class="note-item"><b>FR-MSG-01</b><span>会话列表含置顶、免打扰、未读角标，按最后消息时间排序。</span></div>
-        <div class="note-item"><b>FR-MSG-05</b><span>发送以 clientMsgId 幂等，弱网重发不会产生重复消息。</span></div>
-        <div class="note-item"><b>FR-MSG-11</b><span>在 H5 发送后切到桌面端，可看到同一条消息与已读状态。</span></div>
-        <div class="note-item"><b>FR-MSG-08</b><span>长按/点击自己的气泡可撤回（2 分钟内）。</span></div>
-        <div class="note-item"><b>FR-H5-04</b><span>断线时消息进入本地队列，恢复后自动补发。</span></div>
-        <div class="note-item"><b>当前实现</b><span>Vue 3 + JavaScript + Pinia + 自研 CSS；无 Vant / TypeScript，i18n 中英切换已接入（localStorage.h5_lang）。</span></div>
-        <div class="note-item"><b>H5 路由</b><span>底部 4 个 Tab：消息 / 频道 / 联系人 / 动态；“我的”由会话页左上头像进入，不在底部 Tab。</span></div>
-        <div class="note-item"><b>FR-CONTACT-01</b><span>通讯录按组织架构树展示，支持人员搜索。</span></div>
-        <div class="note-item"><b>FR-RTC-01</b><span>聊天页或 + 号面板可发起语音 / 视频通话，呼叫 → 振铃 → 接听 → 挂断全流程可走通。</span></div>
-        <div class="note-item"><b>FR-RTC-04</b><span>挂断后自动生成通话卡片（类型、时长、结果）写入会话，并同步其他端。</span></div>
-      </aside>
-    </div>
-  </section>
-
   <!-- ========== 桌面 ========== -->
   <section class="view hide" id="view-desktop">
     <div class="layout">
       <aside class="panel">
-        <h3>桌面端原生能力</h3>
-        <p class="sub">Windows / Linux / macOS 三平台一致体验，原生层通过 preload 白名单 API 注入。</p>
+        <h3>桌面端（Electron · 完整实现）</h3>
+        <p class="sub">Windows / Linux / macOS 已完整落地，作为办公场景桌面入口；原生层通过 preload 白名单 API 注入。H5 已移除，桌面端业务层完全自持。</p>
         <div class="page-list">
           <button class="on">三栏主窗口<span class="num">FR-PC-02</span></button>
           <button data-act="desk-tray-demo">托盘与系统通知<span class="num">FR-PC-03</span></button>
@@ -611,15 +578,16 @@ body.dark .contact-pick{border-color:#232c42}
           <button data-act="desk-file">拖拽 / 截图发送<span class="num">FR-PC-05</span></button>
           <button data-act="desk-update">差分自动更新<span class="num">FR-PC-07</span></button>
         </div>
-        <div class="chips"><span class="chip b">Electron</span><span class="chip">Vue 3</span><span class="chip">@h5 复用</span><span class="chip">better-sqlite3</span></div>
+        <div class="chips"><span class="chip b">Electron</span><span class="chip">Vue 3</span><span class="chip">业务层自持</span><span class="chip">better-sqlite3</span></div>
       </aside>
       <div class="center-wrap" style="flex-direction:column;gap:16px">
         <div class="desktop" id="desktopFrame"></div>
       </div>
       <aside class="panel">
         <h3>设计与实现要点</h3>
-        <p class="sub">桌面端与 H5 共用业务组件与 IM SDK，仅替换原生适配层。</p>
-        <div class="note-item"><b>当前实现</b><span>Electron + Vue 3，经 Vite 别名 @h5 复用 H5 的 API 层与 Pinia stores；置顶 / 免打扰存本地 localStorage，非服务端会话设置。</span></div>
+        <p class="sub">桌面端功能已完整实现，办公场景可随时切换；当前主推端为 Android，H5 已移除。</p>
+        <div class="note-item"><b>当前实现</b><span>Electron + Vue 3（功能完整），原生能力经 preload 白名单注入；置顶 / 免打扰存本地 localStorage，非服务端会话设置。</span></div>
+        <div class="note-item"><b>业务解耦</b><span>API / Pinia stores / 消息状态机 / 头像组件已内聚到 desktop/src/shared，不再依赖 H5 工程；H5 删除后桌面端独立承载全部能力。</span></div>
         <div class="note-item"><b>导航窗格</b><span>当前代码含消息 / 通讯录 / 收藏 / 文件 / 通话 / 统计 6 个窗格，另有通知公告与设置。</span></div>
         <div class="note-item"><b>架构 5.2</b><span>渲染进程 / preload / 主进程三层隔离，nodeIntegration 关闭。</span></div>
         <div class="note-item"><b>架构 5.1</b><span>IM SDK 状态机：connecting → authing → syncing → online。</span></div>
@@ -633,11 +601,11 @@ body.dark .contact-pick{border-color:#232c42}
   </section>
 
   <!-- ========== Android（Flutter） ========== -->
-  <section class="view hide" id="view-android">
+  <section class="view" id="view-android">
     <div class="layout">
       <aside class="panel">
-        <h3>Android 客户端（Flutter）</h3>
-        <p class="sub">Android 8.0+，Flutter（Dart 3）+ provider 单工程构建；原生能力通过平台桥接，推送 / 锁屏来电等属目标能力。页面与 H5 / 桌面共享消息协议。</p>
+        <h3>Android 客户端（Flutter · 主推）</h3>
+        <p class="sub">Android 8.0+，Flutter（Dart 3）+ provider 单工程构建，是当前主推体验端与默认视图；原生能力通过平台桥接，推送 / 锁屏来电等属目标能力。页面与桌面端共享消息协议。</p>
         <div class="page-list" id="andPageList"></div>
         <div class="page-list" style="margin-top:12px">
           <button data-act="app-demo" data-k="push">系统级推送（规划：厂商通道 + FCM）<span class="num">FR-APP-02</span></button>
@@ -648,7 +616,7 @@ body.dark .contact-pick{border-color:#232c42}
           <button data-act="lock-call">锁屏来电演示（规划：系统来电）<span class="num">FR-APP-07</span></button>
           <button data-act="wide-toggle">横屏 / 平板布局<span class="num">NFR-COMP-03</span></button>
         </div>
-        <div class="chips"><span class="chip b">Flutter</span><span class="chip">Dart 3</span><span class="chip">provider</span><span class="chip">flutter_webrtc</span></div>
+        <div class="chips"><span class="chip b">主推</span><span class="chip">Flutter</span><span class="chip">Dart 3</span><span class="chip">provider</span><span class="chip">flutter_webrtc</span></div>
       </aside>
       <div class="center-wrap"><div class="phone app-android">
         <div class="statusbar"><span>9:41</span><span class="sb-r">5G &nbsp;▮▮▮ &nbsp;78%</span></div>
@@ -658,9 +626,10 @@ body.dark .contact-pick{border-color:#232c42}
       </div></div>
       <aside class="panel">
         <h3>设计与实现要点</h3>
-        <p class="sub">当前为 Flutter 单工程双端构建，复用消息状态机与多端同步协议；原生能力为规划项。</p>
+        <p class="sub">当前为 Flutter 单工程双端构建，Android 为主推端，复用消息状态机与多端同步协议；原生能力为规划项。</p>
         <div class="note-item"><b>当前实现</b><span>mobile/ 为 Flutter（Dart 3）+ provider 单工程，同时构建 Android / iOS；无 Kotlin 原生业务目录，Material 组件 + Cupertino 图标。</span></div>
-        <div class="note-item"><b>FR-APP-01</b><span>Flutter 客户端与桌面 / H5 消息实时互通，同账号多端同步。</span></div>
+        <div class="note-item"><b>主推定位</b><span>Android 为当前主推端，本原型默认进入 Android 视图；桌面端功能完整实现，作为办公场景桌面入口。</span></div>
+        <div class="note-item"><b>FR-APP-01</b><span>Flutter 客户端与桌面端实时互通，同账号多端同步。</span></div>
         <div class="note-item"><b>FR-APP-02</b><span>规划：厂商通道 / FCM 推送与推送深链；当前工程未接入推送 SDK，原型仅演示交互。</span></div>
         <div class="note-item"><b>FR-APP-05</b><span>规划：后台保活与被回收后增量同步（≤3s）。</span></div>
         <div class="note-item"><b>FR-APP-07</b><span>当前为 Flutter 通话浮层（WebRTC P2P + STUN）；锁屏来电 / 画中画 / 蓝牙切换属目标能力。</span></div>
@@ -697,7 +666,7 @@ body.dark .contact-pick{border-color:#232c42}
         <h3>设计与实现要点</h3>
         <p class="sub">iOS 与 Android 共用 Flutter 工程；复用消息状态机与多端同步协议，原生能力为规划项。</p>
         <div class="note-item"><b>当前实现</b><span>mobile/ 为 Flutter（Dart 3）+ provider 单工程；iOS 打包层仅做原生配置与桥接，无 Swift 业务源码，全中文硬编码无 i18n。</span></div>
-        <div class="note-item"><b>FR-APP-01</b><span>Flutter 客户端与桌面 / H5 消息实时互通，同账号多端同步。</span></div>
+        <div class="note-item"><b>FR-APP-01</b><span>Flutter 客户端与桌面端实时互通，同账号多端同步。</span></div>
         <div class="note-item"><b>FR-APP-02</b><span>规划：APNs 离线推送与通知分组；当前工程未接入推送 SDK，原型仅演示交互。</span></div>
         <div class="note-item"><b>FR-APP-03</b><span>规划：角标与服务端未读数一致，锁屏预览支持隐私模式。</span></div>
         <div class="note-item"><b>FR-APP-07</b><span>当前为 Flutter WebRTC 通话浮层（P2P + STUN）；CallKit 锁屏接听 / 画中画 / AirPods 切换属目标能力。</span></div>
@@ -872,13 +841,13 @@ const mediaItems={
   video:[{label:'架构评审录屏',duration:'02:18',bg:'linear-gradient(135deg,#2b3556,#4a3a6e)'},{label:'原型演示视频',duration:'00:46',bg:'linear-gradient(135deg,#3b2f56,#6b3a6e)'}],
   file:[{label:'02-技术架构文档.md',size:'38 KB'},{label:'需求评审纪要.docx',size:'1.2 MB'},{label:'接口清单.xlsx',size:'86 KB'}]
 };
-const state={view:'h5',h5Page:'convs',h5Conv:null,deskConv:'c1',deskView:'msg',adminPage:'dashboard',role:'r1',status:'在线',attach:false,memberPanel:true,filter:'all',theme:'light',lang:'zh',mention:null,emojiFor:null,draft:'',settingsTab:'notify',deptSel:'研发中心',dashRange:'7',msgMenuIdx:null,authed:false,authPage:'login',loginUser:'林晓',groupPicked:[],
+const state={view:'android',h5Page:'convs',h5Conv:null,deskConv:'c1',deskView:'msg',adminPage:'dashboard',role:'r1',status:'在线',attach:false,memberPanel:true,filter:'all',theme:'light',lang:'zh',mention:null,emojiFor:null,draft:'',settingsTab:'notify',deptSel:'研发中心',dashRange:'7',msgMenuIdx:null,authed:false,authPage:'login',loginUser:'林晓',groupPicked:[],
   call:{active:false,convId:null,type:'audio',phase:'ringing',sec:0,timer:null,muted:false,cam:true,share:false,speaker:false,ringing:false}};
 /* ==================== 国际化 I18N（NFR-I18N-01：文案与语言资源分离） ==================== */
 const I18N={
   zh:{
-    brandSub:'企业级即时通讯平台', sync:'已同步 · 5 端在线', proto:'交互原型', arch:'架构',
-    vH5:'H5 移动端', vAndroid:'Android（Flutter）', vIOS:'iOS（Flutter）', vDesktop:'桌面（Electron）', vAdmin:'Vue 管理后台',
+    brandSub:'企业级即时通讯平台', sync:'已同步 · Android / 桌面 / iOS / 后台', proto:'交互原型', arch:'架构',
+    vAndroid:'Android（Flutter · 主推）', vIOS:'iOS（Flutter）', vDesktop:'桌面（Electron · 完整实现）', vAdmin:'Vue 管理后台',
     tConvs:'消息', tChannels:'频道', tContacts:'联系人', tDiscover:'动态', tMine:'我的',
     pConvs:'消息 / 会话列表', pChat:'聊天页', pCall:'音视频通话页', pAddFriend:'添加朋友', pCreateGroup:'发起群聊',
     pProfile:'编辑资料',
@@ -897,7 +866,7 @@ const I18N={
     account:'账号 / 手机号', password:'密码', remember:'记住我', forgot:'忘记密码？', login:'登录',
     otherLogin:'其他登录方式', sso:'企业 SSO', codeLogin:'验证码登录', demoAccount:'演示账号 linxiao / 123456', oneClick:'一键登录',
     noAccount:'还没有账号？', registerNow:'立即注册', agreeLogin:'登录即代表同意',
-    createAccount:'创建账号', regSub:'注册后即可添加好友、创建群聊，消息在 H5 与桌面端实时同步',
+    createAccount:'创建账号', regSub:'注册后即可添加好友、创建群聊，消息在 Android / iOS / 桌面端实时同步',
     nickname:'昵称', phone:'手机号', verifyCode:'验证码', setPwd:'设置密码', confirmPwd:'确认密码', getCode:'获取验证码',
     agreeReg:'我已阅读并同意《服务协议》与《隐私政策》，了解消息将按企业留存策略保存', register:'注册并登录', hasAccount:'已有账号？', backLogin:'返回登录',
     contactsTitle:'通讯录', newFriends:'新的朋友', groups:'群聊', org:'组织架构', discoverTitle:'发现',
@@ -914,8 +883,8 @@ const I18N={
     mNew:'发起', mCreateGroup:'发起群聊', mAddFriend:'添加朋友', mScan:'扫一扫', mCancel:'取消'
   },
   en:{
-    brandSub:'Enterprise IM Platform', sync:'Synced · 5 devices online', proto:'Interactive Prototype', arch:'Architecture',
-    vH5:'H5 Mobile', vAndroid:'Android (Flutter)', vIOS:'iOS (Flutter)', vDesktop:'Desktop (Electron)', vAdmin:'Admin Console',
+    brandSub:'Enterprise IM Platform', sync:'Synced · Android / Desktop / iOS / Console', proto:'Interactive Prototype', arch:'Architecture',
+    vAndroid:'Android (Flutter · Primary)', vIOS:'iOS (Flutter)', vDesktop:'Desktop (Electron · Full)', vAdmin:'Admin Console',
     tConvs:'Chats', tChannels:'Channels', tContacts:'Contacts', tDiscover:'Moments', tMine:'Me',
     pConvs:'Messages / Chat List', pChat:'Chat', pCall:'Audio / Video Call', pAddFriend:'Add Friend', pCreateGroup:'New Group',
     pProfile:'Edit Profile',
@@ -934,7 +903,7 @@ const I18N={
     account:'Account / Phone', password:'Password', remember:'Remember me', forgot:'Forgot password?', login:'Sign In',
     otherLogin:'Other sign-in methods', sso:'Enterprise SSO', codeLogin:'Code Sign-in', demoAccount:'Demo linxiao / 123456', oneClick:'One-tap Sign In',
     noAccount:'No account?', registerNow:'Sign up', agreeLogin:'By signing in you agree to',
-    createAccount:'Create Account', regSub:'Add friends and create groups after sign-up; messages sync across H5 and desktop',
+    createAccount:'Create Account', regSub:'Add friends and create groups after sign-up; messages sync across Android / iOS / desktop',
     nickname:'Nickname', phone:'Phone', verifyCode:'Verify Code', setPwd:'Password', confirmPwd:'Confirm Password', getCode:'Send Code',
     agreeReg:'I have read and agree to the Terms & Privacy Policy, and understand messages are retained per policy', register:'Sign Up & In', hasAccount:'Have an account?', backLogin:'Back to Sign In',
     contactsTitle:'Contacts', newFriends:'New Friends', groups:'Groups', org:'Organization', discoverTitle:'Discover',
@@ -957,7 +926,7 @@ function applyLang(){
   var bs=document.getElementById('brandSub');if(bs)bs.textContent=t('brandSub');
   var sp=document.getElementById('syncPill');if(sp)sp.innerHTML='<i class="dot"></i>'+t('sync');
   var ll=document.getElementById('langLabel');if(ll)ll.textContent=state.lang==='en'?'English':'中文';
-  var vtabs=[['h5','vH5'],['android','vAndroid'],['ios','vIOS'],['desktop','vDesktop'],['admin','vAdmin']];
+  var vtabs=[['android','vAndroid'],['ios','vIOS'],['desktop','vDesktop'],['admin','vAdmin']];
   var box=document.getElementById('viewTabs');
   if(box)vtabs.forEach(function(x){var b=box.querySelector('[data-view="'+x[0]+'"]');if(b)b.textContent=t(x[1]);});
 }
@@ -983,7 +952,7 @@ const emojis=['😀','😁','😂','🤣','😊','😍','😘','😜','🤔','�
 const deviceList=[
   {name:'Windows 客户端',loc:'上海 · 10.20.3.18',last:'当前在线',cur:true},
   {name:'macOS 客户端',loc:'上海 · 10.20.3.52',last:'2 小时前活跃',cur:false},
-  {name:'H5 网页端',loc:'北京 · 10.20.5.44',last:'在线',cur:false}
+  {name:'Android 客户端',loc:'北京 · 10.20.5.44',last:'在线',cur:false}
 ];
 const fileRows=[['02-技术架构文档.md','38 KB','产品评审群 · 李工','今天 09:42'],['需求评审纪要.docx','1.2 MB','张伟','昨天 15:20'],['接口清单.xlsx','86 KB','前端研发组','周三 11:02'],['屏幕截图.png','2.4 MB','我','今天 10:05']];
 var deptData=[['总部','1,248'],['研发中心','386'],['产品组','42'],['后端组','86'],['前端组','54'],['架构组','18'],['市场部','212'],['审计部','16'],['客服部','96']];
@@ -1275,7 +1244,7 @@ function openReminds(){
 }
 function openNoticeBoard(){
   modal('企业公告','<div style="font-weight:700;margin-bottom:6px">V1.0 正式版发布与维护窗口</div>'+
-    '<div style="font-size:12px;color:#4a556b;line-height:1.9">当前版本 V1.0 已覆盖 H5 / Flutter 双端 / Electron 桌面 / Vue 后台，完整 RBAC 权限与消息审计能力可用。消息服务通过 REST :8080 与 WebSocket :8081 双端口提供，发布期间不中断。</div>'+
+    '<div style="font-size:12px;color:#4a556b;line-height:1.9">当前版本 V1.0 已覆盖 Android / iOS（Flutter 双端）/ Electron 桌面 / Vue 后台，完整 RBAC 权限与消息审计能力可用。消息服务通过 REST :8080 与 WebSocket :8081 双端口提供，发布期间不中断。</div>'+
     '<div style="margin-top:10px;font-size:11px;color:#8a95aa">定向范围：全员 · 已读率 92% · 来自后台「公告管理」，到达系统通知会话（FR-ADMIN-11）</div>',null,'知道了');
 }
 
@@ -1307,7 +1276,7 @@ function flashSync(){
   var p=document.getElementById('syncPill');if(!p)return;
   p.innerHTML='<i class="dot"></i>同步中…';
   p.style.background='#fff5e5';p.style.color='#c47a08';
-  setTimeout(function(){p.innerHTML='<i class="dot"></i>已同步 · 5 端在线';p.style.background='';p.style.color='';},900);
+  setTimeout(function(){p.innerHTML='<i class="dot"></i>'+I18N[state.lang].sync;p.style.background='';p.style.color='';},900);
 }
 function vcallHtml(){
   var k=state.call,c=C[k.convId];
@@ -1335,7 +1304,7 @@ function incomingHtml(){
     '<button class="inc-btn ok" data-act="call-answer" title="接听">'+ic('phoneIn',20)+'</button></div></div></div>';
 }
 
-/* ==================== H5 ==================== */
+/* ==================== 移动端共享视图（Android / iOS） ==================== */
 const h5Pages=[{k:'convs',n:'消息 / 会话列表',i:'msg',no:'FR-MSG-01'},{k:'chat',n:'聊天页',i:'msg',no:'FR-MSG-02'},{k:'call',n:'音视频通话页',i:'phoneIn',no:'FR-RTC-01'},{k:'addFriend',n:'添加朋友',i:'user',no:'FR-CONTACT-08'},{k:'createGroup',n:'发起群聊',i:'users',no:'FR-GROUP-09'},{k:'contacts',n:'通讯录 / 入口',i:'contacts',no:'FR-CONTACT-01'},{k:'dept',n:'组织架构页',i:'dept',no:'FR-CONTACT-01'},{k:'groups',n:'群聊列表',i:'users',no:'FR-MSG-04'},{k:'friends',n:'好友申请（新的朋友）',i:'contacts',no:'FR-CONTACT-07'},{k:'discover',n:'发现',i:'compass',no:'FR-H5-02'},{k:'files',n:'文件助手',i:'folder',no:'FR-FILE-04'},{k:'favorites',n:'收藏',i:'pin',no:'FR-MSG-09'},{k:'mine',n:'我的 / 设备与设置',i:'user',no:'FR-AUTH-07'},{k:'profile',n:'编辑资料',i:'user',no:'FR-AUTH-01'},{k:'settings',n:'设置（通知/隐私/通用）',i:'settings',no:'NFR-MNT-01'}];
 function renderH5Nav(){
   var pageNames={convs:'pConvs',chat:'pChat',call:'pCall',addFriend:'pAddFriend',createGroup:'pCreateGroup',contacts:'pContacts',dept:'pDept',groups:'pGroups',friends:'pFriends',discover:'pDiscover',files:'pFiles',favorites:'pFavorites',mine:'pMine',profile:'pProfile',settings:'pSettings'};
@@ -1510,7 +1479,7 @@ function doLogin(accIn,pwdIn){
   if(acc!=='linxiao')state.loginUser=acc;
   renderCur();renderDesktop();flashSync();
   toast('登录成功，正在同步离线消息…','ok');
-  setTimeout(function(){toast('已同步 6 个会话 · 云端漫游 180 天 · 5 端在线','ok');},900);
+  setTimeout(function(){toast('已同步 6 个会话 · 云端漫游 180 天 · Android / 桌面 / iOS / 后台','ok');},900);
 }
 function doRegister(){
   var nick=((document.getElementById('regNick')||{}).value||'').trim();
@@ -1537,7 +1506,7 @@ function sendCode(btn){
     var t=setInterval(function(){n--;if(b)b.textContent=n+'s 后重发';if(n<=0){clearInterval(t);if(b){b.dataset.run='';b.textContent='获取验证码';}}},1000);}
   toast('验证码已发送（演示环境：123456）','ok');
 }
-function isMobile(){return ['h5','android','ios'].indexOf(state.view)>=0;}
+function isMobile(){return ['android','ios'].indexOf(state.view)>=0;}
 function mobileScreen(){return document.getElementById(state.view==='android'?'andScreen':(state.view==='ios'?'iosScreen':'h5Screen'));}
 function mobileTabbar(){return document.getElementById(state.view==='android'?'andTabbar':(state.view==='ios'?'iosTabbar':'h5Tabbar'));}
 function activePhone(){return document.querySelector(state.view==='android'?'#view-android .phone':(state.view==='ios'?'#view-ios .phone':'.phone'));}
@@ -1794,7 +1763,7 @@ function renderDesktop(){
     }).join('')+'<div class="r-bottom"><button data-act="desk-bell">'+ic('bell',19)+'</button><button data-act="desk-shortcut">'+ic('settings',19)+'</button>'+
       av('林','linear-gradient(135deg,#4f6ef7,#7b61ff)','sm')+'</div></nav>'+
     main+'</div>'+
-    (!state.authed?'<div class="vcall" style="align-items:center;justify-content:center"><div style="text-align:center;padding:24px"><div style="font-size:15px;font-weight:700">未登录</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin:8px 0 18px;line-height:1.7">请在 H5 端登录或注册，<br>桌面端将自动同步相同账号的消息</div><button class="btn primary" data-act="auth-demo">使用演示账号一键登录</button></div></div>':'')+(state.call.active&&!state.call.ringing?vcallHtml():'')+(state.call.ringing?incomingHtml():'')+
+    (!state.authed?'<div class="vcall" style="align-items:center;justify-content:center"><div style="text-align:center;padding:24px"><div style="font-size:15px;font-weight:700">未登录</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin:8px 0 18px;line-height:1.7">请在桌面端登录，或使用演示账号一键登录。<br>登录后体验已完整实现的消息 / 通讯录 / 文件 / 通话能力</div><button class="btn primary" data-act="auth-demo">使用演示账号一键登录</button></div></div>':'')+(state.call.active&&!state.call.ringing?vcallHtml():'')+(state.call.ringing?incomingHtml():'')+
     '<div class="desk-status"><span class="ds-ok"><i class="dot"></i>长连接正常 (ws://host:8081/ws)</span><span>设备：Windows 客户端 · REST :8080</span><span>本地缓存：已加密 · 1.2 GB</span><button class="btn sm" data-act="sim-incoming">'+ic('phoneIn',13)+'模拟来电</button><span style="margin-left:auto">v1.0.0 · 自动更新已开启</span></div>';
   restoreDraft();
   var dme=document.getElementById('deskMsgs');if(dme)scrollBottom(dme);
@@ -1899,7 +1868,7 @@ function pageDashboard(){
       return '<div class="bar-row"><span class="bl">'+b[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+b[1]+'%"></div></div><span class="bv">'+b[1]+'%</span></div>';
     }).join('')+'</div>'+
     '<div class="card" style="margin-top:14px"><h3>客户端分布（登录分布）</h3><div class="csub">按最后活跃端统计的登录占比</div>'+
-    [['Windows',34],['H5 移动端',32],['macOS',24],['Linux',10]].map(function(b){
+    [['Windows',34],['H5 移动端（存量）',32],['macOS',24],['Linux',10]].map(function(b){
       return '<div class="bar-row"><span class="bl">'+b[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+b[1]+'%"></div></div><span class="bv">'+b[1]+'%</span></div>';
     }).join('')+'</div></div>'+
   '<div class="grid2"><div class="card"><h3>最近后台操作</h3><div class="csub">全部写操作自动记录审计日志</div>'+
@@ -1957,7 +1926,7 @@ function pageDepts(){
   var members=orgMembers.filter(function(m){return sel==='总部'||m.dept===sel;});
   var pathMap={'总部':'/1/','研发中心':'/1/3/','产品组':'/1/3/5/','后端组':'/1/3/6/','前端组':'/1/3/7/','架构组':'/1/3/8/'};
   var dpath=pathMap[sel]||'/1/'+String(depts.indexOf(dmeta)+1)+'/';
-  return hint('组织架构变更在 60 秒内同步到 H5 与桌面端通讯录，并影响 RBAC 数据范围。','FR-CONTACT-01 / FR-ADMIN-03')+
+  return hint('组织架构变更在 60 秒内同步到 Android 与桌面端通讯录，并影响 RBAC 数据范围。','FR-CONTACT-01 / FR-ADMIN-03')+
   '<div class="split"><div class="card"><h3>部门树</h3><div class="csub">点击部门筛选成员 · 支持拖拽调整层级</div>'+
     depts.map(function(d,i){return '<div class="tree-row '+(sel===d[0]?'on':'')+'" data-act="dept-select" data-name="'+d[0]+'">'+ic(i<2?'folder':'chev',14)+esc(d[0])+'<span class="tr-c">'+d[1]+' 人</span></div>';}).join('')+
     '<button class="btn primary sm" style="width:100%;justify-content:center;margin-top:12px" data-act="dept-add">'+ic('plus',13)+'新增部门</button></div>'+
@@ -2129,7 +2098,7 @@ function pageLoginLogs(){
     ['2026-11-15 09:12','林晓','10.20.3.18','上海','Windows 客户端','成功','正常'],
     ['2026-11-15 08:46','赵琳','10.20.3.77','上海','macOS 客户端','成功','正常'],
     ['2026-11-15 07:12','未知','203.0.113.42','海外','Web','失败 5 次','异常登录'],
-    ['2026-11-15 06:58','王敏','10.20.5.44','北京','H5 网页端','成功','正常'],
+    ['2026-11-15 06:58','王敏','10.20.5.44','北京','Android 客户端','成功','正常'],
     ['2026-11-14 22:31','陈静','10.20.8.12','广州','Windows 客户端','成功','异地登录'],
     ['2026-11-14 20:05','张伟','10.20.3.9','上海','Windows 客户端','成功','正常']
   ];
@@ -2202,7 +2171,7 @@ function sendMsg(target){
   if(target==='h5'){document.getElementById('h5Msgs').innerHTML=messagesHtml(id);scrollBottom(document.getElementById('h5Msgs'));}
   else{document.getElementById('deskMsgs').innerHTML=messagesHtml(id);scrollBottom(document.getElementById('deskMsgs'));}
   flashSync();
-  toast('消息已发送 · 已同步到全部在线端（H5 / Android / iOS / 桌面）','ok');
+  toast('消息已发送 · 已同步到在线端（Android / 桌面 / iOS）','ok');
   setTimeout(function(){
     var m=C[id].messages[C[id].messages.length-1];if(m&&m.mine)m.read=true;
     if(isMobile()&&state.h5Page==='chat'&&(state.h5Conv||'c1')===id){var e=document.getElementById('h5Msgs');if(e){e.innerHTML=messagesHtml(id);scrollBottom(e);}}
@@ -2211,7 +2180,7 @@ function sendMsg(target){
 }
 function switchView(v){
   state.view=v;
-  ['h5','android','ios','desktop','admin'].forEach(function(x){var el=document.getElementById('view-'+x);if(el)el.classList.toggle('hide',x!==v);});
+  ['android','ios','desktop','admin'].forEach(function(x){var el=document.getElementById('view-'+x);if(el)el.classList.toggle('hide',x!==v);});
   document.querySelectorAll('#viewTabs button').forEach(function(b){b.classList.toggle('on',b.dataset.view===v);});
   renderCur();
   if(v==='admin')renderAdmin();

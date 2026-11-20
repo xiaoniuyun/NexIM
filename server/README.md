@@ -7,11 +7,11 @@
 - 后端：Go 1.22 + Gin + gorilla/websocket + MySQL/GORM + Redis（模块化单体，JSON 协议）
 - 网络：**HTTP REST `:8080` 与 WebSocket `:8081` 双端口**（见 `cmd/server/main.go` 与 `configs/config.yaml`）
 - 前端：
-  - H5：Vue 3 + Vite + Pinia（`web-h5/`）
+  - 移动端：Flutter（Android / iOS，`mobile/`），Android 为主推
   - 管理后台：Vue 3 + Vite + Pinia（`web-admin/`）
-  - 桌面客户端：Electron + Vue 3，通过 `@h5` 别名复用 `web-h5/src` 的 API 层与 stores（`desktop/`）
+  - 桌面客户端：Electron + Vue 3，业务层自持于 `desktop/src/shared`（`desktop/`）
   - 移动客户端：Flutter 独立实现（`mobile/`）
-- 部署：H5/Admin 经 `go:embed` 打进单个 Go 二进制，HTTP `:8080` 同时提供 REST API 与 H5/Admin 静态资源；WS 独立监听 `:8081`。支持 lite / standard 双形态（`deployment.profile` 同一份代码切换）
+- 部署：Admin 经 `go:embed` 打进单个 Go 二进制，HTTP `:8080` 同时提供 REST API 与 Admin 静态资源；WS 独立监听 `:8081`。支持 lite / standard 双形态（`deployment.profile` 同一份代码切换）
 - 标准版：NATS JetStream + Redis Cluster + 分片 + Meilisearch 3 副本 + RustFS（S3 兼容对象存储，替代 MinIO）+ Prometheus/Jaeger 完整配置，见 `configs/config-standard.yaml` 与 `docker-compose.standard.yml`
 - 消息队列：standard 形态下消息落库后发布 `im.message.created` 事件到 JetStream 流 `IM_EVENT`（持久化、可按 `msgId` 去重、可回放），各网关节点消费后向本节点在线用户投递
 
@@ -34,17 +34,16 @@ NexIM/
 │   │   ├── store/                # GORM 迁移 + 种子数据 + Redis
 │   │   ├── storage/              # 本地 FS 与 RustFS（S3 兼容）对象存储
 │   │   ├── model/ / config/ / pkg/ / webassets/
-│   ├── webassets/                # go:embed 嵌入 H5/Admin 构建产物
+│   ├── webassets/                # go:embed 嵌入 Admin 构建产物
 │   │   ├── embed.go              # embed.FS + 静态服务 + SPA fallback
-│   │   └── dist/{h5,admin}/      # 由 scripts/sync-web 从前端 dist 同步（构建产物）
+│   │   └── dist/admin/      # 由 scripts/sync-web 从前端 dist 同步（构建产物）
 │   ├── scripts/                  # sync-web.ps1 / sync-web.sh（同步前端产物）
-│   ├── Dockerfile                # 多阶段：构建 H5→构建 Admin→Go embed 编译→alpine 运行
+│   ├── Dockerfile                # 多阶段：构建 Admin→Go embed 编译→alpine 运行
 │   ├── docker-compose.yml        # lite：MySQL + Redis + NATS + RustFS + coturn + Server
 │   ├── docker-compose.standard.yml # standard：完整中间件编排
-│   └── nginx-web.conf            # 可选：独立 Nginx 托管前端（子路径 /h5/ /admin/）
-├── web-h5/                       # H5 移动端（Vue 3 + Vite，hash 路由 base=/h5/）
+│   └── nginx-web.conf            # 可选：独立 Nginx 托管前端（子路径 /admin/）
 ├── web-admin/                    # 管理后台（Vue 3 + Vite，hash 路由 base=/admin/）
-├── desktop/                      # Electron 桌面客户端（Vue 3，复用 web-h5/src）
+├── desktop/                      # Electron 桌面客户端（Vue 3，业务层自持）
 ├── mobile/                       # Flutter 移动客户端（Android + iOS）
 ├── docs/                         # 业务需求文档 / 技术架构文档
 └── prototype/                    # 高保真交互原型（index.html）
@@ -52,7 +51,7 @@ NexIM/
 
 ## 一键启动（Docker Compose）
 
-> 先启动 Docker Desktop。H5 / Admin 已通过 `go:embed` **打包进单个 Go 二进制**；
+> 先启动 Docker Desktop。Admin 已通过 `go:embed` **打包进单个 Go 二进制**；
 > HTTP `:8080` 提供 REST API 与前端静态资源，WebSocket 独立监听 `:8081`。
 > 下面为 lite 轻量形态；**日常开发请使用标准版（含 NATS JetStream），见「标准版运行」**。
 
@@ -63,7 +62,7 @@ docker compose up -d --build
 
 访问：
 
-- **Vue H5 移动端**：`http://localhost:8080/h5/`（手机浏览器或开发者工具移动模式）
+- **主推移动端**：Android / iOS（Flutter，`mobile/`），通过 REST / WebSocket 直连后端，不随单二进制 embed
 - **Vue 管理后台**：`http://localhost:8080/admin/`（管理员账号 linxiao 登录）
 - 健康检查：`http://localhost:8080/health`
 - WebSocket：`ws://localhost:8081/ws`（独立端口，非同源）
@@ -72,22 +71,20 @@ docker compose up -d --build
 ### 本地单二进制运行（无需 Docker 前端容器）
 
 ```bash
-# 1) 构建两个前端
-cd web-h5   && npm install && npm run build
-cd ../web-admin && npm install && npm run build
+# 1) 构建管理后台前端
+cd web-admin && npm install && npm run build
 # 2) 同步产物到 server/webassets/dist（供 go:embed）
 cd ../server && powershell -File scripts/sync-web.ps1   # Linux/Mac: bash scripts/sync-web.sh
-# 3) 编译单二进制（已含 H5/Admin）
+# 3) 编译单二进制（已含 Admin）
 go build -o nexim-server ./cmd/server
 # 4) 运行（MySQL/Redis/NATS/RustFS 需可达，地址可用环境变量覆盖）
 ./nexim-server
-# 浏览器打开 http://localhost:8080/h5/ 或 /admin/；WS 为 ws://localhost:8081/ws
+# 浏览器打开 http://localhost:8080/admin/；WS 为 ws://localhost:8081/ws
 ```
 
-H5 / Admin 本地 dev 模式（热更新，独立端口，仍代理到后端）：
+Admin 本地 dev 模式（热更新，独立端口，仍代理到后端）：
 
 ```bash
-cd web-h5    && npm run dev   # http://localhost:5174/h5/，/api → :8080，/ws → :8081
 cd web-admin && npm run dev   # http://localhost:5175/admin/
 ```
 
@@ -215,7 +212,7 @@ go build -o nexim-server.exe ./cmd/server
 # 确保本机 MySQL(3306) / Redis(6379) / NATS(4222) 可用，修改 configs/config.yaml 对应地址
 $env:CONFIG_PATH="configs/config.yaml"; .\nexim-server.exe
 # HTTP API + 静态资源 :8080；WebSocket :8081/ws
-# 前端 dev 模式见上文「H5 / Admin 本地 dev 模式」，Vite 已配置 /api 与 /ws 代理
+# 前端 dev 模式见上文「Admin 本地 dev 模式」，Vite 已配置 /api 与 /ws 代理
 ```
 
 ## 测试
@@ -234,14 +231,14 @@ go test ./internal/api -run TestAdminIntegration -v    # 只跑端到端集成�
 
 - `go build ./...`、`go vet ./...`、`go test ./... -count=1`：通过（含 RBAC 端到端集成测试）
 - `docker compose config`：通过（lite / standard 两套编排）
-- Vue H5：`npm run build` 通过；Vue 管理后台：`npm run build` 通过
+- Electron 桌面端：`npm run build` 通过；Vue 管理后台：`npm run build` 通过
 - 后端运行实测：MySQL / Redis / NATS 容器健康，服务 `:8080`（HTTP）与 `:8081`（WS）启动成功
 - 管理 API 实测：登录 / dashboard / 用户 / 角色 / 审计 / 消息审计 / 公告 / 敏感词全部返回正常
-- 单二进制 embed：`go:embed` 将 H5/Admin 构建产物嵌入 Go 二进制，HTTP `:8080` 提供 API 与静态资源、SPA fallback 正常；WS 独立 `:8081`
-- 标准版适配：`deployment.profile` 驱动形态派生与校验；`config-standard.yaml`、`docker-compose.standard.yml` 已就绪；启动日志与 `/health` 输出形态摘要；standard 形态实测 H5/Admin 登录、KPI、14 导航正常
+- 单二进制 embed：`go:embed` 将 Admin 构建产物嵌入 Go 二进制，HTTP `:8080` 提供 API 与静态资源、SPA fallback 正常；WS 独立 `:8081`
+- 标准版适配：`deployment.profile` 驱动形态派生与校验；`config-standard.yaml`、`docker-compose.standard.yml` 已就绪；启动日志与 `/health` 输出形态摘要；standard 形态实测 Admin 登录、KPI、14 导航正常
 - NATS JetStream 接入：消息落库后发布 `im.message.created` 到流 `IM_EVENT`，节点消费后向本节点在线用户投递；以 `msgId` 去重；实测 HTTP/WS 双通道推送实时到达、重复提交仅落一条事件
-- 实时音视频：信令 `CALL_INVITE/ANSWER/ICE/HANGUP` 及 PUSH 帧、在线校验（离线返回 `CALL_ACK 4041`）、standard 形态经 JetStream `im.call.signal` 跨节点转发；H5 `stores/call.js` 实现 RTCPeerConnection/offer-answer/trickle ICE/媒体控制；`im_call` 通话记录 + `GET /rtc/config|/calls` 实测通过
-- 管理后台 14 页路由与渲染、H5 登录/4 Tab/WS `AUTH_ACK`+`HEARTBEAT_ACK`+`SEND_ACK`/消息落库/会话生成/聊天页渲染全链路实测通过
+- 实时音视频：信令 `CALL_INVITE/ANSWER/ICE/HANGUP` 及 PUSH 帧、在线校验（离线返回 `CALL_ACK 4041`）、standard 形态经 JetStream `im.call.signal` 跨节点转发；桌面端 `desktop/src/shared/stores/call.js` 实现 RTCPeerConnection/offer-answer/trickle ICE/媒体控制；`im_call` 通话记录 + `GET /rtc/config|/calls` 实测通过
+- 管理后台 14 页路由与渲染、桌面端登录/三栏/WS `AUTH_ACK`+`HEARTBEAT_ACK`+`SEND_ACK`/消息落库/会话生成/聊天页渲染全链路实测通过
 - Docker Desktop 守护进程需在部署机器上处于运行状态
 
 ## 安全提示

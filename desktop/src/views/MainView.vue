@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useAuthStore } from '@h5/stores/auth'
-import { avatarUrl, DEFAULT_AVATAR } from '@h5/api'
-import { useChatStore } from '@h5/stores/chat'
+import { useAuthStore } from '@/shared/stores/auth'
+import { avatarUrl, DEFAULT_AVATAR } from '@/shared/api'
+import { useChatStore } from '@/shared/stores/chat'
 import Icon from '../components/Icon.vue'
 import ConvColumn from '../components/ConvColumn.vue'
 import ChatPane from '../components/ChatPane.vue'

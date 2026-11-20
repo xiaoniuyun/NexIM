@@ -52,4 +52,4 @@ Android 签名与 iOS 分发证书需在各自平台工程中配置，当前仓�
 ## 实现边界说明
 
 - 移动端为 **Flutter 单工程**，与需求/架构文档中「Android Kotlin + Jetpack Compose / iOS Swift + SwiftUI 双原生栈」的规划形态不同；原生平台目录仅承担打包与原生能力桥接。
-- 桌面端（`desktop/`）通过 `@h5` 别名复用 `web-h5/src` 的 API 层与 Pinia stores；移动端为独立实现，不共享 Web 源码，仅共享后端协议语义。
+- 桌面端（`desktop/`）业务层自持于 `desktop/src/shared`；移动端为独立 Flutter 实现，不共享 Web 源码，仅共享后端协议语义。

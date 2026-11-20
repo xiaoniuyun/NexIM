@@ -1,10 +1,10 @@
 <script setup>
 import { ref } from 'vue'
 import Modal from './Modal.vue'
-import Avatar from '@h5/components/Avatar.vue'
-import { useChatStore } from '@h5/stores/chat'
-import { API } from '@h5/api'
-import { toast } from '@h5/toast'
+import Avatar from '@/shared/components/Avatar.vue'
+import { useChatStore } from '@/shared/stores/chat'
+import { API } from '@/shared/api'
+import { toast } from '@/shared/toast'
 
 const props = defineProps({ msg: Object })
 const emit = defineEmits(['close'])

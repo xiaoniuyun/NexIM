@@ -12,8 +12,8 @@ export function writeAuth(key, value) {
   }
 }
 
-function getToken() { return readAuth('h5_token') }
-function getRefresh() { return readAuth('h5_refresh') }
+function getToken() { return readAuth('desk_token') }
+function getRefresh() { return readAuth('desk_refresh') }
 
 export async function api(path, opts = {}) {
   opts.headers = opts.headers || {}
@@ -33,8 +33,8 @@ export async function api(path, opts = {}) {
     })
     const rd = await r.json()
     if (rd.code === 0) {
-      writeAuth('h5_token', rd.data.accessToken)
-      writeAuth('h5_refresh', rd.data.refreshToken)
+      writeAuth('desk_token', rd.data.accessToken)
+      writeAuth('desk_refresh', rd.data.refreshToken)
       opts.headers['Authorization'] = 'Bearer ' + rd.data.accessToken
       const retry = await fetch(API_BASE + path, opts)
       return retry.json()
@@ -47,8 +47,8 @@ export async function api(path, opts = {}) {
 export function wsUrl() {
   const p = new URLSearchParams({
     token: getToken(),
-    device: localStorage.getItem('h5_device') || 'h5',
-    platform: 'H5'
+    device: localStorage.getItem('desk_device') || 'desk',
+    platform: 'DESKTOP'
   })
   const custom = typeof window !== 'undefined' && window.neximConfig && window.neximConfig.wsUrl
   if (custom) return custom + (custom.includes('?') ? '&' : '?') + p
@@ -71,7 +71,7 @@ export function avatarUrl(avatar) {
 export const DEFAULT_AVATAR = API_BASE + '/assets/default-avatar.svg'
 
 export const API = {
-  login: (account, password, deviceId) => api('/auth/login', { method: 'POST', body: { account, password, deviceId, platform: 'H5' } }),
+  login: (account, password, deviceId) => api('/auth/login', { method: 'POST', body: { account, password, deviceId, platform: 'DESKTOP' } }),
   register: (username, password, nickname) => api('/auth/register', { method: 'POST', body: { username, password, nickname } }),
   logout: () => api('/auth/logout', { method: 'POST' }),
   devices: () => api('/auth/devices'),

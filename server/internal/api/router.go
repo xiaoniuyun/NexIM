@@ -205,13 +205,11 @@ func (rt *Router) Engine() *gin.Engine {
 	// WebSocket（同源，供嵌入的前端使用；独立网关端口仍保留）
 	r.GET("/ws", func(c *gin.Context) { rt.WSHandler(c.Writer, c.Request) })
 
-	// 嵌入的前端静态资源（H5 / Admin），单二进制同源部署
+	// 嵌入的前端静态资源（Admin），单二进制同源部署
 	if webassets.Has() {
-		r.GET("/h5", func(c *gin.Context) { c.Redirect(http.StatusFound, "/h5/") })
-		r.GET("/h5/*filepath", gin.WrapH(webassets.FileServer("h5")))
 		r.GET("/admin", func(c *gin.Context) { c.Redirect(http.StatusFound, "/admin/") })
 		r.GET("/admin/*filepath", gin.WrapH(webassets.FileServer("admin")))
-		r.GET("/", func(c *gin.Context) { c.Redirect(http.StatusFound, "/h5/") })
+		r.GET("/", func(c *gin.Context) { c.Redirect(http.StatusFound, "/admin/") })
 	}
 	return r
 }
@@ -316,7 +314,7 @@ func (rt *Router) WSHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	platform := r.URL.Query().Get("platform")
 	if platform == "" {
-		platform = "H5"
+		platform = "DESKTOP"
 	}
 	conn, err := rt.Up.Upgrade(w, r, nil)
 	if err != nil {
@@ -343,7 +341,7 @@ func (rt *Router) login(c *gin.Context) {
 	ip := c.ClientIP()
 	platform := req.Platform
 	if platform == "" {
-		platform = "H5"
+		platform = "DESKTOP"
 	}
 	if rt.Admin.IsIPBanned(ip) {
 		rt.Admin.RecordLogin("", req.Account, ip, platform, req.DeviceID, false)

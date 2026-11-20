@@ -1,5 +1,5 @@
-import { API } from '@h5/api'
-import { toast } from '@h5/toast'
+import { API } from '@/shared/api'
+import { toast } from '@/shared/toast'
 
 export const desk = typeof window !== 'undefined' ? window.desktop : null
 

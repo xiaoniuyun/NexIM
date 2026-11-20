@@ -1,11 +1,11 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import Avatar from '@h5/components/Avatar.vue'
-import LineIcon from '@h5/components/LineIcon.vue'
-import { useAuthStore } from '@h5/stores/auth'
-import { useChatStore } from '@h5/stores/chat'
-import { API } from '@h5/api'
-import { toast } from '@h5/toast'
+import Avatar from '@/shared/components/Avatar.vue'
+import LineIcon from '@/shared/components/LineIcon.vue'
+import { useAuthStore } from '@/shared/stores/auth'
+import { useChatStore } from '@/shared/stores/chat'
+import { API } from '@/shared/api'
+import { toast } from '@/shared/toast'
 import Modal from './Modal.vue'
 import { desk, fullTime } from '../composables/useDesktop'
 

@@ -1,10 +1,10 @@
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount, reactive } from 'vue'
-import Avatar from '@h5/components/Avatar.vue'
+import Avatar from '@/shared/components/Avatar.vue'
 import Icon from './Icon.vue'
-import { useChatStore } from '@h5/stores/chat'
-import { API } from '@h5/api'
-import { toast } from '@h5/toast'
+import { useChatStore } from '@/shared/stores/chat'
+import { API } from '@/shared/api'
+import { toast } from '@/shared/toast'
 import { pinnedSet, mutedSet, togglePin, toggleMute, timeText } from '../composables/useDesktop'
 
 const emit = defineEmits(['open', 'search'])

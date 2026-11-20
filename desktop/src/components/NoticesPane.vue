@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { API } from '@h5/api'
-import { toast } from '@h5/toast'
+import { API } from '@/shared/api'
+import { toast } from '@/shared/toast'
 import { fullTime } from '../composables/useDesktop'
 
 const notices = ref([])

@@ -1,4 +1,4 @@
-# 将 web-h5 / web-admin 的构建产物同步到 server/assets，供 go:embed 打包进二进制
+# 将 web-admin 的构建产物同步到 server/webassets/dist，供 go:embed 打包进二进制
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 
@@ -10,6 +10,5 @@ function Sync-Dist($src, $dst) {
     Write-Host "synced $src -> $dst"
 }
 
-Sync-Dist (Join-Path $root '..\web-h5\dist')  (Join-Path $root 'webassets\dist\h5')
 Sync-Dist (Join-Path $root '..\web-admin\dist') (Join-Path $root 'webassets\dist\admin')
 Write-Host 'Web assets synced. Now run: go build -o nexim-server ./cmd/server'

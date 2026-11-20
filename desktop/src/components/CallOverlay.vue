@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, nextTick, computed } from 'vue'
-import Avatar from '@h5/components/Avatar.vue'
-import { useCallStore } from '@h5/stores/call'
+import Avatar from '@/shared/components/Avatar.vue'
+import { useCallStore } from '@/shared/stores/call'
 
 const call = useCallStore()
 const localVideo = ref(null)

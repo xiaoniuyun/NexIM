@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import Avatar from '@h5/components/Avatar.vue'
-import { API } from '@h5/api'
-import { useChatStore } from '@h5/stores/chat'
-import { toast } from '@h5/toast'
+import Avatar from '@/shared/components/Avatar.vue'
+import { API } from '@/shared/api'
+import { useChatStore } from '@/shared/stores/chat'
+import { toast } from '@/shared/toast'
 
 const emit = defineEmits(['close', 'open-conv'])
 const chat = useChatStore()
