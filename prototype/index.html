@@ -441,7 +441,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0
 .picked-row{display:flex;gap:6px;padding:10px 0;overflow:auto}
 .picked-row .avatar{flex:none;box-shadow:0 0 0 2px #fff}
 
-/* ---------- 安卓 / 苹果原生风格 ---------- */
+/* ---------- Android / iOS（Flutter）风格 ---------- */
 .phone.app-android{position:relative;border-radius:26px}
 .phone.app-android .h5-head{box-shadow:0 1px 3px rgba(20,30,60,.08)}
 .phone.app-android .tabbar button{position:relative;color:#7d8799}
@@ -463,7 +463,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0
 .phone.app-ios .send-btn{background:#0a84ff;box-shadow:none}
 .phone.app-ios .sec-title{padding-left:16px}
 
-/* ---------- 通讯录通栏平铺（H5 / 安卓 / iOS 共用） ---------- */
+/* ---------- 通讯录通栏平铺（H5 / Android / iOS 共用） ---------- */
 .h5-body.contacts-body{padding:0 0 12px}
 .h5-body.contacts-body .h5-search{margin:12px 12px 10px;border-radius:10px}
 .h5-body.contacts-body .sec-title{padding:9px 16px 5px;background:#fafbfe}
@@ -552,15 +552,15 @@ body.dark .contact-pick{border-color:#232c42}
   </div>
   <div class="seg" id="viewTabs">
     <button data-act="switch-view" data-view="h5" class="on">H5 移动端</button>
-    <button data-act="switch-view" data-view="android">安卓原生</button>
-    <button data-act="switch-view" data-view="ios">苹果原生</button>
-    <button data-act="switch-view" data-view="desktop">桌面客户端</button>
+    <button data-act="switch-view" data-view="android">Android（Flutter）</button>
+    <button data-act="switch-view" data-view="ios">iOS（Flutter）</button>
+    <button data-act="switch-view" data-view="desktop">桌面（Electron）</button>
     <button data-act="switch-view" data-view="admin">Vue 管理后台</button>
   </div>
   <div class="top-right">
     <button class="btn sm" data-act="lang-toggle" style="padding:5px 10px" title="Switch Language">🌐 <span id="langLabel">中文</span></button>
     <span class="pill" id="syncPill"><i class="dot"></i>已同步 · 5 端在线</span>
-    <span class="pill blue">交互原型 v1.9</span>
+    <span class="pill blue">原型 v1.9 · 实现现状对齐 2026-11-20</span>
     <button class="icon-btn" id="themeBtn" data-act="toggle-theme" title="切换深浅色主题"></button>
   </div>
 </header>
@@ -573,7 +573,7 @@ body.dark .contact-pick{border-color:#232c42}
         <h3>H5 移动端页面</h3>
         <p class="sub">移动浏览器 / PWA / 企业微信内嵌，点击切换页面。与桌面端共享同一份会话数据。</p>
         <div class="page-list" id="h5PageList"></div>
-        <div class="chips"><span class="chip b">Vue 3</span><span class="chip">WebSocket</span><span class="chip">IndexedDB</span><span class="chip">PWA</span></div>
+        <div class="chips"><span class="chip b">Vue 3</span><span class="chip">JavaScript</span><span class="chip">Pinia</span><span class="chip">自研 CSS</span></div>
       </aside>
       <div class="center-wrap"><div class="phone">
         <div class="statusbar"><span>9:41</span><span class="sb-r">5G &nbsp;▮▮▮ &nbsp;78%</span></div>
@@ -589,6 +589,8 @@ body.dark .contact-pick{border-color:#232c42}
         <div class="note-item"><b>FR-MSG-11</b><span>在 H5 发送后切到桌面端，可看到同一条消息与已读状态。</span></div>
         <div class="note-item"><b>FR-MSG-08</b><span>长按/点击自己的气泡可撤回（2 分钟内）。</span></div>
         <div class="note-item"><b>FR-H5-04</b><span>断线时消息进入本地队列，恢复后自动补发。</span></div>
+        <div class="note-item"><b>当前实现</b><span>Vue 3 + JavaScript + Pinia + 自研 CSS；无 Vant / TypeScript，i18n 中英切换已接入（localStorage.h5_lang）。</span></div>
+        <div class="note-item"><b>H5 路由</b><span>底部 4 个 Tab：消息 / 频道 / 联系人 / 动态；“我的”由会话页左上头像进入，不在底部 Tab。</span></div>
         <div class="note-item"><b>FR-CONTACT-01</b><span>通讯录按组织架构树展示，支持人员搜索。</span></div>
         <div class="note-item"><b>FR-RTC-01</b><span>聊天页或 + 号面板可发起语音 / 视频通话，呼叫 → 振铃 → 接听 → 挂断全流程可走通。</span></div>
         <div class="note-item"><b>FR-RTC-04</b><span>挂断后自动生成通话卡片（类型、时长、结果）写入会话，并同步其他端。</span></div>
@@ -609,7 +611,7 @@ body.dark .contact-pick{border-color:#232c42}
           <button data-act="desk-file">拖拽 / 截图发送<span class="num">FR-PC-05</span></button>
           <button data-act="desk-update">差分自动更新<span class="num">FR-PC-07</span></button>
         </div>
-        <div class="chips"><span class="chip b">Electron</span><span class="chip">Vue 3 组件复用</span><span class="chip">SQLite 加密</span></div>
+        <div class="chips"><span class="chip b">Electron</span><span class="chip">Vue 3</span><span class="chip">@h5 复用</span><span class="chip">better-sqlite3</span></div>
       </aside>
       <div class="center-wrap" style="flex-direction:column;gap:16px">
         <div class="desktop" id="desktopFrame"></div>
@@ -617,6 +619,8 @@ body.dark .contact-pick{border-color:#232c42}
       <aside class="panel">
         <h3>设计与实现要点</h3>
         <p class="sub">桌面端与 H5 共用业务组件与 IM SDK，仅替换原生适配层。</p>
+        <div class="note-item"><b>当前实现</b><span>Electron + Vue 3，经 Vite 别名 @h5 复用 H5 的 API 层与 Pinia stores；置顶 / 免打扰存本地 localStorage，非服务端会话设置。</span></div>
+        <div class="note-item"><b>导航窗格</b><span>当前代码含消息 / 通讯录 / 收藏 / 文件 / 通话 / 统计 6 个窗格，另有通知公告与设置。</span></div>
         <div class="note-item"><b>架构 5.2</b><span>渲染进程 / preload / 主进程三层隔离，nodeIntegration 关闭。</span></div>
         <div class="note-item"><b>架构 5.1</b><span>IM SDK 状态机：connecting → authing → syncing → online。</span></div>
         <div class="note-item"><b>FR-MSG-19</b><span>本地加密 SQLite 缓存消息，冷启动先渲染缓存再增量同步。</span></div>
@@ -628,23 +632,23 @@ body.dark .contact-pick{border-color:#232c42}
     </div>
   </section>
 
-  <!-- ========== 安卓原生 ========== -->
+  <!-- ========== Android（Flutter） ========== -->
   <section class="view hide" id="view-android">
     <div class="layout">
       <aside class="panel">
-        <h3>安卓原生能力</h3>
-        <p class="sub">Android 8.0+，Kotlin + Jetpack Compose，Material Design 风格。业务页面与 H5 共用，原生层负责推送 / 通话 / 手势。</p>
+        <h3>Android 客户端（Flutter）</h3>
+        <p class="sub">Android 8.0+，Flutter（Dart 3）+ provider 单工程构建；原生能力通过平台桥接，推送 / 锁屏来电等属目标能力。页面与 H5 / 桌面共享消息协议。</p>
         <div class="page-list" id="andPageList"></div>
         <div class="page-list" style="margin-top:12px">
-          <button data-act="app-demo" data-k="push">系统级推送（厂商通道 + FCM）<span class="num">FR-APP-02</span></button>
-          <button data-act="app-demo" data-k="badge">角标与锁屏通知<span class="num">FR-APP-03</span></button>
+          <button data-act="app-demo" data-k="push">系统级推送（规划：厂商通道 + FCM）<span class="num">FR-APP-02</span></button>
+          <button data-act="app-demo" data-k="badge">角标与锁屏通知（规划）<span class="num">FR-APP-03</span></button>
           <button data-act="app-demo" data-k="perm">权限申请与降级<span class="num">FR-APP-04</span></button>
-          <button data-act="app-demo" data-k="update">应用内更新<span class="num">FR-APP-06</span></button>
+          <button data-act="app-demo" data-k="update">应用内更新（规划）<span class="num">FR-APP-06</span></button>
           <button data-act="app-demo" data-k="gesture">左滑操作 / 下拉刷新<span class="num">FR-APP-08</span></button>
-          <button data-act="lock-call">锁屏来电演示（系统来电）<span class="num">FR-APP-07</span></button>
+          <button data-act="lock-call">锁屏来电演示（规划：系统来电）<span class="num">FR-APP-07</span></button>
           <button data-act="wide-toggle">横屏 / 平板布局<span class="num">NFR-COMP-03</span></button>
         </div>
-        <div class="chips"><span class="chip b">Kotlin</span><span class="chip">Jetpack Compose</span><span class="chip">Room</span><span class="chip">厂商推送</span></div>
+        <div class="chips"><span class="chip b">Flutter</span><span class="chip">Dart 3</span><span class="chip">provider</span><span class="chip">flutter_webrtc</span></div>
       </aside>
       <div class="center-wrap"><div class="phone app-android">
         <div class="statusbar"><span>9:41</span><span class="sb-r">5G &nbsp;▮▮▮ &nbsp;78%</span></div>
@@ -654,33 +658,34 @@ body.dark .contact-pick{border-color:#232c42}
       </div></div>
       <aside class="panel">
         <h3>设计与实现要点</h3>
-        <p class="sub">安卓端复用 IM SDK 状态机与多端同步协议，仅替换原生适配层。</p>
-        <div class="note-item"><b>FR-APP-01</b><span>原生 App 与桌面 / H5 消息实时互通，同账号多端同步。</span></div>
-        <div class="note-item"><b>FR-APP-02</b><span>App 被杀后由厂商通道 / FCM 拉起，点击推送直达对应会话。</span></div>
-        <div class="note-item"><b>FR-APP-05</b><span>切后台短时保活；被回收后自动登录并增量同步（≤3s）。</span></div>
-        <div class="note-item"><b>FR-APP-07</b><span>锁屏接听、来电振动铃声、通话中画中画小窗、蓝牙耳机切换。</span></div>
+        <p class="sub">当前为 Flutter 单工程双端构建，复用消息状态机与多端同步协议；原生能力为规划项。</p>
+        <div class="note-item"><b>当前实现</b><span>mobile/ 为 Flutter（Dart 3）+ provider 单工程，同时构建 Android / iOS；无 Kotlin 原生业务目录，Material 组件 + Cupertino 图标。</span></div>
+        <div class="note-item"><b>FR-APP-01</b><span>Flutter 客户端与桌面 / H5 消息实时互通，同账号多端同步。</span></div>
+        <div class="note-item"><b>FR-APP-02</b><span>规划：厂商通道 / FCM 推送与推送深链；当前工程未接入推送 SDK，原型仅演示交互。</span></div>
+        <div class="note-item"><b>FR-APP-05</b><span>规划：后台保活与被回收后增量同步（≤3s）。</span></div>
+        <div class="note-item"><b>FR-APP-07</b><span>当前为 Flutter 通话浮层（WebRTC P2P + STUN）；锁屏来电 / 画中画 / 蓝牙切换属目标能力。</span></div>
         <div class="note-item"><b>FR-APP-08</b><span>下拉刷新、左滑会话置顶 / 免打扰 / 删除、长按消息菜单、深色跟随系统。</span></div>
       </aside>
     </div>
   </section>
 
-  <!-- ========== 苹果原生 ========== -->
+  <!-- ========== iOS（Flutter） ========== -->
   <section class="view hide" id="view-ios">
     <div class="layout">
       <aside class="panel">
-        <h3>苹果原生能力</h3>
-        <p class="sub">iOS 14+，Swift + SwiftUI，遵循人机界面指南（大标题 / 分组列表 / 画中画 / CallKit）。</p>
+        <h3>iOS 客户端（Flutter）</h3>
+        <p class="sub">iOS 14+，Flutter（Dart 3）+ provider 单工程构建；当前以大标题 / 分组列表 / 圆角卡片呈现，CallKit / 画中画属目标能力。</p>
         <div class="page-list" id="iosPageList"></div>
         <div class="page-list" style="margin-top:12px">
-          <button data-act="app-demo" data-k="push">APNs 推送与通知分组<span class="num">FR-APP-02</span></button>
-          <button data-act="app-demo" data-k="badge">角标与锁屏预览<span class="num">FR-APP-03</span></button>
+          <button data-act="app-demo" data-k="push">APNs 推送与通知分组（规划）<span class="num">FR-APP-02</span></button>
+          <button data-act="app-demo" data-k="badge">角标与锁屏预览（规划）<span class="num">FR-APP-03</span></button>
           <button data-act="app-demo" data-k="perm">权限申请与降级<span class="num">FR-APP-04</span></button>
-          <button data-act="app-demo" data-k="pip">通话画中画 / 锁屏接听<span class="num">FR-APP-07</span></button>
+          <button data-act="app-demo" data-k="pip">通话画中画 / 锁屏接听（规划）<span class="num">FR-APP-07</span></button>
           <button data-act="app-demo" data-k="gesture">左滑操作 / 下拉刷新<span class="num">FR-APP-08</span></button>
-          <button data-act="lock-call">锁屏来电演示（CallKit）<span class="num">FR-APP-07</span></button>
+          <button data-act="lock-call">锁屏来电演示（规划：CallKit）<span class="num">FR-APP-07</span></button>
           <button data-act="wide-toggle">横屏 / 平板布局<span class="num">NFR-COMP-03</span></button>
         </div>
-        <div class="chips"><span class="chip b">Swift</span><span class="chip">SwiftUI</span><span class="chip">APNs</span><span class="chip">CallKit</span></div>
+        <div class="chips"><span class="chip b">Flutter</span><span class="chip">Dart 3</span><span class="chip">provider</span><span class="chip">flutter_webrtc</span></div>
       </aside>
       <div class="center-wrap"><div class="phone app-ios">
         <div class="statusbar"><span>9:41</span><span class="sb-r">5G &nbsp;▮▮▮ &nbsp;78%</span></div>
@@ -690,11 +695,12 @@ body.dark .contact-pick{border-color:#232c42}
       </div></div>
       <aside class="panel">
         <h3>设计与实现要点</h3>
-        <p class="sub">iOS 端复用 IM SDK 状态机与多端同步协议，仅替换原生适配层。</p>
-        <div class="note-item"><b>FR-APP-01</b><span>原生 App 与桌面 / H5 消息实时互通，同账号多端同步。</span></div>
-        <div class="note-item"><b>FR-APP-02</b><span>APNs 离线推送，通知按会话分组，点击直达对应会话。</span></div>
-        <div class="note-item"><b>FR-APP-03</b><span>桌面角标与服务端未读数一致，锁屏预览支持隐私模式。</span></div>
-        <div class="note-item"><b>FR-APP-07</b><span>CallKit 锁屏来电、画中画小窗、AirPods / 扬声器切换。</span></div>
+        <p class="sub">iOS 与 Android 共用 Flutter 工程；复用消息状态机与多端同步协议，原生能力为规划项。</p>
+        <div class="note-item"><b>当前实现</b><span>mobile/ 为 Flutter（Dart 3）+ provider 单工程；iOS 打包层仅做原生配置与桥接，无 Swift 业务源码，全中文硬编码无 i18n。</span></div>
+        <div class="note-item"><b>FR-APP-01</b><span>Flutter 客户端与桌面 / H5 消息实时互通，同账号多端同步。</span></div>
+        <div class="note-item"><b>FR-APP-02</b><span>规划：APNs 离线推送与通知分组；当前工程未接入推送 SDK，原型仅演示交互。</span></div>
+        <div class="note-item"><b>FR-APP-03</b><span>规划：角标与服务端未读数一致，锁屏预览支持隐私模式。</span></div>
+        <div class="note-item"><b>FR-APP-07</b><span>当前为 Flutter WebRTC 通话浮层（P2P + STUN）；CallKit 锁屏接听 / 画中画 / AirPods 切换属目标能力。</span></div>
         <div class="note-item"><b>FR-APP-08</b><span>下拉刷新、左滑操作、长按消息菜单、深色模式跟随系统。</span></div>
       </aside>
     </div>
@@ -816,7 +822,7 @@ const C={
     {mine:false,sender:'李工',text:'早上好，架构评审材料我整理好了，大家先看一下。',time:'09:24',color:'#e9834a'},
     {mine:false,sender:'王敏',text:'收到，我先重点看消息可靠性和分库分表部分。',time:'09:26',color:'#3ba58c'},
     {mine:true,sender:'我',text:'好的，RBAC 那块我补充了数据范围的四种策略。',time:'09:30',read:true},
-    {mine:false,sender:'李工',text:'架构文档已更新到 v1.0，增加了大群读扩散和 Kafka 分区保序。',time:'09:42',color:'#e9834a',type:'file',fileName:'02-技术架构文档.md',fileSize:'38 KB'}
+    {mine:false,sender:'李工',text:'架构文档已更新到 v1.0，增加了大群读扩散和 NATS JetStream 分区保序。',time:'09:42',color:'#e9834a',type:'file',fileName:'02-技术架构文档.md',fileSize:'38 KB'}
   ]},
   c2:{id:'c2',name:'张伟',type:'single',color:'linear-gradient(135deg,#3ba7d8,#3f6fe8)',short:'张',unread:1,pinned:false,muted:false,time:'09:18',last:'那我们十点先对齐一下接口',online:'在线',messages:[
     {mine:false,sender:'张伟',text:'协议帧结构定稿了吗？客户端这边准备接入了。',time:'09:10',color:'#3ba7d8'},
@@ -835,8 +841,8 @@ const C={
     {mine:false,sender:'陈静',text:'原型页面我看过了，交互很顺，权限树那块建议加半选状态。',time:'周三 14:02',color:'#a05ce6'},
     {mine:true,sender:'我',text:'已经加上了，父子联动也做了。',time:'周三 14:10',read:true}
   ]},
-  c6:{id:'c6',name:'运维值班群',type:'group',color:'linear-gradient(135deg,#12a594,#3f9dd8)',short:'运',unread:0,pinned:false,muted:false,time:'周二',last:'告警：Kafka 消费 lag 已恢复',online:'6 人在线',members:6,messages:[
-    {mine:false,sender:'值班机器人',text:'告警：Kafka 消费 lag 已恢复，峰值 12,400 条。',time:'周二 11:32',color:'#12a594'}
+  c6:{id:'c6',name:'运维值班群',type:'group',color:'linear-gradient(135deg,#12a594,#3f9dd8)',short:'运',unread:0,pinned:false,muted:false,time:'周二',last:'告警：NATS 消费积压已恢复',online:'6 人在线',members:6,messages:[
+    {mine:false,sender:'值班机器人',text:'告警：NATS JetStream 消费积压已恢复，峰值 12,400 条。',time:'周二 11:32',color:'#12a594'}
   ]}
 };
 const convOrder=['c1','c2','c3','c4','c5','c6'];
@@ -872,9 +878,10 @@ const state={view:'h5',h5Page:'convs',h5Conv:null,deskConv:'c1',deskView:'msg',a
 const I18N={
   zh:{
     brandSub:'企业级即时通讯平台', sync:'已同步 · 5 端在线', proto:'交互原型', arch:'架构',
-    vH5:'H5 移动端', vAndroid:'安卓原生', vIOS:'苹果原生', vDesktop:'桌面客户端', vAdmin:'Vue 管理后台',
-    tConvs:'消息', tContacts:'通讯录', tDiscover:'发现', tMine:'我的',
+    vH5:'H5 移动端', vAndroid:'Android（Flutter）', vIOS:'iOS（Flutter）', vDesktop:'桌面（Electron）', vAdmin:'Vue 管理后台',
+    tConvs:'消息', tChannels:'频道', tContacts:'联系人', tDiscover:'动态', tMine:'我的',
     pConvs:'消息 / 会话列表', pChat:'聊天页', pCall:'音视频通话页', pAddFriend:'添加朋友', pCreateGroup:'发起群聊',
+    pProfile:'编辑资料',
     pContacts:'通讯录 / 入口', pDept:'组织架构页', pGroups:'群聊列表', pFriends:'好友申请（新的朋友）',
     pDiscover:'发现', pFiles:'文件助手', pFavorites:'收藏', pMine:'我的 / 设备与设置', pSettings:'设置（通知/隐私/通用）',
     secPinned:'置顶会话', secAll:'全部会话', secUnread:'未读会话', secGroup:'群聊会话',
@@ -897,7 +904,7 @@ const I18N={
     mine:'我的 / 设备与设置', files:'文件助手', favorites:'收藏', dept:'组织架构',
     back:'返回', send:'发送', cancel:'取消', confirm:'确认', close:'关闭', download:'下载', search:'搜索',
     switchLangTip:'界面语言已切换',
-    dFiles:'文件', dStats:'统计', searchConvUser:'搜索会话 / 用户 / 消息', remindMe:'提醒我',
+    dFiles:'文件', dStats:'统计', dCalls:'通话', searchConvUser:'搜索会话 / 用户 / 消息', remindMe:'提醒我',
     cloudSync180:'消息已云端同步 180 天', globalSearch:'全局搜索', voiceCall:'语音通话', videoCall:'视频通话',
     convSettings:'会话设置', groupMembers:'群成员', invite:'邀请成员', emoji:'表情', image:'图片', file:'文件', mention:'@提及', screenshot:'截图',
     inputPlaceholder:'输入消息，Enter 发送...', tipGlobal:'全局搜索', tipEnter:'发送消息', tipScreenshot:'截图', tipDrag:'支持拖拽文件到窗口',
@@ -908,9 +915,10 @@ const I18N={
   },
   en:{
     brandSub:'Enterprise IM Platform', sync:'Synced · 5 devices online', proto:'Interactive Prototype', arch:'Architecture',
-    vH5:'H5 Mobile', vAndroid:'Android Native', vIOS:'iOS Native', vDesktop:'Desktop', vAdmin:'Admin Console',
-    tConvs:'Chats', tContacts:'Contacts', tDiscover:'Discover', tMine:'Me',
+    vH5:'H5 Mobile', vAndroid:'Android (Flutter)', vIOS:'iOS (Flutter)', vDesktop:'Desktop (Electron)', vAdmin:'Admin Console',
+    tConvs:'Chats', tChannels:'Channels', tContacts:'Contacts', tDiscover:'Moments', tMine:'Me',
     pConvs:'Messages / Chat List', pChat:'Chat', pCall:'Audio / Video Call', pAddFriend:'Add Friend', pCreateGroup:'New Group',
+    pProfile:'Edit Profile',
     pContacts:'Contacts / Entry', pDept:'Organization', pGroups:'Group Chats', pFriends:'Friend Requests',
     pDiscover:'Discover', pFiles:'File Assistant', pFavorites:'Favorites', pMine:'Me / Devices & Settings', pSettings:'Settings (Notify/Privacy/General)',
     secPinned:'Pinned', secAll:'All Chats', secUnread:'Unread', secGroup:'Group Chats',
@@ -933,7 +941,7 @@ const I18N={
     mine:'Me / Devices & Settings', files:'File Assistant', favorites:'Favorites', dept:'Organization',
     back:'Back', send:'Send', cancel:'Cancel', confirm:'Confirm', close:'Close', download:'Download', search:'Search',
     switchLangTip:'Interface language switched',
-    dFiles:'Files', dStats:'Stats', searchConvUser:'Search chats / users / messages', remindMe:'Remind me',
+    dFiles:'Files', dStats:'Stats', dCalls:'Calls', searchConvUser:'Search chats / users / messages', remindMe:'Remind me',
     cloudSync180:'Messages synced to cloud for 180 days', globalSearch:'Global search', voiceCall:'Voice call', videoCall:'Video call',
     convSettings:'Chat settings', groupMembers:'Group members', invite:'Invite', emoji:'Emoji', image:'Image', file:'File', mention:'@Mention', screenshot:'Screenshot',
     inputPlaceholder:'Type a message, Enter to send...', tipGlobal:'Global search', tipEnter:'Send message', tipScreenshot:'Screenshot', tipDrag:'Drop files to attach',
@@ -966,7 +974,7 @@ const orgMembers=[
   {n:'周涛',p:'客服主管',dept:'客服部',s:'在线',c:'#12a594',ph:'138****7788',em:'zhoutao@nex.com'}
 ];
 const favItems=[
-  {t:'text',title:'架构文档已更新到 v1.0，增加了大群读扩散和 Kafka 分区保序。',from:'产品评审群 · 李工',time:'今天 09:42'},
+  {t:'text',title:'架构文档已更新到 v1.0，增加了大群读扩散和 NATS JetStream 分区保序。',from:'产品评审群 · 李工',time:'今天 09:42'},
   {t:'image',title:'架构图（2048×1366 · 2.4 MB）',from:'张伟',time:'昨天 15:20'},
   {t:'file',title:'02-技术架构文档.md · 38 KB',from:'产品评审群 · 李工',time:'今天 09:42'},
   {t:'text',title:'RBAC 那块我补充了数据范围的四种策略。',from:'我',time:'今天 09:30'}
@@ -1267,7 +1275,7 @@ function openReminds(){
 }
 function openNoticeBoard(){
   modal('企业公告','<div style="font-weight:700;margin-bottom:6px">V1.0 正式版发布与维护窗口</div>'+
-    '<div style="font-size:12px;color:#4a556b;line-height:1.9">V1.0 正式版将于本周五发布，新增三平台桌面客户端、Android / iOS 原生客户端、完整 RBAC 权限与消息审计能力。发布期间消息服务不中断。</div>'+
+    '<div style="font-size:12px;color:#4a556b;line-height:1.9">当前版本 V1.0 已覆盖 H5 / Flutter 双端 / Electron 桌面 / Vue 后台，完整 RBAC 权限与消息审计能力可用。消息服务通过 REST :8080 与 WebSocket :8081 双端口提供，发布期间不中断。</div>'+
     '<div style="margin-top:10px;font-size:11px;color:#8a95aa">定向范围：全员 · 已读率 92% · 来自后台「公告管理」，到达系统通知会话（FR-ADMIN-11）</div>',null,'知道了');
 }
 
@@ -1328,21 +1336,20 @@ function incomingHtml(){
 }
 
 /* ==================== H5 ==================== */
-const h5Pages=[{k:'convs',n:'消息 / 会话列表',i:'msg',no:'FR-MSG-01'},{k:'chat',n:'聊天页',i:'msg',no:'FR-MSG-02'},{k:'call',n:'音视频通话页',i:'phoneIn',no:'FR-RTC-01'},{k:'addFriend',n:'添加朋友',i:'user',no:'FR-CONTACT-08'},{k:'createGroup',n:'发起群聊',i:'users',no:'FR-GROUP-09'},{k:'contacts',n:'通讯录 / 入口',i:'contacts',no:'FR-CONTACT-01'},{k:'dept',n:'组织架构页',i:'dept',no:'FR-CONTACT-01'},{k:'groups',n:'群聊列表',i:'users',no:'FR-MSG-04'},{k:'friends',n:'好友申请（新的朋友）',i:'contacts',no:'FR-CONTACT-07'},{k:'discover',n:'发现',i:'compass',no:'FR-H5-02'},{k:'files',n:'文件助手',i:'folder',no:'FR-FILE-04'},{k:'favorites',n:'收藏',i:'pin',no:'FR-MSG-09'},{k:'mine',n:'我的 / 设备与设置',i:'user',no:'FR-AUTH-07'},{k:'settings',n:'设置（通知/隐私/通用）',i:'settings',no:'NFR-MNT-01'}];
+const h5Pages=[{k:'convs',n:'消息 / 会话列表',i:'msg',no:'FR-MSG-01'},{k:'chat',n:'聊天页',i:'msg',no:'FR-MSG-02'},{k:'call',n:'音视频通话页',i:'phoneIn',no:'FR-RTC-01'},{k:'addFriend',n:'添加朋友',i:'user',no:'FR-CONTACT-08'},{k:'createGroup',n:'发起群聊',i:'users',no:'FR-GROUP-09'},{k:'contacts',n:'通讯录 / 入口',i:'contacts',no:'FR-CONTACT-01'},{k:'dept',n:'组织架构页',i:'dept',no:'FR-CONTACT-01'},{k:'groups',n:'群聊列表',i:'users',no:'FR-MSG-04'},{k:'friends',n:'好友申请（新的朋友）',i:'contacts',no:'FR-CONTACT-07'},{k:'discover',n:'发现',i:'compass',no:'FR-H5-02'},{k:'files',n:'文件助手',i:'folder',no:'FR-FILE-04'},{k:'favorites',n:'收藏',i:'pin',no:'FR-MSG-09'},{k:'mine',n:'我的 / 设备与设置',i:'user',no:'FR-AUTH-07'},{k:'profile',n:'编辑资料',i:'user',no:'FR-AUTH-01'},{k:'settings',n:'设置（通知/隐私/通用）',i:'settings',no:'NFR-MNT-01'}];
 function renderH5Nav(){
-  var pageNames={convs:'pConvs',chat:'pChat',call:'pCall',addFriend:'pAddFriend',createGroup:'pCreateGroup',contacts:'pContacts',dept:'pDept',groups:'pGroups',friends:'pFriends',discover:'pDiscover',files:'pFiles',favorites:'pFavorites',mine:'pMine',settings:'pSettings'};
+  var pageNames={convs:'pConvs',chat:'pChat',call:'pCall',addFriend:'pAddFriend',createGroup:'pCreateGroup',contacts:'pContacts',dept:'pDept',groups:'pGroups',friends:'pFriends',discover:'pDiscover',files:'pFiles',favorites:'pFavorites',mine:'pMine',profile:'pProfile',settings:'pSettings'};
   var listHtml=h5Pages.map(function(p){
     return '<button data-act="h5-page" data-page="'+p.k+'" class="'+(state.h5Page===p.k?'on':'')+'">'+ic(p.i,16)+t(pageNames[p.k]||p.n)+'<span class="num">'+p.no+'</span></button>';
   }).join('');
   ['h5PageList','andPageList','iosPageList'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=listHtml;});
-  var tabs=[{k:'convs',n:t('tConvs'),i:'msg'},{k:'contacts',n:t('tContacts'),i:'contacts'},{k:'discover',n:t('tDiscover'),i:'compass'},{k:'mine',n:t('tMine'),i:'user'}];
+  var tabs=[{k:'convs',n:t('tConvs'),i:'msg'},{k:'groups',n:t('tChannels'),i:'hash'},{k:'contacts',n:t('tContacts'),i:'contacts'},{k:'discover',n:t('tDiscover'),i:'compass'}];
   var total=convOrder.reduce(function(s,i){return s+C[i].unread;},0);
   var tbar=mobileTabbar();
   if(tbar)tbar.innerHTML=state.h5Page==='call'?'':tabs.map(function(t){
-    var on=(state.h5Page==='chat'&&t.k==='convs')||state.h5Page===t.k||(state.h5Page==='friends'&&t.k==='contacts')||
-      (['groups','dept'].indexOf(state.h5Page)>=0&&t.k==='contacts')||
-      (['files','favorites'].indexOf(state.h5Page)>=0&&t.k==='discover')||
-      (state.h5Page==='settings'&&t.k==='mine');
+    var on=(['chat','call'].indexOf(state.h5Page)>=0&&t.k==='convs')||state.h5Page===t.k||
+      (['friends','dept','addFriend','createGroup'].indexOf(state.h5Page)>=0&&t.k==='contacts')||
+      (['files','favorites'].indexOf(state.h5Page)>=0&&t.k==='discover');
     return '<button data-act="h5-page" data-page="'+t.k+'" class="'+(on?'on':'')+'">'+ic(t.i,20)+
       (t.k==='convs'&&total?'<span class="tb-badge">'+total+'</span>':'')+'<span>'+t.n+'</span></button>';
   }).join('');
@@ -1639,7 +1646,7 @@ function renderH5(){
         return '<button class="qentry" data-act="h5-qentry" data-name="'+q[0]+'"><span style="color:'+q[3]+'">'+ic(q[2],20)+'</span>'+
           '<div><div class="qe-t">'+q[0]+'</div><div class="qe-s">'+q[1]+'</div></div><span style="margin-left:auto;color:#aab3c4">'+ic('chev',14)+'</span></button>';
       }).join('')+
-      '<div class="card" style="margin-top:14px"><h3>系统公告</h3><p class="csub" style="font-size:12px;line-height:1.8;color:#4a556b">V1.0 正式版将于本周五发布，新增三平台桌面客户端、Android / iOS 原生客户端、完整 RBAC 权限与消息审计能力。发布期间消息服务不中断。</p></div></div>';
+      '<div class="card" style="margin-top:14px"><h3>系统公告</h3><p class="csub" style="font-size:12px;line-height:1.8;color:#4a556b">当前版本 V1.0：H5 / Flutter 双端 / Electron 桌面 / Vue 后台。REST :8080 与 WebSocket :8081 双端口运行，标准版以 NATS JetStream 作事件总线。发布期间消息服务不中断。</p></div></div>';
   }else if(p==='settings'){
     html=h5SettingsHtml();
   }else if(p==='dept'){
@@ -1650,10 +1657,19 @@ function renderH5(){
     html=h5FilesHtml();
   }else if(p==='favorites'){
     html=h5FavHtml();
+  }else if(p==='profile'){
+    html=h5Head('编辑资料','<button class="icon-btn" data-act="h5-back">'+ic('back',18)+'</button>','')+
+      '<div class="h5-body scroll"><div class="card"><div class="field"><label>头像</label><button class="btn" data-act="h5-avatar">更换头像（≤ 5MB）</button></div>'+
+      '<div class="field"><label>昵称</label><input id="pfNick" value="林晓" maxlength="32" style="width:100%"></div>'+
+      '<div class="field"><label>性别</label><div style="display:flex;gap:8px">'+['保密','男','女'].map(function(g){return '<button class="btn sm '+(g==='保密'?'primary':'')+'" data-act="h5-gender">'+g+'</button>';}).join('')+'</div></div>'+
+      '<div class="field"><label>个性签名</label><textarea id="pfSign" maxlength="120" rows="3" style="width:100%">让协作更简单</textarea></div>'+
+      '<div class="field"><label>账号</label><span class="code">@linxiao · UID 10086</span></div>'+
+      '<button class="btn primary" style="width:100%;justify-content:center" data-act="h5-profile-save">保存资料</button></div></div>';
   }else{
     html=h5Head('我的','','<button class="icon-btn" data-act="h5-settings">'+ic('settings',18)+'</button>')+
       '<div class="h5-body scroll"><div class="profile-card">'+av('林','rgba(255,255,255,.25)','lg')+
-      '<div><div class="pc-name">林晓 · 产品负责人</div><div class="pc-sub">研发中心 / 总部 &nbsp;·&nbsp; UID 10086</div></div></div>'+
+      '<div><div class="pc-name">林晓 · 产品负责人</div><div class="pc-sub">研发中心 / 总部 &nbsp;·&nbsp; UID 10086</div></div>'+
+      '<button class="btn sm" style="margin-left:auto" data-act="h5-page" data-page="profile">编辑资料</button></div>'+
       '<div class="group-block"><div class="gb-row" style="background:#fafbfe;font-size:11px;color:#8a95aa">在线状态</div>'+
       '<div style="padding:0 14px 12px"><div class="status-opts">'+['在线','忙碌','隐身'].map(function(x){
         return '<button data-act="h5-status" data-s="'+x+'" class="'+(state.status===x?'on':'')+'">'+x+'</button>';
@@ -1678,7 +1694,7 @@ function renderH5(){
 function renderDesktop(){
   saveDraft();
   var c=C[state.deskConv],dv=state.deskView||'msg';
-  var rail=[['msg',t('tConvs'),'msg'],['contacts',t('tContacts'),'contacts'],['folder',t('dFiles'),'files'],['chart',t('dStats'),'stats']];
+  var rail=[['msg',t('tConvs'),'msg'],['contacts',t('tContacts'),'contacts'],['pin',t('favorites'),'favorites'],['folder',t('dFiles'),'files'],['phoneIn',t('dCalls'),'calls'],['chart',t('dStats'),'stats']];
   var main='';
   if(dv==='msg'){
     main=
@@ -1734,6 +1750,25 @@ function renderDesktop(){
         return '<tr><td>'+ic('file',14)+' '+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td>'+
           '<td style="white-space:nowrap"><button class="btn sm" data-act="file-dl" data-n="'+esc(r[0])+'">下载</button> <button class="btn sm" data-act="fwd-file" data-n="'+esc(r[0])+'">转发</button></td></tr>';
       }).join('')+'</tbody></table></div></div></section>';
+  }else if(dv==='favorites'){
+    main='<section class="chat-col" style="flex:1"><div class="chat-top">'+ic('star',17)+
+      '<div><div class="ct-name">收藏</div><div class="ct-sub">跨会话收藏的消息 · 支持定位原消息</div></div></div>'+
+      '<div class="chat-msgs scroll" style="padding:16px"><div class="toolbar"><input placeholder="搜索内容 / 发送人" style="width:220px"><button class="btn" data-act="tbl-query">查询</button><div class="sp"></div><span class="csub">共 '+favItems.length+' 条</span></div>'+
+      favItems.map(function(f,i){
+        return '<div class="card" style="margin-bottom:10px"><div style="display:flex;gap:10px;align-items:flex-start">'+ic(f.t==='image'?'image':(f.t==='file'?'file':'msg'),18)+
+          '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+esc(f.title)+'</div><div class="csub" style="margin-top:4px">'+esc(f.from)+' · '+esc(f.time)+'</div></div>'+
+          '<button class="btn sm" data-act="fav-del" data-i="'+i+'">取消收藏</button></div></div>';
+      }).join('')+'</div></section>';
+  }else if(dv==='calls'){
+    main='<section class="chat-col" style="flex:1"><div class="chat-top">'+ic('phoneIn',17)+
+      '<div><div class="ct-name">通话</div><div class="ct-sub">通话记录 · 1v1 WebRTC P2P / TURN 中继</div></div></div>'+
+      '<div class="chat-msgs scroll" style="padding:16px"><div class="grid4">'+
+        kpi('通话总数','28','近 7 天','phoneIn')+kpi('未接来电','3','需回拨','bell')+kpi('平均时长','06:42','语音 + 视频','chart')+kpi('平均 MOS','4.2','质量良好','activity')+
+      '</div><div class="card" style="margin-top:14px"><table class="tbl"><thead><tr><th>联系人</th><th>方向</th><th>类型</th><th>结果</th><th>时长</th><th>时间</th><th>操作</th></tr></thead><tbody>'+
+      [['张伟','呼出','视频','已接','08:12','今天 09:30'],['李工','呼入','语音','已接','12:40','昨天 16:20'],['陈静','呼出','语音','未接','—','周三 14:05'],['产品评审群','呼入','视频','已拒','—','周二 11:12']].map(function(r){
+        return '<tr><td>'+esc(r[0])+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td><span class="state '+(r[3]==='已接'?'ok':(r[3]==='未接'?'warn':'off'))+'">'+r[3]+'</span></td><td>'+r[4]+'</td><td>'+r[5]+'</td>'+
+          '<td style="white-space:nowrap"><button class="btn sm" data-act="pc-call" data-n="'+esc(r[0])+'" data-c="#4f6ef7" data-t="audio">回拨</button></td></tr>';
+      }).join('')+'</tbody></table></div></div></section>';
   }else{
     main='<section class="chat-col" style="flex:1"><div class="chat-top">'+ic('chart',17)+
       '<div><div class="ct-name">统计</div><div class="ct-sub">个人消息与会话概览</div></div></div>'+
@@ -1752,15 +1787,15 @@ function renderDesktop(){
   }
   document.getElementById('desktopFrame').innerHTML=
   '<div class="titlebar"><div class="mac-dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>'+
-    '<div class="tb-title">NexIM · '+esc(dv==='msg'?c.name:({'contacts':'通讯录','files':'文件','stats':'统计'})[dv])+'</div><div class="tb-sync"><i class="dot"></i>已同步 · 延迟 23ms</div></div>'+
+    '<div class="tb-title">NexIM · '+esc(dv==='msg'?c.name:({'contacts':'通讯录','favorites':'收藏','files':'文件','calls':'通话','stats':'统计'})[dv])+'</div><div class="tb-sync"><i class="dot"></i>已同步 · 延迟 23ms</div></div>'+
   '<div class="desktop-body">'+
     '<nav class="rail"><div class="r-logo">N</div>'+rail.map(function(r){
-      return '<button class="'+(dv===r[2]?'on':'')+'" data-act="desk-rail" data-name="'+r[1]+'">'+ic(r[0],20)+'</button>';
+      return '<button class="'+(dv===r[2]?'on':'')+'" data-act="desk-rail" data-name="'+r[2]+'" title="'+r[1]+'">'+ic(r[0],20)+'</button>';
     }).join('')+'<div class="r-bottom"><button data-act="desk-bell">'+ic('bell',19)+'</button><button data-act="desk-shortcut">'+ic('settings',19)+'</button>'+
       av('林','linear-gradient(135deg,#4f6ef7,#7b61ff)','sm')+'</div></nav>'+
     main+'</div>'+
     (!state.authed?'<div class="vcall" style="align-items:center;justify-content:center"><div style="text-align:center;padding:24px"><div style="font-size:15px;font-weight:700">未登录</div><div style="font-size:12px;color:rgba(255,255,255,.6);margin:8px 0 18px;line-height:1.7">请在 H5 端登录或注册，<br>桌面端将自动同步相同账号的消息</div><button class="btn primary" data-act="auth-demo">使用演示账号一键登录</button></div></div>':'')+(state.call.active&&!state.call.ringing?vcallHtml():'')+(state.call.ringing?incomingHtml():'')+
-    '<div class="desk-status"><span class="ds-ok"><i class="dot"></i>长连接正常 (wss://im.nex.com/ws)</span><span>设备：Windows 客户端</span><span>本地缓存：已加密 · 1.2 GB</span><button class="btn sm" data-act="sim-incoming">'+ic('phoneIn',13)+'模拟来电</button><span style="margin-left:auto">v1.0.0 · 自动更新已开启</span></div>';
+    '<div class="desk-status"><span class="ds-ok"><i class="dot"></i>长连接正常 (ws://host:8081/ws)</span><span>设备：Windows 客户端 · REST :8080</span><span>本地缓存：已加密 · 1.2 GB</span><button class="btn sm" data-act="sim-incoming">'+ic('phoneIn',13)+'模拟来电</button><span style="margin-left:auto">v1.0.0 · 自动更新已开启</span></div>';
   restoreDraft();
   var dme=document.getElementById('deskMsgs');if(dme)scrollBottom(dme);
 }
@@ -1768,13 +1803,13 @@ function renderDesktop(){
 /* ==================== 管理后台 ==================== */
 const adminMenus=[
   {g:'概览',items:[['dashboard','工作台','grid']]},
-  {g:'用户与组织',items:[['users','用户管理','users'],['depts','组织架构','dept'],['groups','群组管理','hash'],['loginLogs','登录日志','monitor']]},
+  {g:'用户与组织',items:[['users','用户管理','users'],['externalContacts','外部联系人','users'],['depts','组织架构','dept'],['groups','群组管理','hash'],['loginLogs','登录日志','monitor']]},
   {g:'权限治理',items:[['roles','角色权限','shield'],['permPreview','权限预览','key'],['logs','操作日志','audit']]},
   {g:'内容与安全',items:[['audit','消息审计','eye'],['sensitive','内容安全','flag'],['notices','公告管理','bell']]},
   {g:'音视频',items:[['calls','通话记录','phoneIn'],['rtcQuality','质量监控','activity']]},
   {g:'系统',items:[['settings','系统设置','settings']]}
 ];
-const pageTitle={dashboard:'工作台',users:'用户管理',depts:'组织架构',groups:'群组管理',loginLogs:'登录日志',roles:'角色权限',permPreview:'权限预览',logs:'操作日志',audit:'消息审计',sensitive:'内容安全',notices:'公告管理',calls:'通话记录',rtcQuality:'质量监控',settings:'系统设置'};
+const pageTitle={dashboard:'工作台',users:'用户管理',externalContacts:'外部联系人',depts:'组织架构',groups:'群组管理',loginLogs:'登录日志',roles:'角色权限',permPreview:'权限预览',logs:'操作日志',audit:'消息审计',sensitive:'内容安全',notices:'公告管理',calls:'通话记录',rtcQuality:'质量监控',settings:'系统设置'};
 const notices=[
   {id:'n1',title:'V1.4 版本发布与维护窗口公告',scope:'全员',status:'已发布',publish:'2026-11-14 18:00',read:'92%',top:true},
   {id:'n2',title:'信息安全意识培训通知（附课件）',scope:'研发中心',status:'定时中',publish:'2026-11-16 09:00',read:'—',top:false},
@@ -1799,7 +1834,7 @@ const roles=[
   {id:'r5',code:'SUPPORT',name:'客服主管',count:8,builtin:false,scope:'3',perms:['dashboard:view','audit:message:list','report:handle','menu:settings']}
 ];
 const permGroups=[
-  {t:'菜单与目录权限',hint:'控制动态路由与侧边栏可见性',nodes:[['工作台','dashboard:view','菜单'],['用户管理','menu:users','菜单'],['组织架构','menu:depts','菜单'],['角色权限','menu:roles','菜单'],['消息审计','menu:audit','菜单'],['系统设置','menu:settings','菜单']]},
+  {t:'菜单与目录权限',hint:'控制动态路由与侧边栏可见性',nodes:[['工作台','dashboard:view','菜单'],['用户管理','menu:users','菜单'],['外部联系人','menu:users','菜单'],['组织架构','menu:depts','菜单'],['群组管理','menu:groups','菜单'],['登录日志','menu:logs','菜单'],['角色权限','menu:roles','菜单'],['公告管理','menu:notices','菜单'],['消息审计','menu:audit','菜单'],['通话记录','menu:calls','菜单'],['系统设置','menu:settings','菜单']]},
   {t:'接口权限',hint:'服务端网关中间件强制校验（URL + Method）',nodes:[['用户列表','user:list','GET /api/v1/users'],['编辑用户','user:edit','PUT /api/v1/users/{id}'],['启停账号','user:disable','PATCH /api/v1/users/{id}/status'],['组织编辑','dept:edit','POST /api/v1/depts'],['群组冻结','group:freeze','PATCH /api/v1/groups/{id}'],['群组解散','group:dissolve','DELETE /api/v1/groups/{id}'],['授权变更','rbac:role:grant','PUT /api/v1/admin/roles/{id}/permissions'],['通话记录查看','rtc:record:list','GET /api/v1/rtc/records'],['录制回放','rtc:record:playback','GET /api/v1/rtc/records/{id}/playback'],['质量监控','rtc:quality:view','GET /api/v1/rtc/quality'],['强制挂断','rtc:force-end','POST /api/v1/rtc/force-end']]},
   {t:'按钮 / 操作点权限',hint:'v-permission 指令控制显隐，服务端仍二次校验',nodes:[['新增用户','user:create','按钮'],['重置密码','user:reset-pwd','按钮'],['导出用户','user:export','按钮'],['导出审计消息','audit:message:export','按钮'],['导出操作日志','log:export','按钮'],['配置敏感词','sensitive:config','按钮'],['处理举报','report:handle','按钮']]}
 ];
@@ -1843,7 +1878,7 @@ function pageDashboard(){
   var is30=state.dashRange==='30';
   var pts1=is30?'0,150 55,132 110,118 165,124 220,88 275,96 330,62 385,74 440,40 495,52':'0,145 55,120 110,132 165,82 220,96 275,52 330,70 385,28 440,42 495,16';
   var pts2=is30?'0,164 55,152 110,146 165,138 220,142 275,126 330,118 385,108 440,112 495,98':'0,160 55,148 110,152 165,126 220,134 275,110 330,120 385,92 440,104 495,84';
-  return hint('工作台指标来自消息链路埋点与聚合任务，支持近 7 / 30 天切换。','FR-ADMIN-01')+
+  return hint('当前实现：Vue 3 + JavaScript + Pinia + 自研 CSS（无 Element Plus / ECharts）；指标支持近 7 / 30 天切换。','FR-ADMIN-01')+
   '<div class="toolbar"><div class="sp"></div><button class="btn sm '+(is30?'':'primary')+'" data-act="dash-range" data-r="7">近 7 天</button><button class="btn sm '+(is30?'primary':'')+'" data-act="dash-range" data-r="30">近 30 天</button><button class="btn sm" data-act="dash-refresh">'+ic('refresh',13)+'刷新</button></div>'+
   '<div class="grid4">'+
     kpi('当前在线用户','8,642','较昨日 +12.4% · 峰值 9,180','users')+
@@ -1870,7 +1905,7 @@ function pageDashboard(){
   '<div class="grid2"><div class="card"><h3>最近后台操作</h3><div class="csub">全部写操作自动记录审计日志</div>'+
     logRows.slice(0,4).map(function(l){return '<div class="timeline-item"><i class="tl-dot"></i><div><b>'+esc(l.u)+'</b> · '+esc(l.a)+'</div><span class="tl-time">'+esc(l.t)+'</span></div>';}).join('')+
     '</div><div class="card"><h3>系统健康度</h3><div class="csub">核心链路实时状态</div>'+
-    [['Gateway 集群','3 / 3 节点正常','ok'],['消息到达率','99.993%','ok'],['Kafka 消费 lag','1,204 条','warn'],['待处理告警','2 条 · 内容安全 / 异常登录','warn'],['MySQL 主从','正常 · 延迟 0.3s','ok'],['对象存储','可用率 100%','ok']].map(function(r){
+    [['Gateway 集群','3 / 3 节点正常','ok'],['消息到达率','99.993%','ok'],['NATS JetStream 积压','1,204 条','warn'],['待处理告警','2 条 · 内容安全 / 异常登录','warn'],['MySQL 主从','正常 · 延迟 0.3s','ok'],['对象存储','可用率 100%','ok']].map(function(r){
       return '<div class="switch-row"><div>'+r[0]+'<div class="sr-desc">'+r[1]+'</div></div><span class="state '+r[2]+'">'+(r[2]==='ok'?'正常':'关注')+'</span></div>';
     }).join('')+'</div></div>';
 }
@@ -1897,6 +1932,23 @@ function pageUsers(){
     '<button class="btn" data-act="user-export">'+ic('download',14)+'导出</button><button class="btn primary" data-act="user-add">'+ic('plus',14)+'新增用户</button></div>'+
     '<table class="tbl"><thead><tr><th>用户</th><th>部门</th><th>角色</th><th>状态</th><th>最后登录</th><th>认证</th><th>操作</th></tr></thead><tbody id="userRows">'+userRowsHtml()+'</tbody></table>'+
     '<div class="pager">共 '+users.length+' 条 <button>‹</button><button class="on">1</button><button>2</button><button>›</button></div></div>';
+}
+function pageExternalContacts(){
+  var rows=[
+    {name:'王敏',account:'guest_wangmin',dept:'外部联系人',phone:'137****5566',reg:'2026-10-12',last:'2026-11-14 16:22',status:'正常',color:'#f2994a'},
+    {name:'周涛',account:'guest_zhoutao',dept:'外部联系人',phone:'138****7788',reg:'2026-09-30',last:'2026-11-15 09:02',status:'正常',color:'#12a594'},
+    {name:'何雨',account:'guest_heyu',dept:'外部联系人',phone:'139****1122',reg:'2026-11-03',last:'2026-11-13 18:31',status:'禁用',color:'#e26ab4'}
+  ];
+  return hint('外部联系人不展示企业组织架构，消息受更严格审计策略约束（userType = 1）。','FR-ADMIN-02 / FR-SEC-04')+
+  '<div class="card"><div class="toolbar"><input placeholder="姓名 / 账号 / 手机号" style="width:210px"><select><option>全部状态</option><option>正常</option><option>禁用</option></select>'+
+    '<button class="btn" data-act="tbl-query">'+ic('search',14)+'查询</button><div class="sp"></div><button class="btn" data-act="user-export">'+ic('download',14)+'导出</button></div>'+
+    '<table class="tbl"><thead><tr><th>用户</th><th>手机号（脱敏）</th><th>注册时间</th><th>最后登录</th><th>状态</th><th>操作</th></tr></thead><tbody>'+
+    rows.map(function(r){
+      return '<tr><td><div class="u-cell">'+av(r.name,r.color,'sm')+'<div>'+esc(r.name)+'<small>@'+esc(r.account)+'</small></div></div></td>'+
+        '<td><span class="code">'+esc(r.phone)+'</span></td><td>'+esc(r.reg)+'</td><td>'+esc(r.last)+'</td>'+
+        '<td><span class="state '+(r.status==='正常'?'ok':'off')+'"><i class="dot"></i>'+r.status+'</span></td>'+
+        '<td style="white-space:nowrap"><button class="btn sm" data-act="ext-edit" data-n="'+esc(r.name)+'">编辑</button> <button class="btn sm '+(r.status==='正常'?'danger':'ghost')+'" data-act="ext-toggle" data-n="'+esc(r.name)+'">'+(r.status==='正常'?'禁用':'启用')+'</button></td></tr>';
+    }).join('')+'</tbody></table><div class="pager">共 '+rows.length+' 条 <button>‹</button><button class="on">1</button><button>›</button></div></div>';
 }
 function pageDepts(){
   var depts=deptData;
@@ -2115,7 +2167,7 @@ function pagePermPreview(){
 }
 function renderAdmin(){
   renderAdminMenu();
-  var f={dashboard:pageDashboard,users:pageUsers,depts:pageDepts,groups:pageGroups,loginLogs:pageLoginLogs,roles:pageRoles,permPreview:pagePermPreview,logs:pageLogs,audit:pageAudit,sensitive:pageSensitive,notices:pageNotices,calls:pageCalls,rtcQuality:pageRtcQuality,settings:pageSettings}[state.adminPage];
+  var f={dashboard:pageDashboard,users:pageUsers,externalContacts:pageExternalContacts,depts:pageDepts,groups:pageGroups,loginLogs:pageLoginLogs,roles:pageRoles,permPreview:pagePermPreview,logs:pageLogs,audit:pageAudit,sensitive:pageSensitive,notices:pageNotices,calls:pageCalls,rtcQuality:pageRtcQuality,settings:pageSettings}[state.adminPage];
   document.getElementById('adminContent').innerHTML=f();
   if(state.adminPage==='roles')updateGroupChecks();
 }
@@ -2150,7 +2202,7 @@ function sendMsg(target){
   if(target==='h5'){document.getElementById('h5Msgs').innerHTML=messagesHtml(id);scrollBottom(document.getElementById('h5Msgs'));}
   else{document.getElementById('deskMsgs').innerHTML=messagesHtml(id);scrollBottom(document.getElementById('deskMsgs'));}
   flashSync();
-  toast('消息已发送 · 已同步到全部在线端（H5 / 安卓 / iOS / 桌面）','ok');
+  toast('消息已发送 · 已同步到全部在线端（H5 / Android / iOS / 桌面）','ok');
   setTimeout(function(){
     var m=C[id].messages[C[id].messages.length-1];if(m&&m.mine)m.read=true;
     if(isMobile()&&state.h5Page==='chat'&&(state.h5Conv||'c1')===id){var e=document.getElementById('h5Msgs');if(e){e.innerHTML=messagesHtml(id);scrollBottom(e);}}
@@ -2288,6 +2340,9 @@ document.addEventListener('click',function(e){
     case 'h5-person':personCard(t.dataset.n);break;
     case 'h5-status':state.status=t.dataset.s;renderCur();toast('状态已设为「'+t.dataset.s+'」，已广播给好友','ok');break;
     case 'h5-settings':state.h5Page='settings';state.settingsTab='notify';renderCur();break;
+    case 'h5-avatar':toast('头像已更新（演示：选择本地图片，≤ 5MB）','ok');break;
+    case 'h5-gender':t.parentElement.querySelectorAll('button').forEach(function(b){b.classList.toggle('primary',b===t);});toast('性别已设为「'+t.textContent+'」','ok');break;
+    case 'h5-profile-save':toast('资料已保存，并同步到桌面 / 移动端','ok');break;
     case 'settings-tab':state.settingsTab=t.dataset.t;renderCur();break;
     case 'dept-pick-h5':state.deptSel=t.dataset.n;renderCur();break;
     case 'dept-select':state.deptSel=t.dataset.n;renderAdmin();toast('已切换到「'+t.dataset.n+'」，成员列表与数据范围已同步','ok');break;
@@ -2372,7 +2427,8 @@ document.addEventListener('click',function(e){
       toast(dn+'：调用桌面原生适配层');break;}
     case 'desk-search':closeCmd();openCmd();break;
     case 'desk-rail':{
-      var rv=({'消息':'msg','通讯录':'contacts','文件':'files','统计':'stats'})[t.dataset.name]||'msg';
+      var rv=t.dataset.name;
+      if(['msg','contacts','favorites','files','calls','stats'].indexOf(rv)<0)rv='msg';
       state.deskView=rv;renderDesktop();break;}
     case 'desk-bell':case 'desk-tray-demo':showNotify();break;
     case 'desk-shortcut':modal('全局快捷键（FR-PC-04）','<table class="tbl"><thead><tr><th>快捷键</th><th>功能</th></tr></thead><tbody>'+
@@ -2385,13 +2441,13 @@ document.addEventListener('click',function(e){
       function(){closeModal();toast('已开始下载更新包，完成后重启生效','ok');},'立即更新');break;
     case 'app-demo':{
       var adk=t.dataset.k;
-      if(adk==='push')modal('系统级推送（FR-APP-02）','<div style="font-size:12px;color:#4a556b;line-height:2">App 在后台或被系统杀死时：<br>· Android：厂商通道（小米 / 华为 / OPPO / vivo）+ FCM 双通道送达<br>· iOS：APNs 离线推送，通知按会话分组<br>· 点击推送直达对应会话；来电走 CallKit / 系统来电界面</div>',
+      if(adk==='push')modal('系统级推送（FR-APP-02）','<div style="font-size:12px;color:#4a556b;line-height:2"><b>目标能力</b>（当前 Flutter 工程未接入推送 SDK，原型仅演示交互）：<br>· Android：厂商通道（小米 / 华为 / OPPO / vivo）+ FCM 双通道送达<br>· iOS：APNs 离线推送，通知按会话分组<br>· 点击推送直达对应会话；来电走 CallKit / 系统来电界面</div>',
         function(){closeModal();openConv('c1',isMobile()?'h5':'desktop');toast('已从推送直达「产品评审群」会话（演示）','ok');},'模拟收到推送');
       else if(adk==='badge')modal('角标与锁屏通知（FR-APP-03）','<div style="font-size:12px;color:#4a556b;line-height:2">· 桌面图标角标 = 服务端未读总数，多端实时一致<br>· 锁屏通知预览支持隐私模式：仅显示「您有新消息」<br>· 通知栏支持快捷回复与标为已读<br>· 免打扰时段内静默，仅累计角标</div>',null,'知道了');
       else if(adk==='perm')modal('权限申请与降级（FR-APP-04）','<div style="font-size:12px;color:#4a556b;line-height:2">首次使用按需申请：通知 / 麦克风 / 摄像头 / 相册 / 蓝牙。<br>拒绝后对应功能优雅降级（如语音通话按钮置灰），引导前往系统设置开启；不崩溃、不阻塞主流程。</div>',null,'知道了');
       else if(adk==='update')modal('应用内更新（FR-APP-06）','<div style="font-size:12px;color:#4a556b;line-height:2">启动检测新版本 → 弹窗说明更新内容 → 跳转应用市场或应用内下载升级。<br>Android 允许安装未知来源需用户授权；差分包更新失败自动回滚。</div>',
         function(){closeModal();toast('已开始下载差分包 12.4 MB（演示）','ok');},'立即更新');
-      else if(adk==='pip')modal('通话画中画 / 锁屏接听（FR-APP-07）','<div style="font-size:12px;color:#4a556b;line-height:2">· iOS CallKit / Android 系统来电：锁屏可接听或拒接<br>· 通话中返回其他页面保持通话，视频画中画小窗悬浮<br>· 来电振动与铃声、蓝牙耳机与扬声器一键切换</div>',null,'知道了');
+      else if(adk==='pip')modal('通话画中画 / 锁屏接听（FR-APP-07）','<div style="font-size:12px;color:#4a556b;line-height:2"><b>目标能力</b>（当前为 Flutter 通话浮层 + WebRTC P2P / STUN）：<br>· iOS CallKit / Android 系统来电：锁屏可接听或拒接<br>· 通话中返回其他页面保持通话，视频画中画小窗悬浮<br>· 来电振动与铃声、蓝牙耳机与扬声器一键切换</div>',null,'知道了');
       else if(adk==='gesture')modal('移动端手势交互（FR-APP-08）','<div style="font-size:12px;color:#4a556b;line-height:2">· 在会话列表<b>按住会话向左滑</b>，露出置顶 / 免打扰 / 删除<br>· 在会话列表顶部<b>下拉</b>触发增量同步刷新<br>· 长按消息弹出操作菜单（复制 / 引用 / 转发 / 撤回 / 删除）<br>· 深色模式跟随系统</div>',
         function(){closeModal();state.h5Page='convs';renderCur();toast('请在右侧手机中尝试左滑会话或下拉刷新','ok');},'去体验');
       break;}
@@ -2405,7 +2461,7 @@ document.addEventListener('click',function(e){
         ov.innerHTML='<div style="position:absolute;top:20px;font-size:12px;opacity:.75">9:41</div>'+
           '<div class="lc-av" style="background:'+C.c2.color+'">张</div>'+
           '<div class="lc-name">张伟</div>'+
-          '<div class="lc-sub">锁屏来电 · CallKit / 系统来电界面（FR-APP-07）<br>来电振动与自定义铃声 · 拒接可回短信</div>'+
+          '<div class="lc-sub">锁屏来电（规划：iOS CallKit / Android 系统来电，FR-APP-07）<br>当前 Flutter 工程以全屏浮层演示 · 来电振动与自定义铃声</div>'+
           '<div class="lc-btns">'+
           '<button class="lc-btn lc-decline" data-act="lock-decline">'+ic('phoneOff',20)+'<span>拒接</span></button>'+
           '<button class="lc-btn lc-accept" data-act="lock-accept">'+ic('phone',20)+'<span>接听</span></button></div>';
@@ -2470,6 +2526,8 @@ document.addEventListener('click',function(e){
       function(){var n=document.getElementById('nuName').value.trim();if(!n){toast('请填写姓名','warn');return;}
         users.unshift({id:'u'+(users.length+1),name:n,account:document.getElementById('nuAcc').value||'user'+(users.length+1),dept:'未分配',role:document.getElementById('nuRole').value,status:'正常',last:'—',color:'#64748b'});
         closeModal();document.getElementById('userRows').innerHTML=userRowsHtml();toast('用户已创建，初始密码已发送至邮箱','ok');},'创建');break;
+    case 'ext-edit':modal('编辑外部联系人 · '+t.dataset.n,'<div class="field"><label>姓名 / 备注</label><input value="'+esc(t.dataset.n)+'" style="width:100%"></div><div class="field"><label>绑定角色</label><select style="width:100%"><option>外部联系人</option><option>客服主管</option></select></div>',function(){closeModal();toast('外部联系人资料已保存并写入审计日志','ok');},'保存');break;
+    case 'ext-toggle':toast('已'+(t.textContent.trim()==='禁用'?'禁用':'启用')+'外部联系人 '+t.dataset.n+'，操作已记审计','ok');break;
     case 'user-export':case 'group-export':case 'log-export':case 'call-export':toast('导出任务已提交，完成后通过站内通知下载（导出行为已记审计）','ok');break;
     case 'call-play':modal('回放通话录制','回放「'+esc(t.dataset.t)+'」的通话录像需要 MFA 二次验证。<br><br>验证码已发送至管理员邮箱（演示环境：123456）。<br><input id="mfa2" placeholder="请输入 6 位验证码" style="margin-top:12px;width:100%">',
       function(){if(document.getElementById('mfa2').value!=='123456'){toast('验证码不正确','err');return;}
@@ -2479,7 +2537,7 @@ document.addEventListener('click',function(e){
     case 'dept-select':document.querySelectorAll('.tree-row').forEach(function(x){x.classList.remove('on');});t.classList.add('on');toast('已选中部门：'+t.dataset.name);break;
     case 'dept-add':modal('新增部门','<div class="field"><label>部门名称</label><input id="ndName" placeholder="如：解决方案部" style="width:100%"></div>'+
       '<div class="field"><label>上级部门</label><select id="ndParent" style="width:100%">'+deptData.map(function(d){return '<option>'+esc(d[0])+'</option>';}).join('')+'</select></div>'+
-      '<div style="font-size:11px;color:#8a95aa">创建后 60s 内同步到全端通讯录（H5 / 安卓 / iOS / 桌面），并影响 RBAC 数据范围（FR-ADMIN-03）</div>',
+      '<div style="font-size:11px;color:#8a95aa">创建后 60s 内同步到全端通讯录（H5 / Android / iOS / 桌面），并影响 RBAC 数据范围（FR-ADMIN-03）</div>',
       function(){var n=((document.getElementById('ndName')||{}).value||'').trim();
         if(!n){toast('请填写部门名称','warn');return;}
         deptData.push([n,'0']);closeModal();renderAdmin();toast('部门「'+n+'」已创建并写入审计日志','ok');},'创建');break;
@@ -2533,7 +2591,7 @@ document.addEventListener('click',function(e){
     case 'settings-save':toast('系统配置已保存并热生效，变更已写入操作日志','ok');break;
     case 'settings-reset':renderAdmin();toast('已恢复默认配置');break;
     case 'toggle-theme':toggleTheme();break;
-    case 'lang-toggle':state.lang=state.lang==='en'?'zh':'en';applyLang();renderCur();renderDesktop();renderAdmin();toast(t('switchLangTip'),'ok');break;
+    case 'lang-toggle':state.lang=state.lang==='en'?'zh':'en';applyLang();renderCur();renderDesktop();renderAdmin();toast(I18N[state.lang].switchLangTip,'ok');break;
     case 'cm':closeModal();convAction(t.dataset.k,t.dataset.id);break;
     case 'fwd':{
       var fc=C[t.dataset.from],fi=parseInt(t.dataset.idx,10),fm=fc.messages[fi],tgt=C[t.dataset.id];
