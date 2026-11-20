@@ -55,6 +55,11 @@ class _ChatPageState extends State<ChatPage> {
   bool _panelOpen = false;
   int _panelPage = 0;
   bool _emojiOpen = false;
+  // 语音输入（按住说话）
+  bool _voiceMode = false;
+  bool _holdActive = false;
+  bool _holdCancel = false;
+  double _voiceStartY = 0;
 
   @override
   void initState() {
@@ -109,6 +114,11 @@ class _ChatPageState extends State<ChatPage> {
       );
       _recStart = DateTime.now();
       if (mounted) setState(() { _recording = true; _recSec = 0; });
+      // 授权/设备就绪前用户已松手：放弃本次录音
+      if (_voiceMode && !_holdActive) {
+        await _cancelRecord();
+        return;
+      }
       _recTimer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() => _recSec++);
       });
@@ -153,6 +163,64 @@ class _ChatPageState extends State<ChatPage> {
     } finally {
       try { await file.delete(); } catch (_) {}
       if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  /// 取消录音：停止并删除临时文件，不发送
+  Future<void> _cancelRecord() async {
+    _recTimer?.cancel();
+    _recTimer = null;
+    String? path;
+    try { path = await _recorder.stop(); } catch (_) {}
+    if (mounted) setState(() { _recording = false; _recSec = 0; });
+    if (path != null) {
+      try { await File(path).delete(); } catch (_) {}
+    }
+  }
+
+  void _toggleVoiceMode() {
+    if (_voiceMode) {
+      if (_recording) _cancelRecord();
+      setState(() {
+        _voiceMode = false;
+        _holdActive = false;
+        _holdCancel = false;
+      });
+    } else {
+      setState(() {
+        _voiceMode = true;
+        _holdActive = false;
+        _holdCancel = false;
+        _emojiOpen = false;
+        _panelOpen = false;
+      });
+    }
+    FocusScope.of(context).unfocus();
+  }
+
+  void _onVoiceDown(PointerDownEvent e) {
+    _holdActive = true;
+    _holdCancel = false;
+    _voiceStartY = e.position.dy;
+    if (!_recording) _toggleRecord();
+  }
+
+  void _onVoiceMove(PointerMoveEvent e) {
+    if (!_holdActive) return;
+    final cancel = _voiceStartY - e.position.dy > 60;
+    if (cancel != _holdCancel) setState(() => _holdCancel = cancel);
+  }
+
+  void _onVoiceUp() {
+    if (!_holdActive) return;
+    _holdActive = false;
+    final cancel = _holdCancel;
+    _holdCancel = false;
+    if (!_recording) return;
+    if (cancel) {
+      _cancelRecord();
+    } else {
+      _stopRecord();
     }
   }
 
@@ -925,38 +993,40 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 录音提示（与 H5 的 HUD 一致）
             if (_recording)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                decoration:
-                    BoxDecoration(color: const Color(0xFFFFF1F1), borderRadius: BorderRadius.circular(12)),
-                child: Row(
-                  children: [
-                    const Icon(Icons.graphic_eq, size: 17, color: Color(0xFFE5484D)),
-                    const SizedBox(width: 8),
-                    Text('正在录音 $_recSec″',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFFE5484D))),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: _stopRecord,
-                      child: const Text('发送',
-                          style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFFE5484D))),
-                    ),
-                  ],
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: _holdCancel ? const Color(0xF2E5484D) : const Color(0xEB1F2937),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.graphic_eq, size: 16, color: Colors.white),
+                      const SizedBox(width: 9),
+                      Text('$_recSec″',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                      const SizedBox(width: 9),
+                      Text(_holdCancel ? '松开 取消' : '松开 发送 · 上滑 取消',
+                          style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                    ],
+                  ),
                 ),
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: _voiceMode
+                        ? _holdTalkBar()
+                        : TextField(
                       controller: _input,
                       minLines: 1,
                       maxLines: 1,
@@ -1010,10 +1080,11 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(4, 0, 8, 6),
+              padding: const EdgeInsets.fromLTRB(0, 4, 0, 10),
               child: Row(
                 children: [
-                  _tool(Icons.mic_none, _uploading ? null : _toggleRecord, active: _recording),
+                  _tool(Icons.mic_none, _uploading ? null : _toggleVoiceMode,
+                      active: _voiceMode || _recording),
                   _tool(Icons.photo_library_outlined, _uploading ? null : () => _panelAction('image')),
                   _tool(Icons.photo_camera_outlined, _uploading ? null : _pickCamera),
                   _tool(Icons.auto_awesome, _toggleEmoji),
@@ -1059,6 +1130,46 @@ class _ChatPageState extends State<ChatPage> {
     ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 85).then((x) {
       if (x != null) _upload(x.path, x.name);
     });
+  }
+
+  /// 输入区「按住说话」，样式与 H5 一致
+  Widget _holdTalkBar() {
+    final recording = _recording;
+    final cancel = _holdCancel;
+    final Color bg;
+    final Color fg;
+    if (recording && cancel) {
+      bg = const Color(0xFFFFECEE);
+      fg = const Color(0xFFE5484D);
+    } else if (recording) {
+      bg = const Color(0xFFE6F2FF);
+      fg = const Color(0xFF2F7CF6);
+    } else {
+      bg = const Color(0xFFF5F6FA);
+      fg = const Color(0xFF57607A);
+    }
+    return Listener(
+      onPointerDown: _onVoiceDown,
+      onPointerMove: _onVoiceMove,
+      onPointerUp: (_) => _onVoiceUp(),
+      onPointerCancel: (_) => _onVoiceUp(),
+      child: Container(
+        height: 42,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(22)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.mic_none_rounded, size: 19, color: fg),
+            const SizedBox(width: 6),
+            Text(
+              recording ? (cancel ? '松开 取消' : '松开 发送') : '按住 说话',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: fg),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _tool(IconData icon, VoidCallback? onTap, {bool active = false}) {
