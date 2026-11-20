@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { API } from '../api'
 import { toast } from '../toast'
+import { startRingback, startRingtone, stopRinging } from '../ringtone'
 
 // 1对1 WebRTC 通话：信令复用 WebSocket（CALL_*），媒体走 P2P + STUN/TURN
 export const useCallStore = defineStore('call', () => {
@@ -149,6 +150,7 @@ export const useCallStore = defineStore('call', () => {
     callId.value = 'call_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
     state.value = 'calling'
     notice.value = '正在呼叫…'
+    startRingback()
     try {
       await openMedia(callType.value)
       await ensureIce()
@@ -167,6 +169,7 @@ export const useCallStore = defineStore('call', () => {
 
   async function accept() {
     if (state.value !== 'ringing') return
+    stopRinging()
     state.value = 'connecting'
     notice.value = '正在连接…'
     try {
@@ -188,6 +191,7 @@ export const useCallStore = defineStore('call', () => {
   }
 
   function reject() {
+    stopRinging()
     if (callId.value && peerUid.value) {
       chatRef?.sendFrame('CALL_ANSWER', { callId: callId.value, toUid: peerUid.value, accept: false })
     }
@@ -195,6 +199,7 @@ export const useCallStore = defineStore('call', () => {
   }
 
   function hangup() {
+    stopRinging()
     if (callId.value && peerUid.value) {
       chatRef?.sendFrame('CALL_HANGUP', { callId: callId.value, toUid: peerUid.value })
     }
@@ -220,11 +225,13 @@ export const useCallStore = defineStore('call', () => {
         pendingOffer = p.sdp || ''
         notice.value = callType.value === 'video' ? '邀请你视频通话' : '邀请你语音通话'
         state.value = 'ringing'
+        startRingtone()
         break
       }
       case 'CALL_ANSWER_PUSH': {
         if (p.callId !== callId.value) return
         if (!p.accept) { finish('对方已拒绝'); return }
+        stopRinging()
         state.value = 'connecting'
         notice.value = '正在连接…'
         try {
@@ -258,6 +265,7 @@ export const useCallStore = defineStore('call', () => {
 
   function startTimer() {
     if (timer) return
+    stopRinging()
     state.value = 'active'
     notice.value = '通话中'
     timer = setInterval(() => { duration.value++ }, 1000)
@@ -346,6 +354,7 @@ export const useCallStore = defineStore('call', () => {
 
   function finish(msg) {
     stopTimer()
+    stopRinging()
     state.value = 'ended'
     notice.value = msg || '通话已结束'
     // 先采集 getStats 再关闭 PeerConnection，否则质量数据会丢失
@@ -362,6 +371,7 @@ export const useCallStore = defineStore('call', () => {
 
   function reset() {
     stopTimer()
+    stopRinging()
     stopMedia()
     state.value = 'idle'
     callId.value = ''

@@ -6,6 +6,7 @@ import '../core/models.dart';
 import '../core/util.dart';
 import '../widgets/avatar.dart';
 import 'chat_page.dart';
+import 'create_group_page.dart';
 import 'me_page.dart';
 
 class ConversationsPage extends StatefulWidget {
@@ -249,6 +250,26 @@ class _ConversationsPageState extends State<ConversationsPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.group_add_outlined),
+              title: const Text('发起群聊'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final g = await Navigator.of(context).push<Map<String, dynamic>>(
+                  MaterialPageRoute(builder: (_) => const CreateGroupPage()),
+                );
+                if (g == null || !mounted) return;
+                final groupId = '${g['groupId'] ?? ''}';
+                if (groupId.isEmpty) return;
+                final name = '${g['name'] ?? '群聊'}';
+                final app = context.read<AppState>();
+                await app.loadConvs();
+                if (!mounted) return;
+                final convId = app.ensureGroupConv(groupId, name);
+                final conv = app.convs.firstWhere((c) => c.convId == convId);
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatPage(conv: conv)));
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.done_all),
               title: const Text('全部已读'),

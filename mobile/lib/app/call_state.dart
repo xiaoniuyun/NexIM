@@ -5,6 +5,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../core/api.dart';
 import '../core/models.dart';
+import '../core/ringtone.dart';
 import 'app_state.dart';
 
 /// 1 对 1 WebRTC 通话：信令复用 IM 长连接（CALL_*），媒体 P2P。
@@ -24,6 +25,8 @@ class CallState extends ChangeNotifier {
   bool camOn = true;
   int duration = 0;
   String notice = '';
+
+  final CallRingtone _ringtone = CallRingtone();
 
   RTCPeerConnection? _pc;
   MediaStream? _local;
@@ -63,6 +66,7 @@ class CallState extends ChangeNotifier {
     state = 'calling';
     notice = '正在呼叫…';
     notifyListeners();
+    unawaited(_ringtone.playOutgoing());
     try {
       await _openMedia(callType);
       _pc = await createPeerConnection(await _iceConfig());
@@ -84,6 +88,7 @@ class CallState extends ChangeNotifier {
 
   Future<void> accept() async {
     if (state != 'ringing') return;
+    unawaited(_ringtone.stop());
     state = 'connecting';
     notice = '正在连接…';
     notifyListeners();
@@ -110,6 +115,7 @@ class CallState extends ChangeNotifier {
   }
 
   void reject() {
+    unawaited(_ringtone.stop());
     if (callId.isNotEmpty && peerUid.isNotEmpty) {
       app.ws.send('CALL_ANSWER', {'callId': callId, 'toUid': peerUid, 'accept': false});
     }
@@ -117,6 +123,7 @@ class CallState extends ChangeNotifier {
   }
 
   void hangup() {
+    unawaited(_ringtone.stop());
     if (callId.isNotEmpty && peerUid.isNotEmpty) {
       app.ws.send('CALL_HANGUP', {'callId': callId, 'toUid': peerUid});
     }
@@ -266,6 +273,7 @@ class CallState extends ChangeNotifier {
         state = 'ringing';
         notice = callType == 'video' ? '邀请你视频通话' : '邀请你语音通话';
         notifyListeners();
+        unawaited(_ringtone.playIncoming());
         break;
       case 'CALL_ANSWER_PUSH':
         if (p['callId'] != callId) return;
@@ -273,6 +281,7 @@ class CallState extends ChangeNotifier {
           _finish('对方已拒绝');
           return;
         }
+        unawaited(_ringtone.stop());
         state = 'connecting';
         notice = '正在连接…';
         notifyListeners();
@@ -310,6 +319,7 @@ class CallState extends ChangeNotifier {
 
   void _startTimer() {
     if (_timer != null) return;
+    unawaited(_ringtone.stop());
     state = 'active';
     notice = '通话中';
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -320,6 +330,7 @@ class CallState extends ChangeNotifier {
   }
 
   void _finish(String text) {
+    unawaited(_ringtone.stop());
     state = 'ended';
     notice = text;
     _timer?.cancel();
@@ -334,6 +345,7 @@ class CallState extends ChangeNotifier {
   }
 
   void _reset() {
+    unawaited(_ringtone.stop());
     _timer?.cancel();
     _timer = null;
     try {
@@ -365,6 +377,7 @@ class CallState extends ChangeNotifier {
   void dispose() {
     _sub?.cancel();
     _reset();
+    unawaited(_ringtone.dispose());
     localRenderer.dispose();
     remoteRenderer.dispose();
     super.dispose();

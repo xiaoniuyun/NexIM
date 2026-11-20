@@ -19,6 +19,7 @@ import '../core/image_cache.dart';
 import '../core/models.dart';
 import '../core/util.dart';
 import '../widgets/avatar.dart';
+import 'group_info_page.dart';
 
 class ChatPage extends StatefulWidget {
   final Conv conv;
@@ -405,8 +406,12 @@ class _ChatPageState extends State<ChatPage> {
         _toggleRecord();
         return;
       case 'mention':
-        _input.text += '@';
         setState(() => _panelOpen = false);
+        if (widget.conv.isGroup) {
+          _showMentionPicker();
+        } else {
+          _input.text += '@';
+        }
         return;
       case 'emoji':
         setState(() {
@@ -463,6 +468,73 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Future<void> _openGroupInfo() async {
+    final app = context.read<AppState>();
+    final left = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => GroupInfoPage(groupId: widget.conv.peerId, groupName: widget.conv.title),
+      ),
+    );
+    if (left == true && mounted) {
+      await app.loadConvs();
+      if (mounted) Navigator.of(context).maybePop();
+    }
+  }
+
+  /// 群聊 @ 提及：先选群成员，再插入 @昵称
+  Future<void> _showMentionPicker() async {
+    List<Map<String, dynamic>> members = [];
+    try {
+      final data = await Api.get('/groups/${widget.conv.peerId}/members');
+      if (data is List) {
+        members = data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+    } catch (e) {
+      if (mounted) _snack('加载成员失败：$e');
+      return;
+    }
+    if (!mounted) return;
+    final me = context.read<AppState>().myUid;
+    final others = members.where((m) => '${m['uid'] ?? ''}' != me).toList();
+    if (others.isEmpty) {
+      _snack('暂无其他可提及的成员');
+      return;
+    }
+    final picked = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('选择要提及的成员', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: others.length,
+                itemBuilder: (_, i) {
+                  final m = others[i];
+                  return ListTile(
+                    leading: Avatar(name: '${m['nickname'] ?? m['uid']}', url: '${m['avatar'] ?? ''}', size: 38),
+                    title: Text('${m['nickname'] ?? m['uid']}', style: const TextStyle(fontSize: 15)),
+                    onTap: () => Navigator.pop(ctx, m),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    final nick = '${picked['nickname'] ?? picked['uid']}';
+    final t = _input.text;
+    _input.text = t.endsWith('@') ? '$t$nick ' : '$t@$nick ';
+    _input.selection = TextSelection.collapsed(offset: _input.text.length);
+  }
+
   void _showConvMenu() {
     final app = context.read<AppState>();
     showModalBottomSheet<void>(
@@ -471,6 +543,15 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (widget.conv.isGroup)
+              ListTile(
+                leading: const Icon(Icons.groups_outlined),
+                title: const Text('群聊信息'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openGroupInfo();
+                },
+              ),
             ListTile(
               leading: Icon(widget.conv.pinned ? Icons.push_pin : Icons.push_pin_outlined),
               title: Text(widget.conv.pinned ? '取消置顶' : '置顶会话'),
@@ -942,7 +1023,12 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
               ),
-              if (!widget.conv.isGroup)
+              if (widget.conv.isGroup)
+                IconButton(
+                  onPressed: _openGroupInfo,
+                  icon: const Icon(Icons.groups_outlined, color: Color(0xFF1B2333)),
+                )
+              else
                 IconButton(
                   onPressed: _showCallMenu,
                   icon: const Icon(Icons.call_outlined, color: Color(0xFF1B2333)),
