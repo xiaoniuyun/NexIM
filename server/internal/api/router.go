@@ -17,6 +17,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"go.uber.org/zap"
 )
 
 type Router struct {
@@ -75,6 +76,8 @@ func (rt *Router) Engine() *gin.Engine {
 		api.POST("/auth/sms-code", rt.smsCode)
 		api.POST("/auth/password/forgot", rt.forgot)
 		api.GET("/notices", rt.publicNotices)
+		// 默认头像：用户未上传头像时由前端兜底展示
+		api.GET("/assets/default-avatar.svg", rt.defaultAvatar)
 		// 文件下载：匿名入口，handler 内用 Bearer 或 query token 校验
 		api.GET("/files/:id/download", rt.fileDownload)
 
@@ -99,9 +102,9 @@ func (rt *Router) Engine() *gin.Engine {
 			auth.GET("/friends/applies", rt.friendApplies)
 			auth.PUT("/friends/applies/:id", rt.friendHandle)
 
-			auth.GET("/depts", rt.depts)
-			auth.GET("/depts/tree", rt.deptTree)
-			auth.GET("/depts/:id/members", rt.deptMembers)
+			auth.GET("/depts", rt.requireInternal(), rt.depts)
+			auth.GET("/depts/tree", rt.requireInternal(), rt.deptTree)
+			auth.GET("/depts/:id/members", rt.requireInternal(), rt.deptMembers)
 
 			auth.GET("/conversations", rt.conversations)
 			auth.DELETE("/conversations/:id", rt.conversationDelete)
@@ -283,6 +286,18 @@ func (rt *Router) requirePerm(code string) gin.HandlerFunc {
 	}
 }
 
+// requireInternal 组织架构仅对内部员工开放；外部联系人默认无法查询组织架构相关人员
+func (rt *Router) requireInternal() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if rt.Contact.IsExternal(uid(c)) {
+			pkg.Fail(c, 403, 3003, "外部联系人无法查看组织架构")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 func (rt *Router) WSHandler(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	claims, err := pkg.ParseToken(rt.C.Auth.JWTSecret, token)
@@ -360,6 +375,15 @@ func (rt *Router) register(c *gin.Context) {
 	if err != nil {
 		pkg.Fail(c, 400, 4000, err.Error())
 		return
+	}
+	// 自助注册同样默认普通用户并加入公司全员群
+	if newUID, ok := data["uid"].(string); ok && newUID != "" {
+		if err := rt.Admin.EnsureDefaultRole(newUID); err != nil {
+			rt.S.Log.Warn("default role assign failed", zap.String("uid", newUID), zap.Error(err))
+		}
+		if err := rt.Group.JoinCompanyGroup(newUID); err != nil {
+			rt.S.Log.Warn("join company group failed", zap.String("uid", newUID), zap.Error(err))
+		}
 	}
 	pkg.OK(c, data)
 }
@@ -443,13 +467,13 @@ func (rt *Router) deleteDevice(c *gin.Context) {
 
 // ============ 联系人/组织 ============
 func (rt *Router) userSearch(c *gin.Context) {
-	pkg.OK(c, rt.Contact.Users(c.Query("q")))
+	pkg.OK(c, rt.Contact.Users(c.Query("q"), uid(c)))
 }
 func (rt *Router) users(c *gin.Context) {
-	pkg.OK(c, rt.Contact.Users(""))
+	pkg.OK(c, rt.Contact.Users("", uid(c)))
 }
 func (rt *Router) userProfile(c *gin.Context) {
-	u := rt.Contact.Users(c.Param("id"))
+	u := rt.Contact.Users(c.Param("id"), uid(c))
 	if len(u) > 0 {
 		pkg.OK(c, u[0])
 	} else {
@@ -517,6 +541,7 @@ func (rt *Router) myProfileData(uidStr string) map[string]interface{} {
 		"uid": u.UID, "username": u.Username, "nickname": u.Nickname,
 		"avatar": u.Avatar, "signature": u.Signature, "gender": u.Gender,
 		"phone": u.Phone, "title": u.Title, "deptId": u.DeptID, "deptName": deptName,
+		"userType": u.UserType, "isExternal": service.IsExternalUser(&u),
 	}
 }
 func (rt *Router) friends(c *gin.Context) {

@@ -195,8 +195,17 @@ export const useChatStore = defineStore('chat', () => {
     connected.value = false
   }
 
+  // 本地先建、尚未在服务端落库的会话（首条消息前服务端没有记录），刷新列表时需保留
+  const pendingConvs = new Set()
   async function loadConversations() {
-    try { const r = await API.conversations(); convs.value = r.data || [] } catch (e) {}
+    try {
+      const r = await API.conversations()
+      const list = r.data || []
+      const ids = new Set(list.map(c => c.convId))
+      pendingConvs.forEach(id => { if (ids.has(id)) pendingConvs.delete(id) })
+      const local = convs.value.filter(c => pendingConvs.has(c.convId))
+      convs.value = [...local, ...list]
+    } catch (e) {}
   }
   async function openConv(convId) {
     currentConv.value = convId
@@ -278,6 +287,7 @@ export const useChatStore = defineStore('chat', () => {
     if (!convs.value.find(c => c.convId === convId)) {
       convs.value.unshift({ convId, convType: 1, peerId, peerName, unread: 0, lastMsg: '', lastMsgAt: Date.now() })
     }
+    pendingConvs.add(convId)
     return convId
   }
   function setViewing(v) {
@@ -285,6 +295,7 @@ export const useChatStore = defineStore('chat', () => {
   }
   function reset() {
     convs.value = []; messages.value = []; currentConv.value = ''; readMap.value = {}; viewing.value = false
+    pendingConvs.clear()
     disconnect()
   }
 

@@ -1,6 +1,6 @@
 const {
   app, BrowserWindow, ipcMain, Tray, Menu, Notification, globalShortcut,
-  desktopCapturer, dialog, shell, nativeImage, protocol, net
+  desktopCapturer, dialog, shell, nativeImage, protocol, net, session
 } = require('electron')
 const path = require('path')
 const fs = require('fs')
@@ -209,6 +209,10 @@ if (!gotLock) {
     })
 
     registerIpc()
+    // 语音消息需要麦克风权限：桌面端直接放行媒体采集
+    session.defaultSession.setPermissionRequestHandler((wc, permission, callback) => {
+      callback(permission === 'media' || permission === 'audioCapture')
+    })
     createWindow()
     createTray()
     initUpdater()

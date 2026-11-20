@@ -13,6 +13,95 @@ type GroupService struct{ S *store.Store }
 
 func NewGroup(s *store.Store) *GroupService { return &GroupService{S: s} }
 
+// 公司全员群：所有启用用户默认加入，新用户创建/注册后自动入群
+const (
+	CompanyGroupID   = "g_company"
+	CompanyGroupName = "公司全员群"
+)
+
+// EnsureCompanyGroup 幂等创建公司全员群，并把现有全部启用用户纳入（启动时调用）
+func (g *GroupService) EnsureCompanyGroup() (*model.Group, error) {
+	now := model.Now()
+	var grp model.Group
+	if err := g.S.DB.Where("group_id = ?", CompanyGroupID).First(&grp).Error; err != nil {
+		grp = model.Group{
+			GroupID: CompanyGroupID, Name: CompanyGroupName, OwnerUID: g.companyOwner(),
+			Avatar: "#2f7df6", Notice: "公司全员群：所有成员自动加入，可在此与全公司同事交流",
+			Status: 1, CreatedAt: now,
+		}
+		if err := g.S.DB.Create(&grp).Error; err != nil {
+			return nil, err
+		}
+	}
+	var uids []string
+	g.S.DB.Model(&model.User{}).Where("status = 1").Order("id").Pluck("uid", &uids)
+	for _, uid := range uids {
+		g.joinCompanyMember(uid, now)
+	}
+	// 存量用户补会话，登录后即可在会话列表看到公司群
+	g.ensureConversations(CompanyGroupID, grp.Name, uids, now)
+	g.syncCompanyMemberCount()
+	g.S.DB.Where("group_id = ?", CompanyGroupID).First(&grp)
+	return &grp, nil
+}
+
+// JoinCompanyGroup 新用户加入公司全员群（幂等），创建用户与注册成功后调用
+func (g *GroupService) JoinCompanyGroup(uid string) error {
+	if uid == "" {
+		return nil
+	}
+	var grp model.Group
+	if err := g.S.DB.Where("group_id = ?", CompanyGroupID).First(&grp).Error; err != nil {
+		created, err := g.EnsureCompanyGroup()
+		if err != nil {
+			return err
+		}
+		grp = *created
+	}
+	now := model.Now()
+	if g.joinCompanyMember(uid, now) {
+		g.syncCompanyMemberCount()
+	}
+	g.ensureConversations(CompanyGroupID, grp.Name, []string{uid}, now)
+	return nil
+}
+
+// joinCompanyMember 写入群成员（已存在则跳过），返回是否新增
+func (g *GroupService) joinCompanyMember(uid string, now int64) bool {
+	var cnt int64
+	g.S.DB.Model(&model.GroupMember{}).Where("group_id = ? AND uid = ?", CompanyGroupID, uid).Count(&cnt)
+	if cnt > 0 {
+		return false
+	}
+	role := "member"
+	if uid == g.companyOwner() {
+		role = "owner"
+	}
+	return g.S.DB.Create(&model.GroupMember{GroupID: CompanyGroupID, UID: uid, Role: role, JoinedAt: now}).Error == nil
+}
+
+// syncCompanyMemberCount 以群成员表为准刷新人数
+func (g *GroupService) syncCompanyMemberCount() {
+	var cnt int64
+	g.S.DB.Model(&model.GroupMember{}).Where("group_id = ?", CompanyGroupID).Count(&cnt)
+	g.S.DB.Model(&model.Group{}).Where("group_id = ?", CompanyGroupID).Update("member_count", cnt)
+}
+
+// companyOwner 公司群群主：优先取超级管理员，其次最早创建的用户
+func (g *GroupService) companyOwner() string {
+	var uid string
+	g.S.DB.Table("sys_user_role AS ur").Joins("JOIN sys_role AS r ON r.id = ur.role_id").
+		Where("r.code = ?", "SUPER_ADMIN").Order("ur.uid").Limit(1).Pluck("ur.uid", &uid)
+	if uid != "" {
+		return uid
+	}
+	var u model.User
+	if g.S.DB.Order("id").First(&u).Error == nil {
+		return u.UID
+	}
+	return ""
+}
+
 func (g *GroupService) MyGroups(uid string) []model.Group {
 	var ids []string
 	g.S.DB.Model(&model.GroupMember{}).Where("uid = ?", uid).Pluck("group_id", &ids)

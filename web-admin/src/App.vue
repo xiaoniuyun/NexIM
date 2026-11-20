@@ -13,7 +13,7 @@ const bellOpen = ref(false)
 
 const menu = [
   { group: '概览', items: [['dashboard', '工作台', '▦', 'dashboard:view']] },
-  { group: '用户与组织', items: [['users', '用户管理', '👥', 'menu:users'], ['depts', '组织架构', '🏢', 'menu:depts'], ['groups', '群组管理', '💬', 'menu:groups'], ['login-logs', '登录日志', '📋', 'menu:logs']] },
+  { group: '用户与组织', items: [['users', '用户管理', '👥', 'menu:users'], ['external-contacts', '外部联系人', '🤝', 'menu:users'], ['depts', '组织架构', '🏢', 'menu:depts'], ['groups', '群组管理', '💬', 'menu:groups'], ['login-logs', '登录日志', '📋', 'menu:logs']] },
   { group: '权限治理', items: [['roles', '角色权限', '🛡️', 'menu:roles'], ['perm-preview', '权限预览', '🔑', 'menu:roles'], ['logs', '操作日志', '📜', 'menu:logs']] },
   { group: '内容与安全', items: [['audit', '消息审计', '👁️', 'menu:audit'], ['sensitive', '内容安全', '🚩', 'menu:sensitive'], ['notices', '公告管理', '🔔', 'menu:notices']] },
   { group: '音视频', items: [['calls', '通话记录', '📞', 'menu:calls'], ['rtc-quality', '质量监控', '📊', 'menu:calls']] },

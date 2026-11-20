@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { API } from '../api'
 import { t } from '../i18n'
 import { toast } from '../toast'
+import LineIcon from '../components/LineIcon.vue'
 
 const router = useRouter()
 const files = ref([])
@@ -34,7 +35,7 @@ function fmtSize(s) { return s > 1024 * 1024 ? (s / 1024 / 1024).toFixed(1) + ' 
   </div>
   <div class="h5-body">
     <a v-for="f in files" :key="f.fileId" class="qentry" style="text-decoration:none" :href="'/api/v1/files/' + f.fileId + '/download?token=' + encodeURIComponent(token)" target="_blank">
-      <span style="font-size:20px">📄</span>
+      <span style="color:#4f6ef7"><LineIcon name="file" :size="21" /></span>
       <div style="flex:1;min-width:0"><div class="qe-t">{{ f.name }}</div><div class="qe-s">{{ fmtSize(f.size) }} · {{ new Date(f.createdAt).toLocaleString() }}</div></div>
     </a>
     <div v-if="!files.length" class="loading">{{ t('empty') }}</div>

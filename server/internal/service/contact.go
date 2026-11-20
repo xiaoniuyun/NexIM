@@ -23,7 +23,9 @@ type ContactVO struct {
 	Gender    int    `json:"gender"`
 	DeptID    int64  `json:"deptId"`
 	DeptName string `json:"deptName"`
-	Online   bool   `json:"online"`
+	// External 企业外部用户（未归属任何部门），与企业内部用户单聊前需先添加好友
+	External bool `json:"external"`
+	Online   bool `json:"online"`
 }
 
 func (c *ContactService) Friends(uid string) []ContactVO {
@@ -38,11 +40,27 @@ func (c *ContactService) Friends(uid string) []ContactVO {
 	return out
 }
 
-func (c *ContactService) Users(keyword string) []ContactVO {
+// IsExternalUser 外部联系人：注册页注册的账号（user_type=1），或历史未归属部门的账号
+func IsExternalUser(u *model.User) bool { return u.UserType == 1 || u.DeptID == 0 }
+
+// IsExternal 当前用户是否外部联系人（组织架构权限以此为准）
+func (c *ContactService) IsExternal(uid string) bool {
+	var u model.User
+	if c.S.DB.Select("user_type, dept_id").Where("uid = ?", uid).First(&u).Error != nil {
+		return false
+	}
+	return IsExternalUser(&u)
+}
+
+// Users 联系人搜索：外部联系人只能检索其他外部联系人，无法查询组织架构内部人员
+func (c *ContactService) Users(keyword, requesterUID string) []ContactVO {
 	var users []model.User
 	q := c.S.DB.Where("status = 1")
+	if requesterUID != "" && c.IsExternal(requesterUID) {
+		q = q.Where("(user_type = 1 OR dept_id = 0)")
+	}
 	if keyword != "" {
-		q = q.Where("username LIKE ? OR nickname LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+		q = q.Where("(username LIKE ? OR nickname LIKE ?)", "%"+keyword+"%", "%"+keyword+"%")
 	}
 	q.Limit(50).Find(&users)
 	out := []ContactVO{}
@@ -59,10 +77,11 @@ func (c *ContactService) Depts() []model.Dept {
 }
 
 // DeptMembers 支持按物化路径包含所有下级部门成员（数据范围「本部门及下级」）
+// 组织架构仅展示企业内部用户，未分配部门的外部用户不出现在通讯录中
 func (c *ContactService) DeptMembers(deptID int64) []ContactVO {
 	var users []model.User
 	if deptID == 0 {
-		c.S.DB.Where("status = 1").Find(&users)
+		c.S.DB.Where("status = 1 AND dept_id > 0 AND user_type = 0").Find(&users)
 	} else {
 		ids := []int64{deptID}
 		var d model.Dept
@@ -73,7 +92,7 @@ func (c *ContactService) DeptMembers(deptID int64) []ContactVO {
 				ids = append(ids, s.ID)
 			}
 		}
-		c.S.DB.Where("status = 1 AND dept_id IN ?", ids).Find(&users)
+		c.S.DB.Where("status = 1 AND dept_id IN ? AND user_type = 0", ids).Find(&users)
 	}
 	out := []ContactVO{}
 	for i := range users {
@@ -133,5 +152,5 @@ func (c *ContactService) toVO(u *model.User) ContactVO {
 	}
 	return ContactVO{ID: u.ID, UID: u.UID, Username: u.Username, Nickname: u.Nickname,
 		Phone: u.Phone, Title: u.Title, Avatar: u.Avatar, Signature: u.Signature, Gender: u.Gender,
-		DeptID: u.DeptID, DeptName: deptName, Online: online}
+		DeptID: u.DeptID, DeptName: deptName, External: IsExternalUser(u), Online: online}
 }

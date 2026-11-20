@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { API, fileUrl } from '@h5/api'
+import LineIcon from '@h5/components/LineIcon.vue'
 import { toast } from '@h5/toast'
 import { fullTime } from '../composables/useDesktop'
 
@@ -100,7 +101,7 @@ function jump(item) {
           <img :src="imageOf(item)" alt="收藏图片">
         </div>
         <div v-else-if="item.msgType === 5" class="file-msg" @click="openFile(item)">
-          <span class="file-ico">📄</span>
+          <span class="file-ico"><LineIcon name="file" :size="18" /></span>
           <div>
             <div class="file-name">{{ fileName(item) }}</div>
             <div class="file-size">点击下载原文件</div>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '@h5/stores/auth'
-import { avatarUrl } from '@h5/api'
+import { avatarUrl, DEFAULT_AVATAR } from '@h5/api'
 import { useChatStore } from '@h5/stores/chat'
 import Icon from '../components/Icon.vue'
 import ConvColumn from '../components/ConvColumn.vue'
@@ -20,19 +20,18 @@ const auth = useAuthStore()
 const chat = useChatStore()
 const pane = ref('msg')
 const searchOpen = ref(false)
-const myAvatar = computed(() => avatarUrl(auth.user?.avatar))
+const myAvatar = computed(() => avatarUrl(auth.user?.avatar) || DEFAULT_AVATAR)
 
 const navs = [
   { key: 'msg', icon: 'chat', label: '消息' },
   { key: 'contacts', icon: 'contacts', label: '通讯录' },
-  { key: 'files', icon: 'folder', label: '文件' },
   { key: 'favorites', icon: 'star', label: '收藏' },
+  { key: 'files', icon: 'folder', label: '文件' },
   { key: 'calls', icon: 'phone', label: '通话' },
-  { key: 'notices', icon: 'bell', label: '通知公告' },
   { key: 'stats', icon: 'chart', label: '统计' }
 ]
 
-const listWidth = ref(Number(localStorage.getItem('nexim_list_width')) || 304)
+const listWidth = ref(Number(localStorage.getItem('nexim_list_width')) || 278)
 const dragging = ref(false)
 let dragStartX = 0
 let dragStartW = 0
@@ -92,22 +91,26 @@ const unread = computed(() => chat.unreadTotal)
 <template>
   <div class="app-shell">
     <nav class="rail">
-      <div class="rail-logo">N</div>
+      <button class="rail-avatar" :title="auth.user?.nickname" @click="pane = 'settings'">
+        <img v-if="myAvatar" :src="myAvatar" alt="头像">
+        <template v-else>{{ (auth.user?.nickname || '我').slice(0, 1) }}</template>
+        <i class="rail-dot" :class="{ off: !chat.connected }"></i>
+      </button>
       <button
         v-for="n in navs" :key="n.key"
         class="rail-btn" :class="{ on: pane === n.key }"
         :title="n.label" @click="go(n.key)"
       >
-        <Icon :name="n.icon" :size="21" />
+        <Icon :name="n.icon" :size="22" />
         <span v-if="n.key === 'msg' && unread > 0" class="rail-badge">{{ unread > 99 ? '99+' : unread }}</span>
       </button>
       <div class="rail-sp"></div>
-      <button class="rail-btn" :class="{ on: pane === 'settings' }" title="设置" @click="pane = 'settings'">
-        <Icon name="settings" :size="21" />
+      <button class="rail-btn" :class="{ on: pane === 'notices' }" title="通知公告" @click="go('notices')">
+        <Icon name="bell" :size="22" />
+        <i v-if="unread > 0" class="rail-dot-badge"></i>
       </button>
-      <button class="rail-avatar" :title="auth.user?.nickname" @click="pane = 'settings'">
-        <img v-if="myAvatar" :src="myAvatar" alt="头像">
-        <template v-else>{{ (auth.user?.nickname || '我').slice(0, 1) }}</template>
+      <button class="rail-btn" :class="{ on: pane === 'settings' }" title="设置" @click="pane = 'settings'">
+        <Icon name="menu" :size="22" />
       </button>
     </nav>
 

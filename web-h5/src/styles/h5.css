@@ -5,11 +5,12 @@
   --bg:#fafbfe;--card:#fff;--ok:#12b886;--ok-soft:#e6f8f2;
   --danger:#ef4b5b;--danger-soft:#ffedf0;
   --shadow:0 10px 30px rgba(28,42,80,.08);--shadow-lg:0 24px 60px rgba(28,42,80,.16);
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
 body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-family:var(--font-sans);
   font-size:14px;color:var(--ink);background:#e9edf5;
   display:flex;align-items:center;justify-content:center;overflow:hidden;
 }
@@ -80,10 +81,50 @@ img.avatar{object-fit:cover;background:#e8ecf5}
   flex:none;height:calc(58px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);
   background:var(--card);border-top:1px solid var(--line);display:flex;z-index:10;
 }
-.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9aa5b8;font-size:10px;position:relative}
-.tabbar button.on{color:var(--brand);font-weight:700}
-.tabbar .ti{font-size:20px;line-height:1}
-.tb-badge{position:absolute;top:2px;right:calc(50% - 22px);min-width:15px;height:15px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;display:grid;place-items:center;padding:0 3px}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#2b2f38;font-size:11px;position:relative}
+.tabbar button.on{color:#1b7fff;font-weight:700}
+.tabbar .ti{font-size:20px;line-height:1;display:flex}
+.tabbar .ti svg{display:block}
+.tb-badge{position:absolute;top:3px;left:calc(50% + 5px);min-width:15px;height:15px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;display:grid;place-items:center;padding:0 3px}
+
+/* ===== QQ 风格消息列表 ===== */
+.qq-head{flex:none;display:flex;align-items:center;gap:11px;padding:calc(env(safe-area-inset-top) + 12px) 16px 8px;background:var(--card);z-index:10}
+.qq-user{display:flex;align-items:center;gap:11px;min-width:0;text-align:left}
+.qq-user .avatar.lg{width:44px;height:44px;border-radius:50%;font-size:16px}
+.qq-name{font-size:17px;font-weight:700;line-height:1.25}
+.qq-status{display:flex;align-items:center;gap:5px;font-size:11.5px;color:#25b389;margin-top:3px}
+.qq-status .dot{width:6px;height:6px;border-radius:50%;background:#25b389}
+.qq-status.off{color:#9aa5b8}
+.qq-status.off .dot{background:#c3c9d6}
+.qq-plus{margin-left:auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:300;color:#20263a;line-height:1}
+.qq-plus:active{background:#f1f3f8}
+.qq-body{flex:1;min-height:0;overflow-y:auto;background:var(--card);padding:0 0 16px}
+.qq-search{display:flex;align-items:center;gap:7px;height:38px;margin:4px 14px 8px;padding:0 12px;background:#f3f5f9;border-radius:10px;color:#8a95aa;font-size:13px}
+.qq-search input{border:0;background:none;flex:1;font-size:13px;min-width:0;text-align:center;padding:0}
+.qq-search input::placeholder{color:#9aa5b8}
+.qq-filter{display:flex;align-items:center;gap:15px;padding:0 16px 6px}
+.qq-filter button{font-size:12.5px;color:#8a95aa;padding:4px 0;display:inline-flex;align-items:center;gap:4px}
+.qq-filter button.on{color:#1b2333;font-weight:700}
+.qq-filter button.ghost{margin-left:auto;color:var(--brand)}
+.qq-filter b{background:var(--danger);color:#fff;border-radius:99px;font-size:9.5px;padding:0 5px;font-weight:700}
+.qq-row{display:flex;align-items:center;gap:12px;padding:11px 16px;width:100%;text-align:left;background:var(--card);border-bottom:1px solid #f2f4f9}
+.qq-row:active{background:#f7f8fb}
+.qq-ava{position:relative;flex:none}
+.qq-ava .avatar{width:48px;height:48px;border-radius:14px;font-size:17px}
+.qq-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:99px;background:#f5405a;color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;padding:0 5px;border:2px solid var(--card);box-sizing:content-box}
+.qq-main{flex:1;min-width:0}
+.qq-title{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600;line-height:1.25;color:var(--ink)}
+.qq-title .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qq-sub{font-size:13px;color:#8a95aa;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qq-right{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex:none;align-self:flex-start;padding-top:3px}
+.qq-time{font-size:11.5px;color:#a2abbd;white-space:nowrap}
+.qq-tag{font-size:9.5px;color:#e39a2d;background:#fff4e3;border-radius:4px;padding:1px 4px;font-weight:600}
+.qq-empty{text-align:center;color:var(--muted);font-size:13px;padding:60px 20px}
+body.h5-dark .qq-head,body.h5-dark .qq-body,body.h5-dark .qq-row{background:var(--card)}
+body.h5-dark .qq-search{background:#232c42}
+body.h5-dark .qq-row{border-bottom-color:var(--line)}
+body.h5-dark .qq-name,body.h5-dark .qq-title,body.h5-dark .qq-plus{color:var(--ink)}
+
 
 /* 聊天页 */
 .chat-head{
@@ -338,3 +379,136 @@ body.h5-font-large .bubble,body.h5-font-large .ci-last,body.h5-font-large .fav-c
 body.h5-font-large .ci-name,body.h5-font-large .ch-name{font-size:16px}
 body.h5-font-small .bubble,body.h5-font-small .ci-last,body.h5-font-small .fav-content,body.h5-font-small .composer input{font-size:12.5px}
 body.h5-font-small .ci-name,body.h5-font-small .ch-name{font-size:13.5px}
+
+/* ===== 统一排版：字体族 / 字号 / 字重 ===== */
+:root{
+  --fs-title:17px;--fs-h:16px;--fs-body:14px;--fs-sub:13px;--fs-cap:12px;
+  --fw-bold:700;--fw-semi:600;
+}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{font-family:var(--font-sans);font-size:var(--fs-body)}
+button,input,textarea,select{font-family:var(--font-sans)}
+/* 页面标题 */
+.h5-head h2,.ch-name,.qq-name,.mh,.pc-name,.pe-name,.ic-name{font-size:var(--fs-title);font-weight:var(--fw-bold);line-height:1.25}
+/* 列表主标题 */
+.qq-title,.ci-name,.qe-t{font-size:var(--fs-h);font-weight:var(--fw-semi);line-height:1.3}
+/* 正文 */
+.bubble,.composer input,.fav-content,.pick-name,.member-row,.sr-txt,.gb-row{font-size:var(--fs-body)}
+.gb-row{font-weight:500}
+/* 辅助文字 */
+.qq-sub,.qq-status,.qq-time,.ci-last,.qe-s,.ch-sub,.sr-top,.sr-time,.ic-sub,.sec-title,.fav-top,.fav-bottom,.fsize,.msg-status-revoked{font-size:var(--fs-cap)}
+.qq-sub,.ci-last,.qe-s,.ch-sub,.fsize{font-size:var(--fs-sub)}
+.btn-sm,.btn-ghost,.btn-danger,.chip,.attach-panel button,.mini-btn{font-size:var(--fs-cap)}
+.qq-filter button{font-size:var(--fs-cap)}
+/* 会话/消息辅助信息：时间戳、已读状态、文件大小等统一为最小层级 */
+.ci-time,.msg-meta,.bubble.file .fsize,.bubble.call .cl-s{font-size:var(--fs-cap)}
+.bubble.file .fname,.bubble.call .cl-t{font-size:var(--fs-sub);font-weight:var(--fw-semi)}
+.sheet-item{font-size:var(--fs-body)}
+
+/* 线性图标与文字基线对齐 */
+.line-icon{vertical-align:middle}
+.qq-row .line-icon,.gb-row .line-icon,.qentry .line-icon,.attach-panel .line-icon,.icon-btn .line-icon{flex:none}
+.qq-plus .line-icon,.icon-btn .line-icon{pointer-events:none}
+
+/* ===== 语音消息：内联按住说话 ===== */
+.icon-btn.on{background:var(--brand-soft);color:var(--brand)}
+.voice-bar{
+  flex:1;min-width:0;height:38px;border-radius:20px;background:#f6f8fc;color:#57607a;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:14px;font-weight:600;user-select:none;touch-action:none;
+  transition:background .15s ease,color .15s ease;
+}
+.voice-bar.rec{background:#e6f2ff;color:var(--brand)}
+.voice-bar.cancel{background:#ffecee;color:var(--danger)}
+.voice-hud{
+  position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);
+  display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:12px;
+  background:rgba(31,41,55,.92);color:#fff;font-size:12px;white-space:nowrap;
+  box-shadow:0 10px 28px rgba(0,0,0,.18);z-index:30;
+}
+.voice-hud.cancel{background:rgba(229,72,77,.95)}
+.wave{display:flex;align-items:center;gap:2px;height:16px}
+.wave i{width:2px;height:5px;border-radius:2px;background:currentColor;animation:wave 1s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.1s}
+.wave i:nth-child(3){animation-delay:.2s}
+.wave i:nth-child(4){animation-delay:.3s}
+.wave i:nth-child(5){animation-delay:.2s}
+.wave i:nth-child(6){animation-delay:.1s}
+.wave i:nth-child(7){animation-delay:.25s}
+@keyframes wave{0%,100%{height:5px}50%{height:14px}}
+.voice-timer{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ===== 消息列表（按设计图重构） ===== */
+.cs-page{flex:1;min-height:0;display:flex;flex-direction:column;background:#eef1f8}
+.cs-head{flex:none;display:flex;align-items:center;gap:11px;padding:calc(env(safe-area-inset-top) + 14px) 18px 10px}
+.cs-user{display:flex;align-items:center;gap:11px;min-width:0;text-align:left}
+.cs-user .avatar.lg{width:46px;height:46px;border-radius:50%;font-size:16px}
+.cs-id{min-width:0}
+.cs-name{font-size:18px;font-weight:700;line-height:1.2;color:#1b2333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs-status{display:flex;align-items:center;gap:5px;font-size:11.5px;color:#25b389;margin-top:4px}
+.cs-status .dot{width:6px;height:6px;border-radius:50%;background:#25b389}
+.cs-status.off{color:#9aa5b8}
+.cs-status.off .dot{background:#c3c9d6}
+.cs-plus{margin-left:auto;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:30px;font-weight:200;line-height:1;color:#1b2333;flex:none}
+.cs-plus:active{background:#e3e7f1}
+.cs-search{flex:none;display:flex;align-items:center;gap:8px;height:46px;margin:0 14px 12px;padding:0 16px;background:#fff;border-radius:24px;color:#adb3c1;font-size:15px;box-shadow:0 4px 14px rgba(26,40,80,.06)}
+.cs-search input{border:0;background:none;flex:1;font-size:15px;min-width:0;text-align:center;padding:0;color:#1b2333}
+.cs-search input::placeholder{color:#adb3c1}
+.cs-sheet{flex:1;min-height:0;display:flex;flex-direction:column;background:#fff;border-radius:18px 18px 0 0;overflow:hidden}
+.cs-list{flex:1;min-height:0;overflow-y:auto;padding:6px 0 18px}
+.cs-list::-webkit-scrollbar{width:4px}
+.cs-list::-webkit-scrollbar-thumb{background:#d9dfeb;border-radius:9px}
+.cs-row{display:flex;align-items:center;gap:13px;width:100%;padding:11px 18px;text-align:left;background:#fff}
+.cs-row:active{background:#f5f7fb}
+.cs-ava{position:relative;flex:none;width:52px;height:52px}
+.cs-ava .avatar{width:52px!important;height:52px!important;border-radius:50%;font-size:18px}
+.cs-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:99px;background:#fff;color:#f5405a;font-size:10.5px;font-weight:700;display:grid;place-items:center;padding:0 5px;box-shadow:0 1px 5px rgba(20,30,60,.18)}
+.cs-main{flex:1;min-width:0}
+.cs-title{display:flex;align-items:center;gap:6px;font-size:16.5px;font-weight:600;color:#1b2333;line-height:1.25}
+.cs-title .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-sub{font-size:14.5px;color:#a2a9b8;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs-right{flex:none;align-self:flex-start;padding-top:3px}
+.cs-time{font-size:12.5px;color:#a2a9b8;white-space:nowrap}
+.cs-tag{font-size:9.5px;color:#e39a2d;background:#fff4e3;border-radius:4px;padding:1px 4px;font-weight:600}
+.cs-empty{flex:1;display:grid;place-items:center;color:#8a95aa;font-size:13px}
+body.h5-dark .cs-page{background:#101728}
+body.h5-dark .cs-sheet,body.h5-dark .cs-row,body.h5-dark .cs-search{background:var(--card)}
+body.h5-dark .cs-name,body.h5-dark .cs-title,body.h5-dark .cs-plus,body.h5-dark .cs-search input{color:var(--ink)}
+
+/* ===== 聊天页（按设计图重构） ===== */
+.ch-back{width:34px;height:34px;display:grid;place-items:center;color:#1b2333;flex:none;margin-left:-4px}
+.ch-info{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-width:0}
+.chat-head .ch-name{font-size:17px;font-weight:700}
+.chat-head .ch-sub{font-size:11.5px;color:#25b389;gap:5px;margin-top:3px}
+.ch-arrow{color:#aab1bf;font-size:13px;margin-left:1px}
+.ch-act{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#1b2333;flex:none}
+.ch-act:active{background:#f1f3f8}
+.chat-msgs{background:#f0f1f5}
+.bubble{background:#e9e9ee;border-radius:4px 14px 14px 14px;box-shadow:none;color:#1f2329}
+.msg-row.mine .bubble{background:linear-gradient(135deg,#4f6ef7,#5c7bff);color:#fff;border-radius:14px 4px 14px 14px}
+.bubble.file,.bubble.media{background:#fff;color:#1f2329}
+.msg-row.mine .bubble.file,.msg-row.mine .bubble.media{background:#fff;color:#1f2329}
+.composer-wrap{flex:none;position:relative;background:#fff;border-radius:18px 18px 0 0;overflow:visible}
+.c-sheet{background:#fff;border-radius:18px 18px 0 0;padding:10px 12px 0}
+.c-input-row{padding:0 2px 8px}
+.c-input-row input{width:100%;border:1px solid #e8eaf0;border-radius:22px;padding:11px 15px;font-size:15px;background:#fff}
+.c-input-row input:focus{border-color:#d7dbe4}
+.c-sheet .voice-bar{height:42px;border-radius:22px;background:#f5f6fa}
+.c-tools{display:flex;align-items:center;padding:4px 0 10px}
+.c-tool{flex:1;height:40px;display:grid;place-items:center;color:#20242c;border-radius:10px;min-width:0}
+.c-tool:active{background:#f3f5fa}
+.c-close{width:38px;height:38px;border-radius:50%;background:#2f7cf6;color:#fff;display:grid;place-items:center;flex:none;margin-left:6px}
+.c-close.on{background:#2f7cf6}
+.c-close .line-icon{transform:rotate(0deg)}
+.c-panel{background:#f1f3f8;padding:14px 10px calc(10px + env(safe-area-inset-bottom))}
+.c-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 10px}
+.c-cell{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12.5px;color:#1f2329}
+.c-tile{width:100%;height:56px;border-radius:16px;background:#fff;display:grid;place-items:center;color:#20242c}
+.c-cell:active .c-tile{background:#e7ebf3}
+.c-dots{display:flex;justify-content:center;gap:6px;padding-top:12px}
+.c-dots i{width:6px;height:6px;border-radius:50%;background:#c8cdd8}
+.c-dots i.on{background:#3a3f4a}
+body.h5-dark .composer-wrap,body.h5-dark .c-sheet{background:var(--card)}
+body.h5-dark .c-panel{background:#161e30}
+body.h5-dark .c-tile{background:#232c42;color:#e6eaf4}
+

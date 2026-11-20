@@ -6,13 +6,13 @@ import { useAuthStore } from '../stores/auth'
 import { API } from '../api'
 import { t } from '../i18n'
 import Avatar from '../components/Avatar.vue'
+import LineIcon from '../components/LineIcon.vue'
 import { toast } from '../toast'
 
 const router = useRouter()
 const chat = useChatStore()
 const auth = useAuthStore()
 const keyword = ref('')
-const filter = ref('all')
 const showNew = ref(false)
 const friendList = ref([])
 const friendKeyword = ref('')
@@ -21,13 +21,9 @@ const menuConv = ref(null)
 const filtered = computed(() => {
   const q = keyword.value.trim().toLowerCase()
   let list = chat.convs || []
-  if (filter.value === 'unread') list = list.filter(c => c.unread > 0)
-  if (filter.value === 'group') list = list.filter(c => c.convType === 2)
   if (q) list = list.filter(c => (c.peerName || c.peerId || '').toLowerCase().includes(q) || (c.lastMsg || '').toLowerCase().includes(q))
   return [...list].sort((a, b) => (b.pinned || 0) - (a.pinned || 0) || (b.lastMsgAt || 0) - (a.lastMsgAt || 0))
 })
-const pinnedList = computed(() => filtered.value.filter(c => c.pinned))
-const normalList = computed(() => filtered.value.filter(c => !c.pinned))
 
 let convTimer = null
 onMounted(() => {
@@ -62,7 +58,13 @@ function pickFriend(u) {
 function fmtTime(ts) {
   if (!ts) return ''
   const d = new Date(ts)
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  const now = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+  if (d.toDateString() === now.toDateString()) return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  if (d.toDateString() === y.toDateString()) return '昨天'
+  if (d.getFullYear() === now.getFullYear()) return `${d.getMonth() + 1}/${d.getDate()}`
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
 }
 const friendFiltered = computed(() => friendList.value.filter(u => !friendKeyword.value || (u.nickname || '').includes(friendKeyword.value)))
 
@@ -103,80 +105,58 @@ async function removeConv(c) {
     toast(t('pinSuccess'))
   } catch (e) { toast(e.message, 'err') }
 }
-async function readAll() {
-  try {
-    await API.readAll()
-    chat.convs.forEach(c => { c.unread = 0 })
-    await chat.loadConversations()
-    toast(t('allRead'))
-  } catch (e) { toast(e.message, 'err') }
-}
 </script>
 <template>
-  <div class="h5-head">
-    <h2>{{ t('msg') }}</h2>
-    <div class="sp"></div>
-    <button class="icon-btn" @click="router.push('/mine')">
-      <Avatar :name="auth.user?.nickname || 'U'" size="sm" />
-    </button>
-    <button class="icon-btn" @click="router.push('/friends')" :title="t('newFriends')">🔔<i class="hd-dot"></i></button>
-    <button class="icon-btn" @click="openNew" :title="t('addFriend')">＋</button>
-  </div>
-  <div class="h5-body">
-    <div class="h5-search">🔍<input v-model="keyword" :placeholder="t('search')"></div>
-    <div class="chip-row">
-      <button class="chip" :class="{on: filter==='all'}" @click="filter='all'">{{ t('all') }}</button>
-      <button class="chip" :class="{on: filter==='unread'}" @click="filter='unread'">{{ t('unreadOnly') }}<b v-if="chat.unreadTotal">{{ chat.unreadTotal }}</b></button>
-      <button class="chip" :class="{on: filter==='group'}" @click="filter='group'">{{ t('groupOnly') }}</button>
-      <button class="chip ghost" @click="readAll">{{ t('readAll') }}</button>
+  <div class="cs-page">
+    <div class="cs-head">
+      <button class="cs-user" @click="router.push('/mine')">
+        <Avatar :name="auth.user?.nickname || 'U'" size="lg" />
+        <div class="cs-id">
+          <div class="cs-name">{{ auth.user?.nickname || t('msg') }}</div>
+          <div class="cs-status" :class="{ off: !chat.connected }">
+            <i class="dot"></i>{{ chat.connected ? '在线 · 4G' : '连接中…' }}
+          </div>
+        </div>
+      </button>
+      <button class="cs-plus" :title="t('addFriend')" @click="openNew">＋</button>
     </div>
-    <div v-if="filtered.length">
-      <template v-if="pinnedList.length">
-        <div class="sec-title">{{ t('pinned') }}</div>
-        <button v-for="c in pinnedList" :key="c.convId" class="conv-item"
+    <div class="cs-search">
+      <LineIcon name="search" :size="19" />
+      <input v-model="keyword" :placeholder="t('search')">
+    </div>
+    <div class="cs-sheet">
+      <div v-if="filtered.length" class="cs-list">
+        <button v-for="c in filtered" :key="c.convId" class="cs-row"
           @click="openConv(c)" @contextmenu.prevent="openMenu(c)"
           @touchstart="pressStart(c)" @touchend="pressEnd" @touchmove="pressEnd">
-          <Avatar :name="c.peerName || c.peerId" />
-          <div class="ci-main">
-            <div class="ci-top">
-              <span class="ci-name">{{ c.peerName || c.peerId }}</span>
-              <span class="tag-pin">{{ t('pin') }}</span>
-              <span class="ci-time">{{ fmtTime(c.lastMsgAt) }}</span>
+          <span class="cs-ava">
+            <Avatar :name="c.peerName || c.peerId" />
+            <i v-if="c.unread" class="cs-badge">{{ c.unread > 99 ? '99+' : c.unread }}</i>
+          </span>
+          <div class="cs-main">
+            <div class="cs-title">
+              <span class="t">{{ c.peerName || c.peerId }}</span>
+              <span v-if="c.pinned" class="cs-tag">{{ t('pin') }}</span>
             </div>
-            <div class="ci-last">{{ c.muted ? `[${t('muted')}] ` : '' }}{{ c.lastMsg || '暂无消息' }}</div>
+            <div class="cs-sub">{{ c.muted ? `[${t('muted')}] ` : '' }}{{ c.lastMsg || '暂无消息' }}</div>
           </div>
-          <span v-if="c.unread" class="badge">{{ c.unread > 99 ? '99+' : c.unread }}</span>
-        </button>
-      </template>
-      <template v-if="normalList.length">
-        <div class="sec-title">{{ t('all') }}</div>
-        <button v-for="c in normalList" :key="c.convId" class="conv-item"
-          @click="openConv(c)" @contextmenu.prevent="openMenu(c)"
-          @touchstart="pressStart(c)" @touchend="pressEnd" @touchmove="pressEnd">
-          <Avatar :name="c.peerName || c.peerId" />
-          <div class="ci-main">
-            <div class="ci-top">
-              <span class="ci-name">{{ c.peerName || c.peerId }}</span>
-              <span class="ci-time">{{ fmtTime(c.lastMsgAt) }}</span>
-            </div>
-            <div class="ci-last">{{ c.muted ? `[${t('muted')}] ` : '' }}{{ c.lastMsg || '暂无消息' }}</div>
+          <div class="cs-right">
+            <span class="cs-time">{{ fmtTime(c.lastMsgAt) }}</span>
           </div>
-          <span v-if="c.unread" class="badge">{{ c.unread > 99 ? '99+' : c.unread }}</span>
         </button>
-      </template>
-      <div class="conv-hint">{{ t('longPressTip') }}</div>
+      </div>
+      <div v-else class="cs-empty">{{ t('noConv') }}</div>
     </div>
-    <div v-else class="loading">{{ t('noConv') }}</div>
   </div>
 
   <div v-if="showNew" class="mask" @click.self="showNew = false">
     <div class="modal">
       <div class="mh">{{ t('createGroup') }} / {{ t('addFriend') }}</div>
       <div class="mb">
-        <div class="h5-search">🔍<input v-model="friendKeyword" :placeholder="t('inputSearchUser')"></div>
+        <div class="h5-search"><LineIcon name="search" :size="16" /><input v-model="friendKeyword" :placeholder="t('inputSearchUser')"></div>
         <button v-for="u in friendFiltered" :key="u.uid" class="qentry" @click="pickFriend(u)">
           <Avatar :name="u.nickname" size="sm" />
-          <div><div class="qe-t">{{ u.nickname }}</div><div class="qe-s">@{{ u.username }} · {{ u.deptName || '' }}</div></div>
+          <div><div class="qe-t">{{ u.nickname }}</div><div class="qe-s">@{{ u.username }} · {{ u.external ? '企业外部用户' : (u.deptName || '') }}</div></div>
         </button>
         <div v-if="!friendFiltered.length" class="loading">{{ t('noFriend') }}</div>
       </div>

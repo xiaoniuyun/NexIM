@@ -103,6 +103,11 @@ services:
       RUSTFS_OBS_LOGGER_LEVEL: error
     ports: ["9000:9000", "9001:9001"]
     volumes: [rustfs-data:/data]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:9000/health >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   # 单二进制（API/WS/H5/Admin），standard profile
   server:
@@ -116,7 +121,7 @@ services:
       redis: { condition: service_healthy }
       nats: { condition: service_healthy }
       scylla: { condition: service_healthy }
-      rustfs: { condition: service_started }
+      rustfs: { condition: service_healthy }
     environment:
       CONFIG_PATH: /app/configs/config-standard.yaml
       DB_DSN: "root:nexim123@tcp(mysql:3306)/nexim?charset=utf8mb4&parseTime=True&loc=Local"
@@ -129,9 +134,14 @@ services:
       MQ_DRIVER: "jetstream"
       MQ_URL: "nats://nats:4222"
       MQ_STREAM: "IM_EVENT"
+      MQ_RETENTION: "7d"
       SEARCH_URL: "http://meilisearch:7700"
       STORAGE_DRIVER: "rustfs"
       STORAGE_ENDPOINT: "http://rustfs:9000"
+      STORAGE_BUCKET: "nexim-files"
+      STORAGE_ACCESS_KEY: "nexim"
+      STORAGE_SECRET_KEY: "nexim123456"
+      STORAGE_REGION: "us-east-1"
     ports: ["8080:8080"]
 
 volumes:

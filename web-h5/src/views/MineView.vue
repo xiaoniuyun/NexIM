@@ -8,6 +8,7 @@ import { t } from '../i18n'
 import { toast } from '../toast'
 import ModalBox from '../components/ModalBox.vue'
 import Avatar from '../components/Avatar.vue'
+import LineIcon from '../components/LineIcon.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -35,7 +36,7 @@ function logout() {
 <template>
   <div class="h5-head">
     <h2>{{ t('mine') }}</h2><div class="sp"></div>
-    <button class="icon-btn" @click="router.push('/settings')">⚙️</button>
+    <button class="icon-btn" @click="router.push('/settings')"><LineIcon name="settings" :size="20" /></button>
   </div>
   <div class="h5-body">
     <div class="profile-card" @click="router.push('/profile')">
@@ -46,7 +47,7 @@ function logout() {
       </div>
     </div>
     <div class="group-block">
-      <button class="gb-row" @click="router.push('/profile')">✏️ 编辑资料<span class="gb-r">昵称 / 头像 / 签名 ›</span></button>
+      <button class="gb-row" @click="router.push('/profile')"><LineIcon name="edit" :size="18" /> 编辑资料<span class="gb-r">昵称 / 头像 / 签名 ›</span></button>
     </div>
     <div class="group-block">
       <div class="gb-row" style="color:var(--muted);font-size:11px">{{ t('status') }}</div>
@@ -55,16 +56,16 @@ function logout() {
       </div>
     </div>
     <div class="group-block">
-      <button class="gb-row" @click="router.push('/settings')">🖥️ {{ t('devices') }}<span class="gb-r">{{ devices.length }} 台 ›</span></button>
+      <button class="gb-row" @click="router.push('/settings')"><LineIcon name="monitor" :size="18" /> {{ t('devices') }}<span class="gb-r">{{ devices.length }} 台 ›</span></button>
     </div>
     <div class="group-block">
-      <div v-for="d in devices" :key="d.deviceId" class="gb-row">📱 {{ d.deviceName || d.platform }}<span class="gb-r">{{ d.pushChannel || d.platform }}</span></div>
+      <div v-for="d in devices" :key="d.deviceId" class="gb-row"><LineIcon name="monitor" :size="18" /> {{ d.deviceName || d.platform }}<span class="gb-r">{{ d.pushChannel || d.platform }}</span></div>
       <div v-if="!devices.length" class="gb-row" style="color:var(--muted)">暂无其他设备</div>
     </div>
     <div class="group-block">
-      <button class="gb-row" @click="router.push('/settings')">🔔 {{ t('notification') }}<span class="gb-r">已开启 ›</span></button>
-      <button class="gb-row" @click="router.push('/settings')">🔒 {{ t('privacy') }}<span class="gb-r">›</span></button>
-      <button class="gb-row" @click="router.push('/settings')">⚙️ {{ t('general') }}<span class="gb-r">›</span></button>
+      <button class="gb-row" @click="router.push('/settings')"><LineIcon name="bell" :size="18" /> {{ t('notification') }}<span class="gb-r">已开启 ›</span></button>
+      <button class="gb-row" @click="router.push('/settings')"><LineIcon name="lock" :size="18" /> {{ t('privacy') }}<span class="gb-r">›</span></button>
+      <button class="gb-row" @click="router.push('/settings')"><LineIcon name="settings" :size="18" /> {{ t('general') }}<span class="gb-r">›</span></button>
     </div>
     <button class="btn-primary" style="background:var(--danger-soft);color:var(--danger);box-shadow:none" @click="logout">{{ t('logout') }}</button>
   </div>

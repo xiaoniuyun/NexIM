@@ -6,7 +6,9 @@ import { useAuthStore } from '../stores/auth'
 import ModalBox from '../components/ModalBox.vue'
 
 const auth = useAuthStore()
+const canCreate = computed(() => auth.can('dept:create'))
 const canEdit = computed(() => auth.can('dept:edit'))
+const canDelete = computed(() => auth.can('dept:delete'))
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 const tree = ref([])
@@ -158,11 +160,6 @@ const scopeHint = computed(() => selectedDept.value ? `dept.path LIKE '${selecte
           :style="{ paddingLeft: 12 + d.depth * 16 + 'px' }" @click="pick(d.id)">
           📁 {{ d.name }} <span class="tr-c">{{ countOf(d.id) }}</span>
           <span v-if="d.status === 2" class="state off">停用</span>
-          <span class="tree-ops">
-            <button class="btn sm" @click.stop="addDept(d.id)">＋子部门</button>
-            <button class="btn sm" @click.stop="editDept(d)">编辑</button>
-            <button class="btn sm danger" @click.stop="deleteDept(d)">删除</button>
-          </span>
         </div>
         <div v-if="!rows.length" class="loading">暂无部门，请先新增</div>
       </div>
@@ -172,6 +169,9 @@ const scopeHint = computed(() => selectedDept.value ? `dept.path LIKE '${selecte
             <h3>{{ selectedDept ? selectedDept.name : '全部部门' }} · 成员</h3>
             <div class="head-actions">
               <span class="muted">直属 {{ selectedDept ? countOf(selectedDept.id) : allUsers.length }} 人 · 当前列表 {{ members.length }} 人（含下级）</span>
+              <button class="btn sm" :disabled="!selectedDept || !canCreate" @click="addDept(selected)">＋ 子部门</button>
+              <button class="btn sm" :disabled="!selectedDept || !canEdit" @click="editDept(selectedDept)">编辑</button>
+              <button class="btn sm danger" :disabled="!selectedDept || !canDelete" @click="deleteDept(selectedDept)">删除</button>
               <button class="btn sm primary" :disabled="!selectedDept || !canEdit" @click="addMembers">＋ 添加成员</button>
             </div>
           </div>
@@ -208,8 +208,6 @@ const scopeHint = computed(() => selectedDept.value ? `dept.path LIKE '${selecte
 <style scoped>
 .tree-row { display: flex; align-items: center; gap: 6px; }
 .tree-row.off { opacity: .6; }
-.tree-ops { margin-left: auto; display: none; gap: 4px; }
-.tree-row:hover .tree-ops { display: flex; }
 .head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .chk-grid { display: flex; flex-wrap: wrap; gap: 8px 14px; max-height: 260px; overflow: auto; }
 .chk-grid :deep(.role-chk) { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }

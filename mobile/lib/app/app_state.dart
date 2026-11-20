@@ -97,6 +97,8 @@ class AppState extends ChangeNotifier {
       'gender': data['gender'] ?? 0,
       'phone': data['phone'] ?? '',
       'title': data['title'] ?? '',
+      'userType': data['userType'] ?? 0,
+      'isExternal': data['isExternal'] == true,
       'roles': data['roles'] ?? [],
     };
     await Store.setStr('token', Api.token);

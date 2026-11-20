@@ -36,6 +36,16 @@ class NexImApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F6EF7)),
         scaffoldBackgroundColor: Colors.white,
+        // 统一字体族：与 H5 / 桌面端保持同一字体栈（iOS 用苹方，Android 回退思源黑体/系统字体）
+        fontFamily: 'PingFang SC',
+        fontFamilyFallback: const [
+          'Hiragino Sans GB',
+          'Microsoft YaHei',
+          'Noto Sans SC',
+          'Noto Sans CJK SC',
+          'Roboto',
+          'sans-serif',
+        ],
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,

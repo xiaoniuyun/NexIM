@@ -236,9 +236,13 @@ func (a *AdminService) RemoveDeptMember(deptID int64, uid string) error {
 	return nil
 }
 
-// DeptMembersFor 部门成员（含下级），按操作人数据范围过滤
+// DeptMembersFor 部门成员（含下级）；仅对具备管理端部门权限的账号按数据范围过滤，
+// 普通用户查看企业通讯录时应看到完整组织架构
 func (a *AdminService) DeptMembersFor(deptID int64, callerUID string) []ContactVO {
 	list := NewContact(a.S).DeptMembers(deptID)
+	if !HasPerm(a.S, callerUID, "dept:list") {
+		return list
+	}
 	f := a.ScopeFor(callerUID)
 	if f.Unlimited {
 		return list

@@ -16,6 +16,7 @@ import (
 type UserQuery struct {
 	Keyword    string
 	Status     string // "" 全部 | "1" 正常 | "0" 禁用
+	UserType   string // "" 全部 | "0" 内部员工 | "1" 外部联系人
 	DeptID     int64
 	IncludeSub bool
 	UIDs       []string // 指定用户集合（角色成员查询）
@@ -168,6 +169,12 @@ func (a *AdminService) userRows(q UserQuery) ([]UserVO, error) {
 	case "0":
 		db = db.Where("status <> 1")
 	}
+	// 外部联系人：注册账号（user_type=1）与历史未分配部门的账号
+	if q.UserType == "1" {
+		db = db.Where("(user_type = 1 OR dept_id = 0)")
+	} else if q.UserType == "0" {
+		db = db.Where("user_type = 0 AND dept_id > 0")
+	}
 	if q.DeptID > 0 {
 		ids := []int64{q.DeptID}
 		if q.IncludeSub {
@@ -266,6 +273,7 @@ func (a *AdminService) UpdateUserSafe(id int64, updates map[string]interface{}) 
 	allowed := map[string]string{
 		"nickname": "nickname", "username": "username", "phone": "phone", "title": "title",
 		"dept_id": "dept_id", "deptId": "dept_id", "status": "status",
+		"user_type": "user_type", "userType": "user_type",
 	}
 	clean := map[string]interface{}{}
 	for k, v := range updates {

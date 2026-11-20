@@ -67,6 +67,9 @@ export function avatarUrl(avatar) {
   return v.startsWith('file:') ? fileUrl(v.slice(5)) : ''
 }
 
+// 默认头像：未上传头像时统一展示内置人像剪影
+export const DEFAULT_AVATAR = API_BASE + '/assets/default-avatar.svg'
+
 export const API = {
   login: (account, password, deviceId) => api('/auth/login', { method: 'POST', body: { account, password, deviceId, platform: 'H5' } }),
   register: (username, password, nickname) => api('/auth/register', { method: 'POST', body: { username, password, nickname } }),

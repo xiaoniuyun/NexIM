@@ -6,6 +6,7 @@ import { toast } from '../toast'
 import { API } from '../api'
 import { useAuthStore } from '../stores/auth'
 import Avatar from '../components/Avatar.vue'
+import LineIcon from '../components/LineIcon.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -124,15 +125,15 @@ function clearCache() {
       <div class="switch-row" @click="set('verify', !prefs.verify)"><span>加我需要验证</span><span class="switch" :class="{ on: prefs.verify }"></span></div>
       <div class="switch-row" @click="set('phoneSearch', !prefs.phoneSearch)"><span>允许通过手机号搜索</span><span class="switch" :class="{ on: prefs.phoneSearch }"></span></div>
       <div class="switch-row" @click="set('online', !prefs.online)"><span>展示在线状态</span><span class="switch" :class="{ on: prefs.online }"></span></div>
-      <button class="gb-row" @click="openDevices">🖥️ 已登录设备<span class="gb-r">管理 ›</span></button>
-      <button class="gb-row" @click="openBlack">🛡️ 黑名单<span class="gb-r">{{ blocked.length }} ›</span></button>
+      <button class="gb-row" @click="openDevices"><LineIcon name="monitor" :size="18" /> 已登录设备<span class="gb-r">管理 ›</span></button>
+      <button class="gb-row" @click="openBlack"><LineIcon name="shield" :size="18" /> 黑名单<span class="gb-r">{{ blocked.length }} ›</span></button>
     </template>
 
     <template v-else>
       <div class="switch-row" @click="toggleDark">
         <span>{{ t('theme') }}</span><span class="switch" :class="{ on: dark }"></span>
       </div>
-      <button class="gb-row" @click="switchLang">🌐 语言 / Language<span class="gb-r">{{ lang === 'zh' ? '简体中文' : 'English' }} ›</span></button>
+      <button class="gb-row" @click="switchLang"><LineIcon name="globe" :size="18" /> 语言 / Language<span class="gb-r">{{ lang === 'zh' ? '简体中文' : 'English' }} ›</span></button>
       <div class="switch-row">
         <span>字体大小</span>
         <span style="display:flex;gap:5px">
@@ -141,7 +142,7 @@ function clearCache() {
           <button class="btn sm" :class="prefs.font === 'large' ? 'primary' : ''" @click="setFont('large')">{{ t('fontLarge') }}</button>
         </span>
       </div>
-      <button class="gb-row" @click="clearCache">🗑️ 清理缓存<span class="gb-r">{{ t('cacheCleared') }} ›</span></button>
+      <button class="gb-row" @click="clearCache"><LineIcon name="trash" :size="18" /> 清理缓存<span class="gb-r">{{ t('cacheCleared') }} ›</span></button>
       <div class="switch-row"><span>关于<div class="sr-desc">NexIM H5 · 企业即时通讯</div></span><span class="state info">v1.0</span></div>
     </template>
   </div>
@@ -152,7 +153,7 @@ function clearCache() {
       <div class="mh">已登录设备</div>
       <div class="mb">
         <div v-for="d in devices" :key="d.deviceId" class="member-row">
-          <span style="font-size:20px">🖥️</span>
+          <span style="color:#4f6ef7"><LineIcon name="monitor" :size="20" /></span>
           <div style="flex:1">
             <div>{{ d.deviceName || d.deviceId }}</div>
             <div class="sr-desc">{{ d.platform || 'Web' }} · 最近活跃 {{ fmtTime(d.lastActive) }}</div>
@@ -171,7 +172,7 @@ function clearCache() {
     <div class="modal">
       <div class="mh">{{ t('blacklist') }}</div>
       <div class="mb">
-        <div class="h5-search" style="margin-bottom:8px">🔍<input v-model="blockKeyword" placeholder="搜索用户加入黑名单" @keyup.enter="doBlockSearch"></div>
+        <div class="h5-search" style="margin-bottom:8px"><LineIcon name="search" :size="16" /><input v-model="blockKeyword" placeholder="搜索用户加入黑名单" @keyup.enter="doBlockSearch"></div>
         <button v-for="u in blockResults" :key="u.uid" class="member-row" style="width:100%" @click="addBlock(u)">
           <Avatar :name="u.nickname" size="sm" />
           <span style="flex:1;text-align:left">{{ u.nickname }} <span class="sr-desc">@{{ u.username }}</span></span>

@@ -7,6 +7,7 @@ const routes = [
   { path: '/login', name: 'login', component: () => import('./views/LoginView.vue') },
   { path: '/dashboard', name: 'dashboard', component: () => import('./views/DashboardView.vue'), meta: { title: '工作台', group: '概览', auth: true, perm: 'dashboard:view' } },
   { path: '/users', name: 'users', component: () => import('./views/UsersView.vue'), meta: { title: '用户管理', group: '用户与组织', auth: true, perm: 'menu:users' } },
+  { path: '/external-contacts', name: 'externalContacts', component: () => import('./views/ExternalContactsView.vue'), meta: { title: '外部联系人', group: '用户与组织', auth: true, perm: 'menu:users' } },
   { path: '/depts', name: 'depts', component: () => import('./views/DeptsView.vue'), meta: { title: '组织架构', group: '用户与组织', auth: true, perm: 'menu:depts' } },
   { path: '/groups', name: 'groups', component: () => import('./views/GroupsView.vue'), meta: { title: '群组管理', group: '用户与组织', auth: true, perm: 'menu:groups' } },
   { path: '/login-logs', name: 'loginLogs', component: () => import('./views/LoginLogsView.vue'), meta: { title: '登录日志', group: '用户与组织', auth: true, perm: 'menu:logs' } },

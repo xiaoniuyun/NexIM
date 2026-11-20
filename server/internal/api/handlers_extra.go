@@ -13,11 +13,24 @@ import (
 	"nexim/server/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // ============ 公告 ============
 func (rt *Router) publicNotices(c *gin.Context) {
 	pkg.OK(c, rt.Admin.Notices())
+}
+
+// defaultAvatarSVG 默认头像：中性人像剪影，用户未上传头像时使用
+const defaultAvatarSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">` +
+	`<rect width="128" height="128" rx="30" fill="#e8ecf5"/>` +
+	`<circle cx="64" cy="49" r="21" fill="#a9b4cc"/>` +
+	`<path d="M64 79c-21.5 0-37 12.6-37 29h74c0-16.4-15.5-29-37-29z" fill="#a9b4cc"/>` +
+	`</svg>`
+
+func (rt *Router) defaultAvatar(c *gin.Context) {
+	c.Header("Cache-Control", "public, max-age=86400")
+	c.Data(http.StatusOK, "image/svg+xml; charset=utf-8", []byte(defaultAvatarSVG))
 }
 
 // ============ 消息搜索/转发 ============
@@ -241,6 +254,13 @@ func (rt *Router) adminCreateUser(c *gin.Context) {
 			pkg.Fail(c, 400, 4000, err.Error())
 			return
 		}
+	}
+	// 默认角色与公司全员群：新用户可直接与全组织成员交流
+	if err := rt.Admin.EnsureDefaultRole(u.UID); err != nil {
+		rt.S.Log.Warn("default role assign failed", zap.String("uid", u.UID), zap.Error(err))
+	}
+	if err := rt.Group.JoinCompanyGroup(u.UID); err != nil {
+		rt.S.Log.Warn("join company group failed", zap.String("uid", u.UID), zap.Error(err))
 	}
 	rt.Admin.Audit(uid(c), "user:create", u.UID, req.Username)
 	pkg.OK(c, u)

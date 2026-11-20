@@ -5,6 +5,7 @@ import { API } from '../api'
 import { t } from '../i18n'
 import { toast } from '../toast'
 import Avatar from '../components/Avatar.vue'
+import LineIcon from '../components/LineIcon.vue'
 
 const router = useRouter()
 const users = ref([])
@@ -52,7 +53,7 @@ async function create() {
       <span v-if="!picked.length" class="muted" style="padding:8px 0">勾选联系人后点击完成</span>
       <Avatar v-for="u in pickedUsers()" :key="u.uid" :name="u.nickname" size="sm" />
     </div>
-    <div class="h5-search">🔍<input v-model="keyword" placeholder="搜索联系人"></div>
+    <div class="h5-search"><LineIcon name="search" :size="16" /><input v-model="keyword" placeholder="搜索联系人"></div>
     <div class="sec-title">选择联系人 · {{ filtered.length }} 人</div>
     <label v-for="u in filtered" :key="u.uid" class="contact-pick">
       <input type="checkbox" :checked="picked.includes(u.uid)" @change="toggle(u.uid)">

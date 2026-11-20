@@ -40,6 +40,10 @@ class _ChatPageState extends State<ChatPage> {
   Timer? _recTimer;
   String? _playingId;
   StreamSubscription? _playerSub;
+  // 工具栏面板
+  bool _panelOpen = false;
+  int _panelPage = 0;
+  bool _emojiOpen = false;
 
   @override
   void initState() {
@@ -197,49 +201,135 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  void _pickAttachment() {
+  void _snack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  void _panelAction(String key) {
+    final call = context.read<CallState>();
+    switch (key) {
+      case 'call-audio':
+      case 'call-video':
+        if (widget.conv.isGroup) {
+          _snack('群聊暂不支持音视频通话');
+          return;
+        }
+        if (call.busy) {
+          _snack('当前正在通话中');
+          return;
+        }
+        setState(() => _panelOpen = false);
+        call.startCall(widget.conv, key == 'call-audio' ? 'audio' : 'video');
+        return;
+      case 'file':
+        setState(() => _panelOpen = false);
+        FilePicker.pickFile().then((f) {
+          if (f != null && f.path != null) _upload(f.path!, f.name);
+        });
+        return;
+      case 'image':
+        setState(() => _panelOpen = false);
+        ImagePicker()
+            .pickImage(source: ImageSource.gallery, imageQuality: 85)
+            .then((x) {
+          if (x != null) _upload(x.path, x.name);
+        });
+        return;
+      case 'video':
+        setState(() => _panelOpen = false);
+        ImagePicker().pickVideo(source: ImageSource.gallery).then((x) {
+          if (x != null) _upload(x.path, x.name);
+        });
+        return;
+      case 'voice':
+        setState(() => _panelOpen = false);
+        _toggleRecord();
+        return;
+      case 'mention':
+        _input.text += '@';
+        setState(() => _panelOpen = false);
+        return;
+      case 'emoji':
+        setState(() {
+          _emojiOpen = !_emojiOpen;
+          _panelOpen = false;
+        });
+        return;
+      case 'favorite':
+        setState(() => _panelOpen = false);
+        _snack('长按消息即可收藏');
+        return;
+      default:
+        setState(() => _panelOpen = false);
+        _snack('暂不支持该功能');
+    }
+  }
+
+  void _showCallMenu() {
+    final call = context.read<CallState>();
     showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            _attachAction(ctx, Icons.photo_camera_outlined, '拍照', () async {
-              final x = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 85);
-              if (x != null) _upload(x.path, x.name);
-            }),
-            _attachAction(ctx, Icons.photo_library_outlined, '相册', () async {
-              final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-              if (x != null) _upload(x.path, x.name);
-            }),
-            _attachAction(ctx, Icons.videocam_outlined, '视频', () async {
-              final x = await ImagePicker().pickVideo(source: ImageSource.gallery);
-              if (x != null) _upload(x.path, x.name);
-            }),
-            _attachAction(ctx, Icons.attach_file, '文件', () async {
-              final f = await FilePicker.pickFile();
-              if (f != null && f.path != null) _upload(f.path!, f.name);
-            }),
+            const ListTile(title: Text('发起通话', style: TextStyle(fontWeight: FontWeight.w600))),
+            ListTile(
+              leading: const Icon(Icons.call_outlined),
+              title: const Text('语音通话'),
+              onTap: () {
+                Navigator.pop(ctx);
+                if (call.busy) {
+                  _snack('当前正在通话中');
+                } else {
+                  call.startCall(widget.conv, 'audio');
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam_outlined),
+              title: const Text('视频通话'),
+              onTap: () {
+                Navigator.pop(ctx);
+                if (call.busy) {
+                  _snack('当前正在通话中');
+                } else {
+                  call.startCall(widget.conv, 'video');
+                }
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _attachAction(BuildContext sheetCtx, IconData icon, String label, Future<void> Function() run) {
-    return InkWell(
-      onTap: () {
-        Navigator.pop(sheetCtx);
-        run();
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+  void _showConvMenu() {
+    final app = context.read<AppState>();
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 28),
-            const SizedBox(height: 6),
-            Text(label, style: const TextStyle(fontSize: 12)),
+            ListTile(
+              leading: Icon(widget.conv.pinned ? Icons.push_pin : Icons.push_pin_outlined),
+              title: Text(widget.conv.pinned ? '取消置顶' : '置顶会话'),
+              onTap: () {
+                Navigator.pop(ctx);
+                app.togglePinned(widget.conv);
+              },
+            ),
+            ListTile(
+              leading: Icon(widget.conv.muted
+                  ? Icons.notifications_active_outlined
+                  : Icons.notifications_off_outlined),
+              title: Text(widget.conv.muted ? '开启提醒' : '消息免打扰'),
+              onTap: () {
+                Navigator.pop(ctx);
+                app.toggleMuted(widget.conv);
+              },
+            ),
           ],
         ),
       ),
@@ -313,7 +403,6 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final call = context.watch<CallState>();
     final list = app.messages.where((m) => m.convId == widget.conv.convId).toList();
     if (list.length != _lastCount) {
       _lastCount = list.length;
@@ -321,54 +410,10 @@ class _ChatPageState extends State<ChatPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            Avatar(name: widget.conv.title, url: widget.conv.peerAvatar, size: 34),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.conv.title,
-                      maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16)),
-                  Text(
-                    widget.conv.isGroup ? '群聊' : (app.connected ? '在线' : '连接中'),
-                    style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.normal),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (!widget.conv.isGroup) ...[
-            IconButton(
-              tooltip: '语音通话',
-              onPressed: call.busy ? null : () => call.startCall(widget.conv, 'audio'),
-              icon: const Icon(Icons.call_outlined),
-            ),
-            IconButton(
-              tooltip: '视频通话',
-              onPressed: call.busy ? null : () => call.startCall(widget.conv, 'video'),
-              icon: const Icon(Icons.videocam_outlined),
-            ),
-          ],
-          PopupMenuButton<String>(
-            onSelected: (v) {
-              if (v == 'pin') app.togglePinned(widget.conv);
-              if (v == 'mute') app.toggleMuted(widget.conv);
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(value: 'pin', child: Text(widget.conv.pinned ? '取消置顶' : '置顶会话')),
-              PopupMenuItem(value: 'mute', child: Text(widget.conv.muted ? '开启提醒' : '消息免打扰')),
-            ],
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF0F1F5),
       body: Column(
         children: [
+          _header(app),
           Expanded(
             child: list.isEmpty
                 ? const Center(child: Text('暂无消息', style: TextStyle(color: Colors.grey)))
@@ -380,7 +425,7 @@ class _ChatPageState extends State<ChatPage> {
                   ),
           ),
           if (_uploading) const LinearProgressIndicator(minHeight: 2),
-          _inputBar(),
+          _composer(),
         ],
       ),
     );
@@ -398,7 +443,7 @@ class _ChatPageState extends State<ChatPage> {
     }
     final mine = m.mine;
     final extra = m.extra is Map ? Map<String, dynamic>.from(m.extra) : <String, dynamic>{};
-    final bubbleColor = mine ? const Color(0xFF4F6EF7) : const Color(0xFFF1F3F6);
+    final bubbleColor = mine ? const Color(0xFF4F6EF7) : const Color(0xFFE9E9EE);
     final textColor = mine ? Colors.white : const Color(0xFF1F2329);
 
     Widget content;
@@ -481,10 +526,10 @@ class _ChatPageState extends State<ChatPage> {
       decoration: BoxDecoration(
         color: bubbleColor,
         borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(10),
-          topRight: const Radius.circular(10),
-          bottomLeft: Radius.circular(mine ? 10 : 2),
-          bottomRight: Radius.circular(mine ? 2 : 10),
+          topLeft: const Radius.circular(14),
+          topRight: const Radius.circular(14),
+          bottomLeft: Radius.circular(mine ? 14 : 4),
+          bottomRight: Radius.circular(mine ? 4 : 14),
         ),
       ),
       child: content,
@@ -539,59 +584,310 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _inputBar() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          border: Border(top: BorderSide(color: Colors.black.withValues(alpha: 0.06))),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            IconButton(
-              onPressed: _uploading ? null : _pickAttachment,
-              icon: const Icon(Icons.add_circle_outline),
-            ),
-            Expanded(
-              child: TextField(
-                controller: _input,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.newline,
-                decoration: InputDecoration(
-                  hintText: _recording ? '正在录音 $_recSec″，点击红色按钮结束' : '输入消息…',
-                  isDense: true,
-                  filled: true,
-                  fillColor: const Color(0xFFF1F3F6),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide.none,
+  Widget _header(AppState app) {
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.of(context).maybePop(),
+                icon: const Icon(Icons.arrow_back_ios_new, size: 19, color: Color(0xFF1B2333)),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _showConvMenu,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.conv.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1B2333))),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: app.connected ? const Color(0xFF25B389) : const Color(0xFFC3C9D6),
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            widget.conv.isGroup ? '群聊' : (app.connected ? '在线 · WiFi' : '连接中…'),
+                            style: TextStyle(
+                                fontSize: 11.5,
+                                color: app.connected ? const Color(0xFF25B389) : const Color(0xFF9AA5B8)),
+                          ),
+                          const Text(' ›', style: TextStyle(fontSize: 13, color: Color(0xFFAAB1BF))),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              tooltip: _recording ? '结束录音' : '语音消息',
-              onPressed: _uploading ? null : () => _toggleRecord(),
-              icon: Icon(_recording ? Icons.stop_circle : Icons.mic_none),
-              color: _recording ? Colors.red : null,
-            ),
-            IconButton.filled(
-              onPressed: _send,
-              icon: const Icon(Icons.send, size: 20),
-              style: IconButton.styleFrom(
-                backgroundColor: const Color(0xFF4F6EF7),
-                foregroundColor: Colors.white,
+              if (!widget.conv.isGroup)
+                IconButton(
+                  onPressed: _showCallMenu,
+                  icon: const Icon(Icons.call_outlined, color: Color(0xFF1B2333)),
+                ),
+              IconButton(
+                onPressed: _showConvMenu,
+                icon: const Icon(Icons.menu, color: Color(0xFF1B2333)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static const List<String> _emojis = [
+    '😀', '😄', '😂', '😊', '😍', '🤔', '😎', '👍', '👏', '🙏', '🎉',
+    '❤️', '🔥', '✅', '💡', '🚀', '📌', '😅', '🤝', '😴', '🙌'
+  ];
+
+  static const List<List<_PanelItem>> _panelPages = [
+    [
+      _PanelItem(Icons.call_outlined, '语音通话', 'call-audio'),
+      _PanelItem(Icons.videocam_outlined, '视频通话', 'call-video'),
+      _PanelItem(Icons.location_on_outlined, '位置', 'location'),
+      _PanelItem(Icons.folder_outlined, '文件', 'file'),
+      _PanelItem(Icons.card_giftcard, '红包', 'redpacket'),
+      _PanelItem(Icons.account_balance_wallet_outlined, '转账', 'transfer'),
+      _PanelItem(Icons.star_border, '收藏', 'favorite'),
+      _PanelItem(Icons.screen_share_outlined, '屏幕分享', 'screenshare'),
+    ],
+    [
+      _PanelItem(Icons.photo_library_outlined, '相册', 'image'),
+      _PanelItem(Icons.video_library_outlined, '视频', 'video'),
+      _PanelItem(Icons.mic_none, '语音消息', 'voice'),
+      _PanelItem(Icons.alternate_email, '提及', 'mention'),
+      _PanelItem(Icons.sentiment_satisfied_alt, '表情', 'emoji'),
+    ],
+  ];
+
+  Widget _composer() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_recording)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration:
+                    BoxDecoration(color: const Color(0xFFFFF1F1), borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.graphic_eq, size: 17, color: Color(0xFFE5484D)),
+                    const SizedBox(width: 8),
+                    Text('正在录音 $_recSec″',
+                        style: const TextStyle(fontSize: 13, color: Color(0xFFE5484D))),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: _stopRecord,
+                      child: const Text('发送',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFE5484D))),
+                    ),
+                  ],
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+              child: TextField(
+                controller: _input,
+                minLines: 1,
+                maxLines: 1,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _send(),
+                onTap: () => setState(() {
+                  _panelOpen = false;
+                  _emojiOpen = false;
+                }),
+                style: const TextStyle(fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: '发消息…',
+                  hintStyle: const TextStyle(fontSize: 15, color: Color(0xFFADB3C1)),
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(22),
+                      borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(22),
+                      borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(22),
+                      borderSide: const BorderSide(color: Color(0xFFD7DBE4))),
+                ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 0, 8, 6),
+              child: Row(
+                children: [
+                  _tool(Icons.mic_none, _uploading ? null : _toggleRecord, active: _recording),
+                  _tool(Icons.photo_library_outlined, _uploading ? null : () => _panelAction('image')),
+                  _tool(Icons.photo_camera_outlined, _uploading ? null : _pickCamera),
+                  _tool(Icons.auto_awesome, _toggleEmoji),
+                  _tool(Icons.sentiment_satisfied_alt, _toggleEmoji),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      _panelOpen = !_panelOpen;
+                      _emojiOpen = false;
+                    }),
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFF2F7CF6),
+                      ),
+                      child: const Icon(Icons.close, size: 19, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_emojiOpen) _emojiPanel(),
+            if (_panelOpen) _gridPanel(),
           ],
         ),
       ),
     );
   }
+
+  void _toggleEmoji() {
+    setState(() {
+      _emojiOpen = !_emojiOpen;
+      _panelOpen = false;
+    });
+  }
+
+  void _pickCamera() {
+    ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 85).then((x) {
+      if (x != null) _upload(x.path, x.name);
+    });
+  }
+
+  Widget _tool(IconData icon, VoidCallback? onTap, {bool active = false}) {
+    return Expanded(
+      child: IconButton(
+        onPressed: onTap,
+        iconSize: 26,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minHeight: 40),
+        icon: Icon(icon, color: active ? const Color(0xFFE5484D) : const Color(0xFF20242C)),
+      ),
+    );
+  }
+
+  Widget _emojiPanel() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF1F3F8),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        children: _emojis
+            .map((e) => GestureDetector(
+                  onTap: () => setState(() => _input.text += e),
+                  child: Text(e, style: const TextStyle(fontSize: 26)),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _gridPanel() {
+    final items = _panelPages[_panelPage];
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF1F3F8),
+      padding: const EdgeInsets.fromLTRB(10, 14, 10, 10),
+      child: Column(
+        children: [
+          GridView.count(
+            crossAxisCount: 4,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 8,
+            childAspectRatio: 0.94,
+            children: items
+                .map((it) => InkWell(
+                      onTap: () => _panelAction(it.key),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Column(
+                        children: [
+                          Container(
+                            height: 56,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(it.icon, size: 26, color: const Color(0xFF20242C)),
+                          ),
+                          const SizedBox(height: 7),
+                          Text(it.label,
+                              style: const TextStyle(fontSize: 12.5, color: Color(0xFF1F2329))),
+                        ],
+                      ),
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              _panelPages.length,
+              (i) => GestureDetector(
+                onTap: () => setState(() => _panelPage = i),
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: i == _panelPage ? const Color(0xFF3A3F4A) : const Color(0xFFC8CDD8),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PanelItem {
+  final IconData icon;
+  final String label;
+  final String key;
+  const _PanelItem(this.icon, this.label, this.key);
 }

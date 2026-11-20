@@ -30,8 +30,9 @@ cache:
   aof: true
 
 mq:
-  driver: nats                  # standard: kafka
-  stream: im-event
+  driver: jetstream            # NATS JetStream 事件总线
+  url: "nats://nats:4222"
+  stream: IM_EVENT
   replicas: 1
   retention: 7d
 
@@ -42,9 +43,13 @@ search:
   api_key: ""
 
 storage:
-  driver: localFS               # standard: rustfs（S3 兼容，替代 MinIO）
-  local_dir: "data/files"
-  bucket: ""
+  driver: rustfs               # 统一使用 RustFS（S3 兼容，替代 MinIO/本地磁盘）
+  local_dir: "data/files"      # 仅 rustfs 不可用时的降级目录
+  bucket: "nexim-files"
+  endpoint: "http://rustfs:9000"
+  access_key: "nexim"
+  secret_key: "nexim123456"
+  region: "us-east-1"          # 桶不存在时首次写入自动创建
 
 observability:
   metrics: victoriametrics      # standard: prometheus

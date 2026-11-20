@@ -37,6 +37,7 @@ const groupMembers = ref([])
 const groupTab = ref('info')
 
 const myUid = computed(() => auth.user?.uid)
+const isExternal = computed(() => auth.user?.isExternal === true)
 const friendIds = computed(() => new Set(friends.value.map(f => f.uid)))
 const isOwner = computed(() => groupDetail.value?.ownerUid && groupDetail.value.ownerUid === myUid.value)
 
@@ -62,15 +63,19 @@ const applyUsers = computed(() => new Map(users.value.map(u => [u.uid, u])))
 onMounted(loadAll)
 async function loadAll() {
   try {
-    const [f, d, g, a, u] = await Promise.all([
-      API.friends(), API.depts(), API.groups(), API.friendApplies(), API.users()
+    // 外部联系人默认无法查看组织架构，跳过分部与成员请求
+    const [f, a, g, u] = await Promise.all([
+      API.friends(), API.friendApplies(), API.groups(), API.users()
     ])
     friends.value = f.data || []
-    depts.value = d.data || []
-    groups.value = g.data || []
     applies.value = a.data || []
+    groups.value = g.data || []
     users.value = u.data || []
-    pickDept(0)
+    if (!isExternal.value) {
+      const d = await API.depts()
+      depts.value = d.data || []
+      await pickDept(0)
+    }
   } catch (e) { toast(e.message, 'err') }
 }
 async function refreshFriends() {
@@ -82,6 +87,7 @@ async function refreshFriends() {
 }
 
 async function pickDept(id) {
+  if (isExternal.value) return
   deptId.value = id
   try {
     const r = await API.deptMembers(id)
@@ -209,11 +215,11 @@ async function leaveGroup(g) {
     <header class="pane-head">
       <h2>通讯录</h2>
       <div class="tabs">
-        <button :class="{ on: tab === 'friends' }" @click="tab = 'friends'">好友 · {{ friends.length }}</button>
+        <button :class="{ on: tab === 'friends' }" @click="tab = 'friends'">外部联系人 · {{ friends.length }}</button>
         <button :class="{ on: tab === 'applies' }" @click="tab = 'applies'; refreshFriends()">
           新的朋友<span v-if="applies.length" class="count-dot">{{ applies.length }}</span>
         </button>
-        <button :class="{ on: tab === 'dept' }" @click="tab = 'dept'">组织架构</button>
+        <button :class="{ on: tab === 'dept' }" v-if="!isExternal" @click="tab = 'dept'">组织架构</button>
         <button :class="{ on: tab === 'groups' }" @click="tab = 'groups'">群聊 · {{ groups.length }}</button>
       </div>
       <input v-if="tab === 'friends'" v-model="keyword" class="pane-search" placeholder="搜索姓名 / 账号 / 部门">
@@ -226,8 +232,8 @@ async function leaveGroup(g) {
         <div v-for="u in filtered" :key="u.uid" class="row-card" @click="chatWith(u)">
           <Avatar :name="u.nickname || u.uid" :src="u.avatar" size="md" />
           <div class="row-main">
-            <div class="row-name">{{ u.nickname }} <span class="muted">@{{ u.username }}</span></div>
-            <div class="row-sub">{{ u.deptName || '未分配部门' }}<span v-if="u.title"> · {{ u.title }}</span></div>
+            <div class="row-name">{{ u.nickname }} <span class="muted">@{{ u.username }}</span><span v-if="u.external" class="tag ext">外部</span></div>
+            <div class="row-sub">{{ u.external ? '企业外部用户' : (u.deptName || '未分配部门') }}<span v-if="u.title"> · {{ u.title }}</span></div>
           </div>
           <span v-if="u.online" class="state ok">在线</span>
           <button class="btn sm">发消息</button>
@@ -285,8 +291,8 @@ async function leaveGroup(g) {
         <div v-for="u in addCandidates" :key="u.uid" class="member-row">
           <Avatar :name="u.nickname || u.uid" :src="u.avatar" size="sm" />
           <div style="flex:1">
-            <div>{{ u.nickname }} <span class="muted">@{{ u.username }}</span></div>
-            <div class="sr-desc">{{ u.deptName || '' }}</div>
+            <div>{{ u.nickname }} <span class="muted">@{{ u.username }}</span><span v-if="u.external" class="tag ext">外部</span></div>
+            <div class="sr-desc">{{ u.external ? '企业外部用户' : (u.deptName || '企业内部用户') }}</div>
           </div>
           <button class="btn sm primary" :disabled="applied.includes(u.uid)" @click="applyFriend(u)">
             {{ applied.includes(u.uid) ? '已申请' : '添加' }}

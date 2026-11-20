@@ -13,6 +13,8 @@ type User struct {
 	Signature    string `gorm:"size:255;default:''" json:"signature"`
 	Gender       int    `gorm:"default:0" json:"gender"` // 0未知 1男 2女
 	DeptID       int64  `gorm:"default:0" json:"deptId"`
+	// UserType 账号类型：0 企业内部员工 1 外部联系人（注册页注册默认外部联系人）
+	UserType     int    `gorm:"default:0" json:"userType"`
 	Phone        string `gorm:"size:32" json:"phone"`
 	Title        string `gorm:"size:64" json:"title"`
 	Status       int    `gorm:"default:1" json:"status"`

@@ -1,12 +1,14 @@
 <script setup>
 import { computed, ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import Avatar from '@h5/components/Avatar.vue'
+import LineIcon from '@h5/components/LineIcon.vue'
 import { useAuthStore } from '@h5/stores/auth'
 import { useChatStore } from '@h5/stores/chat'
 import { useCallStore } from '@h5/stores/call'
 import { API, fileUrl } from '@h5/api'
 import { toast } from '@h5/toast'
 import Modal from './Modal.vue'
+import Icon from './Icon.vue'
 import ForwardDialog from './ForwardDialog.vue'
 import { desk, bytes, fullTime, uploadFiles, sendScreenshot, togglePin, toggleMute, pinnedSet, mutedSet } from '../composables/useDesktop'
 
@@ -66,7 +68,7 @@ function scrollBottom(smooth = false) {
   })
 }
 watch(() => msgs.value.length, () => scrollBottom())
-watch(() => chat.currentConv, () => { showSearch.value = false; searchResults.value = []; scrollBottom() })
+watch(() => chat.currentConv, () => { exitVoiceMode(); showSearch.value = false; searchResults.value = []; scrollBottom() })
 
 function send() {
   const v = text.value.trim()
@@ -108,14 +110,58 @@ function openFile(m) {
   window.open(fileUrl(m.extra.fileId), '_blank')
 }
 
-// ===== 语音消息 =====
+// ===== 语音消息（内联按住说话） =====
+const voiceMode = ref(false)
+const willCancel = ref(false)
+let cancelRecording = false
+let startPending = false
+let voiceStartY = 0
+
+function toggleVoiceMode() {
+  if (voiceMode.value) { exitVoiceMode(); return }
+  showAttach.value = false
+  showEmoji.value = false
+  voiceMode.value = true
+}
+function exitVoiceMode() {
+  if (recording.value || startPending) cancelRecord()
+  willCancel.value = false
+  voiceMode.value = false
+}
+function startVoiceHold(e) {
+  if (e && e.currentTarget && e.pointerId != null) {
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch (_) {}
+  }
+  voiceStartY = e?.clientY ?? 0
+  willCancel.value = false
+  if (!recording.value) toggleRecord()
+}
+function onVoiceMove(e) {
+  if (!recording.value) return
+  willCancel.value = voiceStartY - e.clientY > 60
+}
+function endVoiceHold() {
+  if (!recording.value && !startPending) return
+  if (willCancel.value) cancelRecord()
+  else stopRecord()
+  willCancel.value = false
+}
 async function toggleRecord() {
   if (recording.value) { stopRecord(); return }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
     return toast('当前环境不支持录音', 'err')
   }
   try {
+    cancelRecording = false
+    startPending = true
     recStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    // 授权/设备就绪期间用户已松手或退出语音模式：放弃本次录音
+    if (!startPending || !voiceMode.value) {
+      startPending = false
+      releaseStream()
+      return
+    }
+    startPending = false
     const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
       : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
       : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : ''
@@ -134,9 +180,14 @@ async function toggleRecord() {
   }
 }
 function stopRecord() {
+  startPending = false
   if (recTimer) { clearInterval(recTimer); recTimer = null }
   recording.value = false
   try { if (recorder && recorder.state !== 'inactive') recorder.stop() } catch (_) {}
+}
+function cancelRecord() {
+  cancelRecording = true
+  stopRecord()
 }
 function releaseStream() {
   if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null }
@@ -148,6 +199,7 @@ async function finishRecord() {
   recChunks = []
   recorder = null
   releaseStream()
+  if (cancelRecording) { cancelRecording = false; return }
   if (blob.size < 800) return toast('录音时间太短', 'err')
   const ext = mime.indexOf('mp4') >= 0 ? 'm4a' : 'webm'
   const file = new File([blob], 'voice_' + Date.now() + '.' + ext, { type: mime })
@@ -309,9 +361,28 @@ function closePopovers(e) {
   if (!e.target.closest?.('.chat-tools')) showMore.value = false
 }
 
+function onVoiceKeyDown(e) {
+  if (!voiceMode.value) return
+  if (e.key === 'Escape') { e.preventDefault(); exitVoiceMode(); return }
+  if (e.code === 'Space' && !recording.value) {
+    const el = document.activeElement
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return
+    e.preventDefault()
+    startVoiceHold()
+  }
+}
+function onVoiceKeyUp(e) {
+  if (e.code === 'Space' && (recording.value || startPending || willCancel.value)) {
+    e.preventDefault()
+    endVoiceHold()
+  }
+}
+
 onMounted(() => {
   chat.setViewing(true)
   window.addEventListener('click', closePopovers)
+  window.addEventListener('keydown', onVoiceKeyDown)
+  window.addEventListener('keyup', onVoiceKeyUp)
   scrollBottom()
 })
 onBeforeUnmount(() => {
@@ -319,6 +390,8 @@ onBeforeUnmount(() => {
   stopRecord()
   releaseStream()
   window.removeEventListener('click', closePopovers)
+  window.removeEventListener('keydown', onVoiceKeyDown)
+  window.removeEventListener('keyup', onVoiceKeyUp)
 })
 </script>
 
@@ -333,22 +406,20 @@ onBeforeUnmount(() => {
     <template v-else>
       <header class="chat-head">
         <div class="chat-title">
-          <Avatar :name="title" :src="conv?.peerAvatar" size="md" />
-          <div>
-            <div class="ct-name">
-              {{ title }}
-              <span v-if="isGroup" class="tag">群聊</span>
-              <span v-if="muted.has(conv.convId)" class="tag off">免打扰</span>
-            </div>
-            <div class="ct-sub">{{ chat.connected ? '已连接 · 消息实时同步' : '连接中断，正在重连…' }}</div>
+          <div class="ct-name">
+            {{ title }}
+            <i class="online-dot" :class="{ off: !chat.connected }"></i>
+            <span v-if="isGroup" class="tag">群聊</span>
+            <span v-if="muted.has(conv.convId)" class="tag off">免打扰</span>
           </div>
         </div>
         <div class="chat-tools">
-          <button class="icon-btn" title="搜索聊天记录" @click="toggleSearch">⌕</button>
-          <button v-if="canCall" class="icon-btn" title="语音通话" @click="startCall('audio')">☎</button>
-          <button v-if="canCall" class="icon-btn" title="视频通话" @click="startCall('video')">▣</button>
-          <button v-if="isGroup" class="icon-btn" title="群成员" @click="openMembers">☰</button>
-          <button class="icon-btn" title="更多" @click="showMore = !showMore">⋯</button>
+          <button v-if="canCall" class="icon-btn" title="语音通话" @click="startCall('audio')"><Icon name="phone" :size="19" /></button>
+          <button v-if="canCall" class="icon-btn" title="视频通话" @click="startCall('video')"><Icon name="video" :size="20" /></button>
+          <button v-if="canCall" class="icon-btn" title="屏幕分享" @click="toast('暂不支持屏幕分享')"><Icon name="screen" :size="20" /></button>
+          <button v-if="isGroup" class="icon-btn" title="群成员" @click="openMembers"><Icon name="users" :size="20" /></button>
+          <button class="icon-btn" title="搜索聊天记录" @click="toggleSearch"><Icon name="search" :size="19" /></button>
+          <button class="icon-btn" title="更多" @click="showMore = !showMore"><Icon name="more" :size="20" /></button>
           <div v-if="showMore" class="popover" @click.stop>
             <button @click="doPin">{{ pinned.has(conv.convId) ? '取消置顶' : '置顶会话' }}</button>
             <button @click="doMute">{{ muted.has(conv.convId) ? '关闭免打扰' : '消息免打扰' }}</button>
@@ -400,7 +471,7 @@ onBeforeUnmount(() => {
                 </template>
                 <template v-else-if="m.type === 'file'">
                   <div class="file-msg" @click="openFile(m)">
-                    <span class="file-ico">📄</span>
+                    <span class="file-ico"><LineIcon name="file" :size="18" /></span>
                     <div>
                       <div class="file-name">{{ m.extra?.name || m.content || '文件' }}</div>
                       <div class="file-size">{{ bytes(m.extra?.size) }}</div>
@@ -433,23 +504,20 @@ onBeforeUnmount(() => {
 
       <footer class="composer">
         <div class="composer-tools">
-          <button class="icon-btn" title="表情" @click="showEmoji = !showEmoji; showAttach = false">☺</button>
-          <button class="icon-btn" title="附件" @click="showAttach = !showAttach; showEmoji = false">📎</button>
-          <button class="icon-btn" :class="{ recording }" :title="recording ? `结束录音 ${recSeconds}″` : '语音消息'" @click="toggleRecord">{{ recording ? '⏺' : '🎙' }}</button>
-          <button class="icon-btn" :disabled="!desk" title="截图并发送（Ctrl+Shift+A）" @click="sendScreenshot(chat)">✂</button>
+          <button class="tool-btn" title="表情" @click="showEmoji = !showEmoji"><Icon name="smile" :size="22" /></button>
+          <button class="tool-btn" :disabled="!desk" title="截图并发送（Ctrl+Shift+A）" @click="sendScreenshot(chat)"><Icon name="scissors" :size="22" /></button>
+          <button class="tool-btn" title="发送文件" @click="pick('file')"><Icon name="folder" :size="22" /></button>
+          <button class="tool-btn" title="发送图片" @click="pick('image')"><Icon name="image" :size="22" /></button>
+          <button class="tool-btn" title="发送视频" @click="pick('video')"><Icon name="video" :size="22" /></button>
+          <button class="tool-btn" :class="{ recording, on: voiceMode }" title="语音输入（按住 Space）" @click="toggleVoiceMode"><Icon name="mic" :size="22" /></button>
+          <button class="tool-btn" title="语音消息" @click="toggleVoiceMode"><Icon name="voice" :size="22" /></button>
+          <button class="tool-btn" title="提醒成员" @click="toggleMention"><Icon name="addUser" :size="22" /></button>
           <span class="sp"></span>
-          <span class="muted">{{ chat.connected ? 'Enter 发送 · Shift+Enter 换行' : '离线：消息将在重连后补发' }}</span>
+          <button class="tool-btn" title="搜索聊天记录" @click="toggleSearch"><Icon name="clock" :size="22" /></button>
         </div>
 
         <div v-if="showEmoji" class="emoji-panel">
           <button v-for="e in emojis" :key="e" @click="insertEmoji(e)">{{ e }}</button>
-        </div>
-        <div v-if="showAttach" class="attach-menu">
-          <button @click="pick('image')">图片</button>
-          <button @click="pick('video')">视频</button>
-          <button @click="pick('file')">文件</button>
-          <button @click="showAttach = false; toggleRecord()">语音消息</button>
-          <button @click="toggleMention">@ 提醒</button>
         </div>
         <div v-if="showMention" class="mention-panel">
           <div v-for="u in mentionList" :key="u.uid" class="mention-row" @click="mention(u)">
@@ -458,14 +526,31 @@ onBeforeUnmount(() => {
           <div v-if="!mentionList.length" class="empty-tip">暂无可提醒成员</div>
         </div>
 
-        <textarea
-          v-model="text" class="composer-input" rows="3"
-          placeholder="输入消息…（Enter 发送，Shift+Enter 换行，可直接拖入文件）"
-          @keydown="onKeydown"
-        ></textarea>
-        <div class="composer-foot">
-          <span class="muted">支持 100MB 以内图片 / 视频 / 文件</span>
-          <button class="btn primary" :disabled="!text.trim()" @click="send">发送</button>
+        <div v-if="recording" class="voice-hud" :class="{ cancel: willCancel }">
+          <div class="wave"><i v-for="n in 7" :key="n"></i></div>
+          <span class="voice-timer">{{ recSeconds }}″</span>
+          <span class="voice-tip">{{ willCancel ? '松开 取消' : '松开 发送 · 上滑 取消' }}</span>
+        </div>
+
+        <div class="composer-body">
+          <textarea
+            v-if="!voiceMode" v-model="text" class="composer-input" rows="4"
+            placeholder="输入消息…"
+            @keydown="onKeydown"
+          ></textarea>
+          <div
+            v-else class="voice-bar" :class="{ rec: recording, cancel: willCancel }"
+            @pointerdown.prevent="startVoiceHold" @pointermove="onVoiceMove"
+            @pointerup.prevent="endVoiceHold" @pointercancel="endVoiceHold"
+          >
+            <LineIcon name="mic" :size="18" />
+            <span>{{ recording ? (willCancel ? '松开 取消' : '松开 发送') : '按住 说话' }}</span>
+          </div>
+          <div class="composer-foot" v-if="!voiceMode">
+            <button class="send-btn" :disabled="!text.trim()" @click="send">
+              <span>发送</span><i></i><Icon name="chevronDown" :size="14" />
+            </button>
+          </div>
         </div>
         <input ref="fileInput" type="file" multiple hidden @change="onPick">
       </footer>

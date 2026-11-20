@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { API, fileUrl } from '@h5/api'
+import LineIcon from '@h5/components/LineIcon.vue'
 import { toast } from '@h5/toast'
 import { bytes, fullTime } from '../composables/useDesktop'
 
@@ -64,12 +65,10 @@ async function removeFile(f) {
 }
 function iconOf(f) {
   const m = String(f.mimeType || '')
-  if (m.startsWith('image/')) return '🖼'
-  if (m.startsWith('video/')) return '🎬'
-  if (m.startsWith('audio/')) return '🎵'
-  if (/pdf/.test(m)) return '📕'
-  if (/zip|rar|7z/.test(m)) return '🗜'
-  return '📄'
+  if (m.startsWith('image/')) return 'image'
+  if (m.startsWith('video/')) return 'video'
+  if (m.startsWith('audio/')) return 'mic'
+  return 'file'
 }
 </script>
 
@@ -92,7 +91,7 @@ function iconOf(f) {
         <thead><tr><th>文件</th><th>大小</th><th>来源会话</th><th>时间</th><th></th></tr></thead>
         <tbody>
           <tr v-for="f in list" :key="f.fileId">
-            <td><span class="file-ico">{{ iconOf(f) }}</span>{{ f.name }}</td>
+            <td><span class="file-ico"><LineIcon :name="iconOf(f)" :size="18" /></span>{{ f.name }}</td>
             <td>{{ bytes(f.size) }}</td>
             <td class="muted">{{ f.convId || '—' }}</td>
             <td class="muted">{{ fullTime(f.createdAt) }}</td>

@@ -7,6 +7,7 @@ import { API, fileUrl } from '../api'
 import { t } from '../i18n'
 import { toast } from '../toast'
 import Avatar from '../components/Avatar.vue'
+import LineIcon from '../components/LineIcon.vue'
 import ModalBox from '../components/ModalBox.vue'
 
 const route = useRoute()
@@ -21,9 +22,48 @@ const text = ref('')
 const showAttach = ref(false)
 const showEmoji = ref(false)
 const showMention = ref(false)
+const showCallMenu = ref(false)
+const panelPage = ref(0)
 const msgList = ref(null)
 const modal = ref(null)
 const emojis = ['😀','😄','😂','😊','😍','🤔','😎','👍','👏','🙏','🎉','❤️','🔥','✅','💡','🚀','📌','😅','🤝','😴','🙌']
+
+// 聊天工具栏：分页宫格（对齐设计图）
+const gridPages = [
+  [
+    { key: 'call-audio', label: '语音通话', icon: 'phone' },
+    { key: 'call-video', label: '视频通话', icon: 'video' },
+    { key: 'location', label: '位置', icon: 'location' },
+    { key: 'file', label: '文件', icon: 'folder' },
+    { key: 'redpacket', label: '红包', icon: 'redpacket' },
+    { key: 'transfer', label: '转账', icon: 'transfer' },
+    { key: 'favorite', label: '收藏', icon: 'star' },
+    { key: 'screenshare', label: '屏幕分享', icon: 'screenshare' }
+  ],
+  [
+    { key: 'image', label: '相册', icon: 'image' },
+    { key: 'video-file', label: '视频', icon: 'video' },
+    { key: 'voice', label: '语音消息', icon: 'mic' },
+    { key: 'mention', label: '提及', icon: 'at' },
+    { key: 'emoji', label: '表情', icon: 'smile' }
+  ]
+]
+const gridItems = computed(() => gridPages[panelPage.value])
+function gridAction(key) {
+  showAttach.value = false
+  switch (key) {
+    case 'call-audio': startCall('audio'); return
+    case 'call-video': startCall('video'); return
+    case 'file': attach('file'); return
+    case 'image': attach('image'); return
+    case 'video-file': attach('video'); return
+    case 'voice': toggleVoiceMode(); return
+    case 'mention': openMention(); return
+    case 'emoji': toggleEmoji(); return
+    case 'favorite': router.push('/favorites'); return
+    default: toast('暂不支持该功能', 'err')
+  }
+}
 
 // 附件上传
 const filePick = ref(null)
@@ -34,6 +74,7 @@ const uploading = ref(false)
 const recording = ref(false)
 const recSeconds = ref(0)
 let recorder = null
+let cancelRecording = false
 let recChunks = []
 let recStream = null
 let recTimer = null
@@ -63,6 +104,8 @@ let msgTimer = null
 let convTimer = null
 onMounted(async () => {
   chat.setViewing(true)
+  window.addEventListener('keydown', onRecKey)
+  window.addEventListener('keyup', onRecKeyUp)
   await chat.openConv(convId.value)
   scrollBottom()
   msgTimer = setInterval(async () => {
@@ -74,12 +117,15 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   chat.setViewing(false)
+  window.removeEventListener('keydown', onRecKey)
+  window.removeEventListener('keyup', onRecKeyUp)
   stopRecord()
   releaseStream()
   if (msgTimer) clearInterval(msgTimer)
   if (convTimer) clearInterval(convTimer)
 })
 watch(convId, async v => {
+  exitVoiceMode()
   if (!v || v === chat.currentConv) return
   await chat.openConv(v)
   nextTick(scrollBottom)
@@ -111,6 +157,10 @@ function send() {
   showEmoji.value = false; showMention.value = false
 }
 function addEmoji(e) { text.value += e }
+function toggleEmoji() {
+  showAttach.value = false
+  showEmoji.value = !showEmoji.value
+}
 
 async function openMention() {
   showMention.value = !showMention.value
@@ -128,11 +178,12 @@ function attach(kind) {
   if (kind === 'emoji') { showEmoji.value = !showEmoji.value; return }
   if (kind === 'at') { openMention(); return }
   if (kind === 'call-audio') { startCall('audio'); return }
-  if (kind === 'voice') { toggleRecord(); return }
   pickKind.value = kind
   const input = filePick.value
   if (!input) return
-  input.accept = kind === 'image' ? 'image/*' : kind === 'video' ? 'video/*' : '*/*'
+  input.accept = kind === 'image' || kind === 'camera' ? 'image/*' : kind === 'video' ? 'video/*' : '*/*'
+  if (kind === 'camera') input.setAttribute('capture', 'environment')
+  else input.removeAttribute('capture')
   input.value = ''
   input.click()
 }
@@ -165,7 +216,40 @@ function openFile(m) {
   window.open(fileUrl(m.extra.fileId), '_blank')
 }
 
-// ===== 语音消息 =====
+// ===== 语音消息（内联按住说话） =====
+const voiceMode = ref(false)
+const willCancel = ref(false)
+let startPending = false
+let voiceStartY = 0
+function toggleVoiceMode() {
+  if (voiceMode.value) { exitVoiceMode(); return }
+  showAttach.value = false
+  showEmoji.value = false
+  voiceMode.value = true
+}
+function exitVoiceMode() {
+  if (recording.value || startPending) cancelRecord()
+  willCancel.value = false
+  voiceMode.value = false
+}
+function startVoiceHold(e) {
+  if (e && e.currentTarget && e.pointerId != null) {
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch (_) {}
+  }
+  voiceStartY = e?.clientY ?? 0
+  willCancel.value = false
+  if (!recording.value) toggleRecord()
+}
+function onVoiceMove(e) {
+  if (!recording.value) return
+  willCancel.value = voiceStartY - e.clientY > 60
+}
+function endVoiceHold() {
+  if (!recording.value && !startPending) return
+  if (willCancel.value) cancelRecord()
+  else stopRecord()
+  willCancel.value = false
+}
 async function toggleRecord() {
   if (recording.value) { stopRecord(); return }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
@@ -173,7 +257,16 @@ async function toggleRecord() {
     return
   }
   try {
+    cancelRecording = false
+    startPending = true
     recStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    // 授权期间用户已松手或退出语音模式：放弃本次录音
+    if (!startPending || !voiceMode.value) {
+      startPending = false
+      releaseStream()
+      return
+    }
+    startPending = false
     const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
       : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
       : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : ''
@@ -193,9 +286,33 @@ async function toggleRecord() {
 }
 
 function stopRecord() {
+  startPending = false
   if (recTimer) { clearInterval(recTimer); recTimer = null }
   recording.value = false
   try { if (recorder && recorder.state !== 'inactive') recorder.stop() } catch (_) {}
+}
+
+function cancelRecord() {
+  cancelRecording = true
+  stopRecord()
+}
+
+function onRecKey(e) {
+  if (!voiceMode.value) return
+  if (e.key === 'Escape') {
+    if (recording.value) cancelRecord()
+    else voiceMode.value = false
+    return
+  }
+  if (e.code === 'Space' && !recording.value) {
+    const el = document.activeElement
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return
+    e.preventDefault()
+    startVoiceHold()
+  }
+}
+function onRecKeyUp(e) {
+  if (e.code === 'Space' && (recording.value || startPending || willCancel.value)) endVoiceHold()
 }
 
 function releaseStream() {
@@ -209,6 +326,7 @@ async function finishRecord() {
   recChunks = []
   recorder = null
   releaseStream()
+  if (cancelRecording) { cancelRecording = false; return }
   if (blob.size < 800) { toast('录音时间太短', 'err'); return }
   const ext = mime.indexOf('mp4') >= 0 ? 'm4a' : 'webm'
   const file = new File([blob], 'voice_' + Date.now() + '.' + ext, { type: mime })
@@ -353,15 +471,25 @@ function pickTarget(id) {
 </script>
 <template>
   <div class="chat-head">
-    <button class="icon-btn" @click="router.back()">‹</button>
-    <div>
+    <button class="ch-back" @click="router.back()"><LineIcon name="back" :size="24" :stroke="2.2" /></button>
+    <button class="ch-info" @click="showSettings = true">
       <div class="ch-name">{{ name }}</div>
-      <div class="ch-sub"><i class="dot"></i>{{ isGroup ? `${members.length || conv.memberCount || ''} 人群聊` : t('online') }}</div>
-    </div>
+      <div class="ch-sub">
+        <i class="dot"></i>{{ isGroup ? `${members.length || conv.memberCount || ''} 人群聊` : '在线 · WiFi' }}<span class="ch-arrow">›</span>
+      </div>
+    </button>
     <div class="sp"></div>
-    <button v-if="!isGroup" class="icon-btn" @click="startCall('audio')">📞</button>
-    <button v-if="!isGroup" class="icon-btn" @click="startCall('video')">🎥</button>
-    <button class="icon-btn" @click="showSettings = true">⋯</button>
+    <button v-if="!isGroup" class="ch-act" title="发起通话" @click="showCallMenu = true"><LineIcon name="phone" :size="23" /></button>
+    <button class="ch-act" title="会话设置" @click="showSettings = true"><LineIcon name="menu" :size="23" /></button>
+  </div>
+
+  <div v-if="showCallMenu" class="mask sheet-mask" @click.self="showCallMenu = false">
+    <div class="sheet">
+      <div class="sheet-title">发起通话</div>
+      <button class="sheet-item" @click="showCallMenu = false; startCall('audio')">语音通话</button>
+      <button class="sheet-item" @click="showCallMenu = false; startCall('video')">视频通话</button>
+      <button class="sheet-item cancel" @click="showCallMenu = false">{{ t('cancel') }}</button>
+    </div>
   </div>
 
   <div ref="msgList" class="chat-msgs">
@@ -384,14 +512,14 @@ function pickTarget(id) {
           </div>
           <div v-else-if="m.type === 'file'" class="bubble file">
             <a v-if="m.extra?.fileId" :href="fileUrl(m.extra.fileId)" target="_blank" class="file-link">
-              📄<div><div class="fname">{{ m.extra.name || m.content }}</div><div class="fsize">{{ fmtSize(m.extra.size) || '点击下载' }}</div></div>
+              <LineIcon name="file" :size="22" /><div><div class="fname">{{ m.extra.name || m.content }}</div><div class="fsize">{{ fmtSize(m.extra.size) || '点击下载' }}</div></div>
             </a>
-            <span v-else>📄<div><div class="fname">{{ m.content }}</div><div class="fsize">点击下载</div></div></span>
+            <span v-else><LineIcon name="file" :size="22" /><div><div class="fname">{{ m.content }}</div><div class="fsize">点击下载</div></div></span>
             <button class="media-more" @click.stop="openActions(m)">⋯</button>
           </div>
           <div v-else-if="m.type === 'voice'" class="bubble voice">
             <audio v-if="m.extra?.fileId" :src="fileUrl(m.extra.fileId)" controls preload="none"></audio>
-            <span v-else>🎙️ 语音 {{ m.extra?.duration ? m.extra.duration + '″' : '' }}</span>
+            <span v-else><LineIcon name="mic" :size="18" /> 语音 {{ m.extra?.duration ? m.extra.duration + '″' : '' }}</span>
             <button class="media-more" @click.stop="openActions(m)">⋯</button>
           </div>
           <div v-else class="bubble" @click="openActions(m)">{{ m.content }}</div>
@@ -415,21 +543,42 @@ function pickTarget(id) {
     <div v-if="showEmoji" class="emoji-panel">
       <button v-for="e in emojis" :key="e" @click="addEmoji(e)">{{ e }}</button>
     </div>
-    <div v-if="showAttach" class="attach-panel">
-      <button :disabled="uploading" @click="attach('image')"><span class="at-icon">🖼️</span>{{ uploading ? '上传中…' : t('image') }}</button>
-      <button :disabled="uploading" @click="attach('video')"><span class="at-icon">🎬</span>{{ t('video') }}</button>
-      <button :disabled="uploading" @click="attach('file')"><span class="at-icon">📎</span>{{ t('file') }}</button>
-      <button :class="{ recording }" @click="attach('voice')"><span class="at-icon">🎙️</span>{{ recording ? '结束录音' : '语音消息' }}</button>
-      <button @click="attach('call-audio')"><span class="at-icon">📞</span>语音通话</button>
-      <button @click="attach('emoji')"><span class="at-icon">😊</span>表情</button>
+    <div class="c-sheet">
+      <div v-if="recording || willCancel" class="voice-hud" :class="{ cancel: willCancel }">
+        <div class="wave"><i v-for="n in 7" :key="n"></i></div>
+        <span class="voice-timer">{{ recSeconds }}″</span>
+        <span class="voice-tip">{{ willCancel ? '松开 取消' : '松开 发送 · 上滑 取消' }}</span>
+      </div>
+      <div class="c-input-row">
+        <div
+          v-if="voiceMode" class="voice-bar" :class="{ rec: recording, cancel: willCancel }"
+          @pointerdown.prevent="startVoiceHold" @pointermove="onVoiceMove"
+          @pointerup.prevent="endVoiceHold" @pointercancel="endVoiceHold"
+        >
+          <LineIcon name="mic" :size="19" />
+          <span>{{ recording ? (willCancel ? '松开 取消' : '松开 发送') : '按住 说话' }}</span>
+        </div>
+        <input v-else v-model="text" :placeholder="t('inputMsg')" @keyup.enter="send">
+      </div>
+      <div class="c-tools">
+        <button class="c-tool" :class="{ recording }" title="语音" @click="toggleVoiceMode"><LineIcon name="mic" :size="26" /></button>
+        <button class="c-tool" :disabled="uploading" title="相册" @click="attach('image')"><LineIcon name="image" :size="26" /></button>
+        <button class="c-tool" :disabled="uploading" title="拍摄" @click="attach('camera')"><LineIcon name="camera" :size="26" /></button>
+        <button class="c-tool" title="贴纸" @click="toggleEmoji"><LineIcon name="sticker" :size="26" /></button>
+        <button class="c-tool" title="表情" @click="toggleEmoji"><LineIcon name="smile" :size="26" /></button>
+        <button class="c-close" :class="{ on: showAttach }" title="更多" @click="showEmoji = false; showAttach = !showAttach"><LineIcon name="close" :size="18" /></button>
+      </div>
     </div>
-    <div class="composer">
-      <button class="icon-btn" @click="showAttach = !showAttach">＋</button>
-      <button class="icon-btn" @click="showEmoji = !showEmoji">😊</button>
-      <button class="icon-btn" @click="openMention">@</button>
-      <input v-model="text" :placeholder="recording ? '正在录音，再次点击麦克风结束' : t('inputMsg')" @keyup.enter="send">
-      <button class="icon-btn" :class="{ recording }" title="语音消息" @click="toggleRecord">{{ recording ? '⏺' : '🎙️' }}</button>
-      <button class="send-btn" @click="send">➤</button>
+    <div v-if="showAttach" class="c-panel">
+      <div class="c-grid">
+        <button v-for="it in gridItems" :key="it.key" class="c-cell" @click="gridAction(it.key)">
+          <span class="c-tile"><LineIcon :name="it.icon" :size="26" /></span>
+          <span>{{ it.label }}</span>
+        </button>
+      </div>
+      <div class="c-dots">
+        <i v-for="(_, i) in gridPages" :key="i" :class="{ on: panelPage === i }" @click="panelPage = i"></i>
+      </div>
     </div>
   </div>
   <input ref="filePick" type="file" class="hidden-file" @change="onFilePick">
@@ -476,7 +625,7 @@ function pickTarget(id) {
     <div class="modal">
       <div class="mh">{{ t('searchInChat') }}</div>
       <div class="mb">
-        <div class="h5-search" style="margin-bottom:10px">🔍<input v-model="searchKeyword" :placeholder="t('searchInChat')" @keyup.enter="doSearch"></div>
+        <div class="h5-search" style="margin-bottom:10px"><LineIcon name="search" :size="16" /><input v-model="searchKeyword" :placeholder="t('searchInChat')" @keyup.enter="doSearch"></div>
         <div v-if="searching" class="loading">搜索中…</div>
         <button v-for="r in searchResults" :key="r.msgId" class="search-result" @click="gotoResult(r)">
           <div class="sr-top"><span>{{ r.fromName || r.fromUid }}</span><span class="sr-type">{{ r.typeLabel }}</span></div>

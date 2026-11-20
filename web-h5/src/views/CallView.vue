@@ -5,6 +5,7 @@ import { useChatStore } from '../stores/chat'
 import { useCallStore } from '../stores/call'
 import { useAuthStore } from '../stores/auth'
 import { toast } from '../toast'
+import LineIcon from '../components/LineIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -82,7 +83,7 @@ onUnmounted(() => {
 <template>
   <div class="vcall" :class="{ video: isVideo }">
     <div class="vc-head">
-      <span>{{ isVideo ? '🎬' : '📞' }} {{ name }}</span>
+      <span><LineIcon :name="isVideo ? 'video' : 'phone'" :size="18" /> {{ name }}</span>
       <span class="sp"></span>
       <button @click="call.hangup()">－</button>
     </div>
@@ -103,14 +104,14 @@ onUnmounted(() => {
     </div>
 
     <div class="vc-ctrl">
-      <button class="vc-btn" :class="{ off: call.muted }" @click="call.toggleMute()">{{ call.muted ? '🔇' : '🎤' }}</button>
-      <button v-if="isVideo" class="vc-btn" :class="{ off: !call.camOn }" @click="call.toggleCam()">{{ call.camOn ? '📹' : '📷' }}</button>
-      <button v-if="isVideo" class="vc-btn small" @click="call.switchCamera()">🔄</button>
-      <button class="vc-btn hang" @click="call.hangup()">📴</button>
+      <button class="vc-btn" :class="{ off: call.muted }" @click="call.toggleMute()"><LineIcon :name="call.muted ? 'micOff' : 'mic'" :size="22" /></button>
+      <button v-if="isVideo" class="vc-btn" :class="{ off: !call.camOn }" @click="call.toggleCam()"><LineIcon :name="call.camOn ? 'video' : 'videoOff'" :size="22" /></button>
+      <button v-if="isVideo" class="vc-btn small" @click="call.switchCamera()"><LineIcon name="switchCamera" :size="20" /></button>
+      <button class="vc-btn hang" @click="call.hangup()"><LineIcon name="phoneOff" :size="22" /></button>
     </div>
 
     <div class="vc-quality">
-      <span>🔒 {{ call.callType === 'video' ? '端到端加密媒体' : 'DTLS-SRTP' }}</span>
+      <span style="display:flex;align-items:center;gap:5px"><LineIcon name="lock" :size="13" /> {{ call.callType === 'video' ? '端到端加密媒体' : 'DTLS-SRTP' }}</span>
       <span>{{ call.state === 'active' ? 'P2P 已连接' : '信令已就绪' }}</span>
     </div>
   </div>

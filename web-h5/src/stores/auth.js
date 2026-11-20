@@ -27,7 +27,8 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = {
       uid: data.uid, username: data.username, nickname: data.nickname,
       avatar: data.avatar, signature: data.signature || '', gender: data.gender || 0,
-      phone: data.phone || '', title: data.title || '', roles: data.roles || []
+      phone: data.phone || '', title: data.title || '', roles: data.roles || [],
+      userType: data.userType || 0, isExternal: data.isExternal === true
     }
     writeAuth('h5_token', token.value)
     writeAuth('h5_refresh', refresh.value)

@@ -214,7 +214,22 @@ func (s *Store) finalizeSeed() error {
 	if err := s.ensureRoles(); err != nil {
 		return err
 	}
+	if err := s.ensureDefaultRoles(); err != nil {
+		return err
+	}
 	return s.fixDeptPaths()
+}
+
+// ensureDefaultRoles 未分配角色的存量用户兜底为普通用户（USER）
+func (s *Store) ensureDefaultRoles() error {
+	var userRole model.Role
+	if s.DB.Where("code = ?", "USER").First(&userRole).Error != nil {
+		return nil
+	}
+	return s.DB.Exec(`INSERT INTO sys_user_role (uid, role_id)
+		SELECT u.uid, ? FROM sys_user u
+		LEFT JOIN sys_user_role ur ON ur.uid = u.uid
+		WHERE u.status = 1 AND ur.role_id IS NULL`, userRole.ID).Error
 }
 
 // fixUserDeptRefs 修复历史种子中「按路径编号」而非真实部门 ID 的用户引用

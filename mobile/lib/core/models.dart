@@ -141,6 +141,7 @@ class Contact {
   final String avatar;
   final String deptName;
   final String title;
+  final bool external;
 
   Contact.fromJson(Map<String, dynamic> j)
       : uid = '${j['uid'] ?? j['friendUid'] ?? ''}',
@@ -148,7 +149,8 @@ class Contact {
         nickname = '${j['nickname'] ?? j['remark'] ?? j['uid'] ?? ''}',
         avatar = '${j['avatar'] ?? ''}',
         deptName = '${j['deptName'] ?? ''}',
-        title = '${j['title'] ?? ''}';
+        title = '${j['title'] ?? ''}',
+        external = j['external'] == true || (j['deptId'] as num?)?.toInt() == 0;
 }
 
 class GroupInfo {

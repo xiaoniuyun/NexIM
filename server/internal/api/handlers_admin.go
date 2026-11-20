@@ -19,8 +19,8 @@ func userQueryFrom(c *gin.Context) service.UserQuery {
 	size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
 	deptID, _ := strconv.ParseInt(c.Query("deptId"), 10, 64)
 	return service.UserQuery{
-		Keyword: c.Query("kw"), Status: c.Query("status"), DeptID: deptID,
-		IncludeSub: c.Query("includeSub") == "1", Page: page, Size: size,
+		Keyword: c.Query("kw"), Status: c.Query("status"), UserType: c.Query("userType"),
+		DeptID: deptID, IncludeSub: c.Query("includeSub") == "1", Page: page, Size: size,
 	}
 }
 
@@ -34,7 +34,7 @@ func (rt *Router) adminUsersExport(c *gin.Context) {
 	c.Status(http.StatusOK)
 	_, _ = c.Writer.Write([]byte("\xEF\xBB\xBF"))
 	w := csv.NewWriter(c.Writer)
-	_ = w.Write([]string{"账号", "昵称", "部门", "岗位", "手机号", "角色", "状态", "最后登录"})
+	_ = w.Write([]string{"账号", "昵称", "用户类型", "部门", "岗位", "手机号", "角色", "状态", "最后登录"})
 	for _, u := range rows {
 		state := "正常"
 		if u.Status != 1 {
@@ -44,7 +44,11 @@ func (rt *Router) adminUsersExport(c *gin.Context) {
 		if u.LastLoginAt > 0 {
 			last = strconv.FormatInt(u.LastLoginAt, 10)
 		}
-		_ = w.Write([]string{u.Username, u.Nickname, u.DeptName, u.Title, u.Phone,
+		utype := "内部员工"
+		if service.IsExternalUser(&u.User) {
+			utype = "外部联系人"
+		}
+		_ = w.Write([]string{u.Username, u.Nickname, utype, u.DeptName, u.Title, u.Phone,
 			strings.Join(u.RoleNames, " / "), state, last})
 	}
 	w.Flush()

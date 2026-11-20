@@ -57,6 +57,12 @@ func (m *MessageService) Send(fromUID, convID, convType, toID, msgType, content,
 	if toID == "" && convTypeCode(convType) == 1 {
 		toID = peerFromConvID(convID, fromUID)
 	}
+	// 单聊准入：企业内部用户之间可直接聊天；含企业外部用户（未分配部门）时需先互为好友
+	if convTypeCode(convType) == 1 && toID != "" && toID != fromUID {
+		if err := m.checkSingleChatAllowed(fromUID, toID); err != nil {
+			return nil, err
+		}
+	}
 
 	seq, err := m.nextSeq(convID)
 	if err != nil {
@@ -76,6 +82,31 @@ func (m *MessageService) Send(fromUID, convID, convType, toID, msgType, content,
 
 	m.upsertConversation(convID, convTypeCode(convType), fromUID, toID, msgID, content, seq, now)
 	return &msg, nil
+}
+
+// checkSingleChatAllowed 单聊准入校验：
+// 双方均为企业内部员工时可直接聊天；
+// 任一方为外部联系人时，双方必须已互为好友。
+func (m *MessageService) checkSingleChatAllowed(fromUID, toUID string) error {
+	var from, to model.User
+	if m.S.DB.Where("uid = ?", fromUID).First(&from).Error != nil {
+		return nil
+	}
+	if m.S.DB.Where("uid = ?", toUID).First(&to).Error != nil {
+		return nil
+	}
+	if !IsExternalUser(&from) && !IsExternalUser(&to) {
+		return nil
+	}
+	var cnt int64
+	m.S.DB.Model(&model.Friend{}).Where("uid = ? AND friend_uid = ? AND status = 1", fromUID, toUID).Count(&cnt)
+	if cnt > 0 {
+		return nil
+	}
+	if IsExternalUser(&to) {
+		return fmt.Errorf("对方为企业外部联系人，请先添加好友后再聊天")
+	}
+	return fmt.Errorf("你属于企业外部联系人，请先添加好友后再聊天")
 }
 
 func (m *MessageService) nextSeq(convID string) (int64, error) {

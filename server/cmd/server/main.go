@@ -45,6 +45,13 @@ func main() {
 	msgSvc := service.NewMessage(st)
 	contactSvc := service.NewContact(st)
 	groupSvc := service.NewGroup(st)
+
+	// 公司全员群：确保存在，并把现有启用用户全部纳入（新用户创建时再增量加入）
+	if grp, err := groupSvc.EnsureCompanyGroup(); err != nil {
+		log.Warn("ensure company group failed", zap.Error(err))
+	} else {
+		log.Info("company group ready", zap.String("group", grp.GroupID), zap.Int("members", grp.MemberCount))
+	}
 	fileDir := config.C.Storage.LocalDir
 	if fileDir == "" {
 		fileDir = "data/files"

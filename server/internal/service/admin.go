@@ -71,6 +71,23 @@ func (a *AdminService) CreateUser(username, password, nickname string, deptID in
 	return &u, nil
 }
 
+// EnsureDefaultRole 未分配任何角色的用户默认授予「普通用户」
+func (a *AdminService) EnsureDefaultRole(uid string) error {
+	if uid == "" {
+		return nil
+	}
+	var cnt int64
+	a.S.DB.Model(&model.UserRole{}).Where("uid = ?", uid).Count(&cnt)
+	if cnt > 0 {
+		return nil
+	}
+	var r model.Role
+	if a.S.DB.Where("code = ?", "USER").First(&r).Error != nil {
+		return nil
+	}
+	return a.S.DB.Create(&model.UserRole{UID: uid, RoleID: r.ID}).Error
+}
+
 func (a *AdminService) UpdateUser(id int64, updates map[string]interface{}) error {
 	if pwd, ok := updates["password"]; ok {
 		h, _ := bcrypt.GenerateFromPassword([]byte(fmt.Sprint(pwd)), bcrypt.DefaultCost)

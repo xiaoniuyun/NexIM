@@ -74,11 +74,17 @@ func (a *AuthService) Login(username, password, deviceID, platform string) (map[
 	}
 	a.S.DB.Model(&u).Update("last_login_at", now)
 
+	// 外部联系人角色：注册页注册的账号 user_type = 1；历史未分配部门的账号同样视为外部联系人
+	ext := IsExternalUser(&u)
+	if ext {
+		roles = append(roles, "external")
+	}
 	return map[string]interface{}{
 		"accessToken": access, "refreshToken": refresh,
 		"uid": u.UID, "username": u.Username, "nickname": u.Nickname,
 		"avatar": u.Avatar, "signature": u.Signature, "gender": u.Gender,
 		"phone": u.Phone, "title": u.Title, "deptId": u.DeptID,
+		"userType": u.UserType, "isExternal": ext,
 		"roles": roles, "permissions": e.Permissions, "dataScope": e.DataScope,
 	}, nil
 }
@@ -94,9 +100,10 @@ func (a *AuthService) Register(username, password, nickname string) (map[string]
 	}
 	h, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	now := model.Now()
+	// 注册页注册的账号一律为外部联系人（不归属部门，默认无法查看组织架构）
 	u := model.User{
 		UID: fmt.Sprintf("u_%d", now), Username: username, Nickname: nickname,
-		PasswordHash: string(h), Avatar: "#4f6ef7", Status: 1, CreatedAt: now, UpdatedAt: now,
+		PasswordHash: string(h), Avatar: "#4f6ef7", UserType: 1, Status: 1, CreatedAt: now, UpdatedAt: now,
 	}
 	if nickname == "" {
 		u.Nickname = username

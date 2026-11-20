@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount, reactive } from 'vue'
 import Avatar from '@h5/components/Avatar.vue'
+import Icon from './Icon.vue'
 import { useChatStore } from '@h5/stores/chat'
 import { API } from '@h5/api'
 import { toast } from '@h5/toast'
@@ -9,15 +10,12 @@ import { pinnedSet, mutedSet, togglePin, toggleMute, timeText } from '../composa
 const emit = defineEmits(['open', 'search'])
 const chat = useChatStore()
 const keyword = ref('')
-const filter = ref('all')
 const pinned = ref(pinnedSet())
 const muted = ref(mutedSet())
 const menu = reactive({ show: false, x: 0, y: 0, conv: null })
 
 const list = computed(() => {
   let arr = [...chat.convs]
-  if (filter.value === 'unread') arr = arr.filter(c => (c.unread || 0) > 0)
-  if (filter.value === 'group') arr = arr.filter(c => c.convType === 2)
   const kw = keyword.value.trim().toLowerCase()
   if (kw) {
     arr = arr.filter(c =>
@@ -94,17 +92,13 @@ onBeforeUnmount(() => window.removeEventListener('click', closeMenu))
 <template>
   <div class="conv-col">
     <header class="conv-head">
-      <div class="conv-title">
-        <h2>消息</h2>
-        <button class="icon-btn" title="全部已读" @click="readAll">✓</button>
-        <button class="icon-btn" title="搜索（Ctrl+K）" @click="emit('search')">⌕</button>
+      <div class="conv-search-wrap">
+        <Icon name="search" :size="16" />
+        <input v-model="keyword" placeholder="搜索">
       </div>
-      <input v-model="keyword" class="conv-search" placeholder="搜索会话 / 用户">
-      <div class="chips">
-        <button :class="{ on: filter === 'all' }" @click="filter = 'all'">全部</button>
-        <button :class="{ on: filter === 'unread' }" @click="filter = 'unread'">未读</button>
-        <button :class="{ on: filter === 'group' }" @click="filter = 'group'">群聊</button>
-      </div>
+      <button class="conv-plus" title="发起会话（Ctrl+K）" @click="emit('search')">
+        <Icon name="plus" :size="18" />
+      </button>
     </header>
 
     <div class="conv-list scroll">
@@ -127,8 +121,10 @@ onBeforeUnmount(() => window.removeEventListener('click', closeMenu))
             <span class="conv-time">{{ timeText(c.lastMsgAt) }}</span>
           </div>
           <div class="conv-row">
-            <span class="conv-msg">{{ muted.has(c.convId) ? '🔕 ' : '' }}{{ c.lastMsg || '暂无消息' }}</span>
-            <span v-if="c.convType === 2" class="tag">群</span>
+            <span class="conv-msg">
+              <Icon v-if="muted.has(c.convId)" name="bellOff" :size="13" class="mute-ic" />
+              {{ c.lastMsg || '暂无消息' }}
+            </span>
           </div>
         </div>
       </div>
@@ -139,6 +135,7 @@ onBeforeUnmount(() => window.removeEventListener('click', closeMenu))
       <button @click="doPin">{{ pinned.has(menu.conv.convId) ? '取消置顶' : '置顶会话' }}</button>
       <button @click="doMute">{{ muted.has(menu.conv.convId) ? '关闭免打扰' : '消息免打扰' }}</button>
       <button @click="doRead">标记为已读</button>
+      <button @click="readAll(); closeMenu()">全部标为已读</button>
       <button class="danger" @click="doDelete">删除会话</button>
     </div>
   </div>

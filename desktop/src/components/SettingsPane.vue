@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import Avatar from '@h5/components/Avatar.vue'
+import LineIcon from '@h5/components/LineIcon.vue'
 import { useAuthStore } from '@h5/stores/auth'
 import { useChatStore } from '@h5/stores/chat'
 import { API } from '@h5/api'
@@ -302,7 +303,7 @@ async function logout() {
     <Modal v-if="showDevices" title="已登录设备" width="460px" @close="showDevices = false">
       <div class="member-list">
         <div v-for="d in devices" :key="d.deviceId" class="member-row">
-          <span>🖥</span>
+          <span style="color:#4f6ef7"><LineIcon name="monitor" :size="18" /></span>
           <div style="flex:1">
             <div>{{ d.deviceName || d.deviceId }}</div>
             <div class="sr-desc">{{ d.platform || 'Web' }} · 最近活跃 {{ fullTime(d.lastActive) }}</div>

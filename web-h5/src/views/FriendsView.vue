@@ -29,24 +29,33 @@ function nameOf(a) { return a.fromName || a.nickname || ('用户 ' + a.fromUid) 
     <button class="icon-btn" @click="router.back()">‹</button>
     <div><div class="ch-name">{{ t('newFriends') }}</div><div class="ch-sub">{{ pending.length }} 条待处理</div></div>
   </div>
-  <div class="h5-body">
-    <div class="sec-title">待处理 · {{ pending.length }}</div>
-    <div v-for="a in pending" :key="a.id" class="qentry">
-      <Avatar :name="nameOf(a)" />
-      <div style="flex:1;min-width:0">
-        <div class="qe-t">{{ nameOf(a) }}</div>
-        <div class="qe-s" style="white-space:normal">{{ a.message || '申请添加你为好友' }}</div>
-        <div class="qe-s">{{ new Date(a.createdAt).toLocaleString() }}</div>
+  <div class="qq-body">
+    <div class="qq-sec">待处理 · {{ pending.length }}</div>
+    <div v-for="a in pending" :key="a.id" class="qq-row">
+      <span class="qq-ava"><Avatar :name="nameOf(a)" /></span>
+      <div class="qq-main">
+        <div class="qq-title"><span class="t">{{ nameOf(a) }}</span></div>
+        <div class="qq-sub">{{ a.message || '申请添加你为好友' }}</div>
       </div>
-      <button class="btn-sm" @click="handle(a, true)">通过</button>
-      <button class="btn-ghost" @click="handle(a, false)">拒绝</button>
+      <button class="qq-act ok" @click="handle(a, true)">通过</button>
+      <button class="qq-act" @click="handle(a, false)">拒绝</button>
     </div>
-    <div v-if="!pending.length" class="loading">暂无待处理申请</div>
-    <div class="sec-title">已处理</div>
-    <div v-for="a in done" :key="a.id" class="qentry">
-      <Avatar :name="nameOf(a)" />
-      <div style="flex:1"><div class="qe-t">{{ nameOf(a) }}</div><div class="qe-s">{{ a.message || '' }}</div></div>
-      <span class="state" :class="a.status === 1 ? 'ok' : 'off'">{{ a.status === 1 ? '已同意' : '已拒绝' }}</span>
+    <div v-if="!pending.length" class="qq-empty">暂无待处理申请</div>
+    <div class="qq-sec">已处理</div>
+    <div v-for="a in done" :key="a.id" class="qq-row">
+      <span class="qq-ava"><Avatar :name="nameOf(a)" /></span>
+      <div class="qq-main">
+        <div class="qq-title"><span class="t">{{ nameOf(a) }}</span></div>
+        <div class="qq-sub">{{ a.message || '' }}</div>
+      </div>
+      <span class="qq-state" :class="a.status === 1 ? 'ok' : ''">{{ a.status === 1 ? '已同意' : '已拒绝' }}</span>
     </div>
   </div>
 </template>
+<style scoped>
+.qq-sec { font-size: 12px; font-weight: 600; color: #8a95aa; padding: 10px 16px 6px; }
+.qq-act { flex: none; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 8px; background: #f3f5f9; color: #4a556b; }
+.qq-act.ok { background: var(--brand); color: #fff; }
+.qq-state { flex: none; font-size: 12px; color: #9aa5b8; }
+.qq-state.ok { color: #25b389; }
+</style>

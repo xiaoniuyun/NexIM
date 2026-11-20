@@ -6,6 +6,7 @@ import '../core/models.dart';
 import '../core/util.dart';
 import '../widgets/avatar.dart';
 import 'chat_page.dart';
+import 'me_page.dart';
 
 class ConversationsPage extends StatefulWidget {
   const ConversationsPage({super.key});
@@ -27,129 +28,245 @@ class _ConversationsPageState extends State<ConversationsPage> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
+      backgroundColor: const Color(0xFFEEF1F8),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
           children: [
-            const Text('NexIM', style: TextStyle(fontWeight: FontWeight.w700)),
-            const SizedBox(width: 8),
-            Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: app.connected ? const Color(0xFF3BA58C) : Colors.grey,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(app.connected ? '在线' : '连接中',
-                style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.normal)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: '全部已读',
-            onPressed: () => app.markAllRead(),
-            icon: const Icon(Icons.done_all),
-          ),
-          IconButton(
-            tooltip: '刷新',
-            onPressed: () => app.loadConvs(),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-            child: TextField(
-              onChanged: (v) => setState(() => _keyword = v.trim()),
-              decoration: InputDecoration(
-                hintText: '搜索会话',
-                isDense: true,
-                prefixIcon: const Icon(Icons.search, size: 20),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
+            _header(app),
+            _search(),
+            Expanded(
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                ),
+                child: RefreshIndicator(
+                  onRefresh: () => app.loadConvs(),
+                  child: list.isEmpty
+                      ? ListView(
+                          children: const [
+                            SizedBox(height: 120),
+                            Center(child: Text('暂无会话', style: TextStyle(color: Color(0xFF8A95AA)))),
+                          ],
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(top: 6, bottom: 18),
+                          itemCount: list.length,
+                          itemBuilder: (context, i) => _row(app, list[i]),
+                        ),
                 ),
               ),
             ),
-          ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _header(AppState app) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 14, 12, 10),
+      child: Row(
+        children: [
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => app.loadConvs(),
-              child: list.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 120),
-                        Center(child: Text('暂无会话', style: TextStyle(color: Colors.grey))),
-                      ],
-                    )
-                  : ListView.separated(
-                      itemCount: list.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, indent: 74),
-                      itemBuilder: (context, i) {
-                        final c = list[i];
-                        return ListTile(
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => ChatPage(conv: c)),
-                          ),
-                          onLongPress: () => _actions(c),
-                          leading: Badge(
-                            isLabelVisible: c.unread > 0,
-                            label: Text(c.unread > 99 ? '99+' : '${c.unread}'),
-                            child: Avatar(name: c.title, url: c.peerAvatar, size: 48),
-                          ),
-                          title: Row(
-                            children: [
-                              Flexible(
-                                child: Text(c.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MePage())),
+              child: Row(
+                children: [
+                  ClipOval(child: Avatar(name: app.myName, size: 46)),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(app.myName.isEmpty ? 'NexIM' : app.myName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: app.connected ? const Color(0xFF25B389) : const Color(0xFFC3C9D6),
                               ),
-                              if (c.isGroup) ...[
-                                const SizedBox(width: 6),
-                                const Icon(Icons.group, size: 13, color: Colors.grey),
-                              ],
-                              if (c.pinned) ...[
-                                const SizedBox(width: 4),
-                                const Icon(Icons.push_pin, size: 13, color: Colors.grey),
-                              ],
-                            ],
-                          ),
-                          subtitle: Text(c.lastMsg.isEmpty ? '暂无消息' : c.lastMsg,
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                          trailing: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(timeText(c.lastMsgAt),
-                                  style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                              const SizedBox(height: 6),
-                              if (c.muted)
-                                const Icon(Icons.notifications_off_outlined, size: 15, color: Colors.grey)
-                              else if (c.unread > 0)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE05B5B),
-                                    borderRadius: BorderRadius.circular(9),
-                                  ),
-                                  child: Text(c.unread > 99 ? '99+' : '${c.unread}',
-                                      style: const TextStyle(color: Colors.white, fontSize: 10)),
-                                )
-                              else
-                                const SizedBox(height: 15),
-                            ],
-                          ),
-                        );
-                      },
+                            ),
+                            const SizedBox(width: 5),
+                            Text(app.connected ? '在线 · 4G' : '连接中…',
+                                style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: app.connected ? const Color(0xFF25B389) : const Color(0xFF9AA5B8))),
+                          ],
+                        ),
+                      ],
                     ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: '更多',
+            onPressed: _more,
+            icon: const Icon(Icons.add, size: 30, color: Color(0xFF1B2333)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _search() {
+    return Container(
+      height: 46,
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [BoxShadow(color: Color(0x141A2850), blurRadius: 14, offset: Offset(0, 4))],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search, size: 20, color: Color(0xFFADB3C1)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              textAlign: TextAlign.center,
+              textAlignVertical: TextAlignVertical.center,
+              onChanged: (v) => setState(() => _keyword = v.trim()),
+              style: const TextStyle(fontSize: 15),
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                hintText: '搜索',
+                hintStyle: TextStyle(fontSize: 15, color: Color(0xFFADB3C1)),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _row(AppState app, Conv c) {
+    return InkWell(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatPage(conv: c))),
+      onLongPress: () => _actions(c),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 11, 18, 11),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 52,
+              height: 52,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipOval(child: Avatar(name: c.title, url: c.peerAvatar, size: 52)),
+                  if (c.unread > 0)
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: Container(
+                        constraints: const BoxConstraints(minWidth: 18),
+                        height: 18,
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(99),
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x2E141E3C), blurRadius: 5, offset: Offset(0, 1))
+                          ],
+                        ),
+                        child: Text(c.unread > 99 ? '99+' : '${c.unread}',
+                            style: const TextStyle(
+                                color: Color(0xFFF5405A), fontSize: 10.5, fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(c.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600)),
+                      ),
+                      if (c.pinned) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFFFF4E3), borderRadius: BorderRadius.circular(4)),
+                          child: const Text('置顶',
+                              style: TextStyle(
+                                  fontSize: 9.5, color: Color(0xFFE39A2D), fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    c.lastMsg.isEmpty ? '暂无消息' : (c.muted ? '[免打扰] ' : '') + c.lastMsg,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14.5, color: Color(0xFFA2A9B8)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(top: 3, bottom: 20),
+              child: Text(timeText(c.lastMsgAt),
+                  style: const TextStyle(fontSize: 12.5, color: Color(0xFFA2A9B8))),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _more() {
+    final app = context.read<AppState>();
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.done_all),
+              title: const Text('全部已读'),
+              onTap: () {
+                Navigator.pop(ctx);
+                app.markAllRead();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.refresh),
+              title: const Text('刷新会话'),
+              onTap: () {
+                Navigator.pop(ctx);
+                app.loadConvs();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

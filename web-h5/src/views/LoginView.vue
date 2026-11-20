@@ -60,6 +60,7 @@ async function doRegister() {
       <button class="btn-primary" type="submit" :disabled="loading">{{ loading ? '登录中...' : t('loginBtn') }}</button>
     </form>
     <form v-else @submit.prevent="doRegister">
+      <div class="auth-tip">注册账号默认为<b>外部联系人</b>，仅可添加外部联系人，无法查看企业组织架构。</div>
       <label>{{ t('account') }}</label>
       <input v-model="regUser" placeholder="至少3位">
       <label>{{ t('nickname') }}</label>
@@ -72,3 +73,7 @@ async function doRegister() {
     <div class="auth-demo">{{ t('demoAccount') }} <b>linxiao / 123456</b>（管理员）<br><b>zhangwei / 123456</b></div>
   </div>
 </template>
+<style scoped>
+.auth-tip { font-size: 12px; line-height: 1.5; color: #8a95aa; background: #f3f5f9; border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+.auth-tip b { color: var(--brand); }
+</style>
