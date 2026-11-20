@@ -26,7 +26,9 @@ func userQueryFrom(c *gin.Context) service.UserQuery {
 
 // GET /admin/users-export 导出筛选后的用户（CSV，带 BOM 便于 Excel 打开中文）
 func (rt *Router) adminUsersExport(c *gin.Context) {
-	rows := rt.Admin.ExportUsers(userQueryFrom(c))
+	q := userQueryFrom(c)
+	q.CallerUID = uid(c)
+	rows := rt.Admin.ExportUsers(q)
 	c.Header("Content-Type", "text/csv; charset=utf-8")
 	c.Header("Content-Disposition", `attachment; filename="nexim-users.csv"`)
 	c.Status(http.StatusOK)
@@ -62,6 +64,10 @@ func (rt *Router) adminSetUserRoles(c *gin.Context) {
 	}
 	if c.ShouldBindJSON(&req) != nil {
 		pkg.Fail(c, 400, 1001, "参数错误")
+		return
+	}
+	if rt.Admin.HasSuperRole(req.RoleIDs) && !rt.Admin.IsSuperAdmin(uid(c)) {
+		pkg.Fail(c, 403, 4003, "只有超级管理员可以授予超级管理员角色")
 		return
 	}
 	if err := rt.Admin.SetUserRoles(u.UID, req.RoleIDs); err != nil {
@@ -187,5 +193,52 @@ func (rt *Router) adminDeleteDept(c *gin.Context) {
 		return
 	}
 	rt.Admin.Audit(uid(c), "dept:delete", strconv.FormatInt(id, 10), "")
+	pkg.OK(c, nil)
+}
+
+// POST /admin/depts/:id/members 批量加入部门成员
+func (rt *Router) adminDeptAddMembers(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	var req struct {
+		UIDs []string `json:"uids" binding:"required"`
+	}
+	if c.ShouldBindJSON(&req) != nil {
+		pkg.Fail(c, 400, 1001, "参数错误")
+		return
+	}
+	n, err := rt.Admin.AddDeptMembers(id, req.UIDs)
+	if err != nil {
+		pkg.Fail(c, 400, 4000, err.Error())
+		return
+	}
+	rt.Admin.Audit(uid(c), "dept:member:add", strconv.FormatInt(id, 10), strconv.Itoa(n))
+	pkg.OK(c, gin.H{"added": n})
+}
+
+// DELETE /admin/depts/:id/members/:uid 移出部门成员
+func (rt *Router) adminDeptRemoveMember(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err := rt.Admin.RemoveDeptMember(id, c.Param("uid")); err != nil {
+		pkg.Fail(c, 400, 4000, err.Error())
+		return
+	}
+	rt.Admin.Audit(uid(c), "dept:member:remove", strconv.FormatInt(id, 10), c.Param("uid"))
+	pkg.OK(c, nil)
+}
+
+// GET /admin/roles/:id/members 角色成员列表
+func (rt *Router) adminRoleMembers(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	pkg.OK(c, rt.Admin.RoleMembers(id))
+}
+
+// DELETE /admin/roles/:id/members/:uid 解绑角色成员
+func (rt *Router) adminRoleRemoveMember(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err := rt.Admin.RemoveRoleMember(id, c.Param("uid")); err != nil {
+		pkg.Fail(c, 400, 4000, err.Error())
+		return
+	}
+	rt.Admin.Audit(uid(c), "rbac:role:revoke", strconv.FormatInt(id, 10), c.Param("uid"))
 	pkg.OK(c, nil)
 }

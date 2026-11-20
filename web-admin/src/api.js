@@ -52,6 +52,8 @@ export const API = {
   updateRole: (id, body) => api(`/admin/roles/${id}`, { method: 'PUT', body }),
   deleteRole: id => api(`/admin/roles/${id}`, { method: 'DELETE' }),
   grantRole: body => api('/admin/roles/grant', { method: 'POST', body }),
+  roleMembers: id => api(`/admin/roles/${id}/members`),
+  removeRoleMember: (id, uid) => api(`/admin/roles/${id}/members/${encodeURIComponent(uid)}`, { method: 'DELETE' }),
 
   // 组织架构
   depts: () => api('/depts'),
@@ -60,6 +62,8 @@ export const API = {
   createDept: body => api('/admin/depts', { method: 'POST', body }),
   updateDept: (id, body) => api(`/admin/depts/${id}`, { method: 'PUT', body }),
   deleteDept: id => api(`/admin/depts/${id}`, { method: 'DELETE' }),
+  addDeptMembers: (id, uids) => api(`/admin/depts/${id}/members`, { method: 'POST', body: { uids } }),
+  removeDeptMember: (id, uid) => api(`/admin/depts/${id}/members/${encodeURIComponent(uid)}`, { method: 'DELETE' }),
 
   groups: () => api('/groups'),
   adminGroups: (params = {}) => api('/admin/groups?' + qs(params)),

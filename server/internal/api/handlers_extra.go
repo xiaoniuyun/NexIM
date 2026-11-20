@@ -213,7 +213,9 @@ func (rt *Router) adminDashboard(c *gin.Context) {
 	pkg.OK(c, rt.Admin.Dashboard())
 }
 func (rt *Router) adminUsers(c *gin.Context) {
-	pkg.OK(c, rt.Admin.UserListEx(userQueryFrom(c)))
+	q := userQueryFrom(c)
+	q.CallerUID = uid(c)
+	pkg.OK(c, rt.Admin.UserListEx(q))
 }
 func (rt *Router) adminCreateUser(c *gin.Context) {
 	var req struct {
@@ -250,6 +252,11 @@ func (rt *Router) adminUpdateUser(c *gin.Context) {
 		pkg.Fail(c, 400, 1001, "参数错误")
 		return
 	}
+	// 角色分配是独立权限：仅有 user:edit 不得顺带改角色
+	if _, ok := req["roleIds"]; ok && !service.HasPerm(rt.S, uid(c), "rbac:role:grant") {
+		pkg.Fail(c, 403, 4003, "缺少角色分配权限")
+		return
+	}
 	if err := rt.Admin.UpdateUserSafe(id, req); err != nil {
 		pkg.Fail(c, 400, 4000, err.Error())
 		return
@@ -266,6 +273,10 @@ func (rt *Router) adminUpdateUser(c *gin.Context) {
 			}
 		}
 		if rt.S.DB.Where("id = ?", id).First(&u).Error == nil {
+			if rt.Admin.HasSuperRole(ids) && !rt.Admin.IsSuperAdmin(uid(c)) {
+				pkg.Fail(c, 403, 4003, "只有超级管理员可以授予超级管理员角色")
+				return
+			}
 			if err := rt.Admin.SetUserRoles(u.UID, ids); err != nil {
 				pkg.Fail(c, 400, 4000, err.Error())
 				return
@@ -304,6 +315,10 @@ func (rt *Router) adminGrantRole(c *gin.Context) {
 	}
 	if c.ShouldBindJSON(&req) != nil {
 		pkg.Fail(c, 400, 1001, "参数错误")
+		return
+	}
+	if rt.Admin.HasSuperRole([]int64{req.RoleID}) && !rt.Admin.IsSuperAdmin(uid(c)) {
+		pkg.Fail(c, 403, 4003, "只有超级管理员可以授予超级管理员角色")
 		return
 	}
 	if err := rt.Admin.GrantRoleEx(req.UID, req.RoleID); err != nil {

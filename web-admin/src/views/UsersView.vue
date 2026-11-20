@@ -2,7 +2,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { API } from '../api'
 import { toast } from '../toast'
+import { useAuthStore } from '../stores/auth'
 import ModalBox from '../components/ModalBox.vue'
+
+const auth = useAuthStore()
+const canGrant = computed(() => auth.can('rbac:role:grant'))
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 const data = ref({ list: [], total: 0 })
@@ -13,6 +17,7 @@ const page = ref(1)
 const size = 8
 const loading = ref(false)
 const modal = ref(null)
+const selected = ref(new Set())
 
 const params = () => ({
   kw: f.value.kw.trim(), status: f.value.status, deptId: f.value.dept,
@@ -25,9 +30,35 @@ async function load() {
     data.value = u.data || { list: [], total: 0 }
     depts.value = d.data || []
     roles.value = r.data || []
+    selected.value = new Set()
   } catch (e) { toast(e.message, 'err') } finally { loading.value = false }
 }
 onMounted(load)
+
+const allChecked = computed(() => data.value.list.length > 0 && data.value.list.every(u => selected.value.has(u.id)))
+function toggleOne(id) {
+  const s = new Set(selected.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  selected.value = s
+}
+function toggleAll() {
+  selected.value = allChecked.value ? new Set() : new Set(data.value.list.map(u => u.id))
+}
+function batchStatus(enable) {
+  const ids = Array.from(selected.value)
+  if (!ids.length) return
+  modal.value.open({
+    title: `批量${enable ? '启用' : '禁用'}账号`,
+    body: `<p>确认${enable ? '启用' : '禁用'}选中的 ${ids.length} 个账号？${enable ? '' : '禁用后其令牌立即失效。'}</p>`,
+    okText: enable ? '启用' : '禁用', danger: !enable,
+    onOk: async () => {
+      try {
+        await Promise.all(ids.map(id => enable ? API.enableUser(id) : API.deleteUser(id)))
+        toast(`已${enable ? '启用' : '禁用'} ${ids.length} 个账号`); load()
+      } catch (e) { toast(e.message, 'err'); return false }
+    }
+  })
+}
 
 const deptName = id => depts.value.find(x => x.id === id)?.name || (id ? '未分配（无效部门）' : '未分配')
 const roleText = u => (u.roleNames || []).length ? u.roleNames.join(' / ') : '普通成员'
@@ -47,19 +78,22 @@ const val = id => (document.getElementById(id)?.value || '').trim()
 function editUser(u) {
   modal.value.open({
     title: '编辑用户',
-    body: `<div class="field"><label>姓名 / 昵称</label><input id="eu-nick" value="${esc(u.nickname)}"></div>
+    body: `<div class="field"><label>登录账号</label><input id="eu-user" value="${esc(u.username)}" placeholder="登录账号（唯一）"></div>
+      <div class="field"><label>姓名 / 昵称</label><input id="eu-nick" value="${esc(u.nickname)}"></div>
       <div class="field"><label>岗位</label><input id="eu-title" value="${esc(u.title)}" placeholder="如 产品经理"></div>
       <div class="field"><label>手机号</label><input id="eu-phone" value="${esc(u.phone)}" placeholder="选填"></div>
       <div class="field"><label>所属部门</label><select id="eu-dept">${deptOptions(u.deptId)}</select></div>
-      <div class="field"><label>绑定角色（可多选，留空为普通成员）</label><div class="chk-grid">${roleChecks(u)}</div></div>`,
+      <div class="field"><label>绑定角色（可多选，留空为普通成员）</label>${canGrant.value ? `<div class="chk-grid">${roleChecks(u)}</div>` : `<div class="muted">无角色分配权限，当前角色：${esc(roleText(u))}</div>`}</div>`,
     okText: '保存',
     onOk: async () => {
       try {
+        const username = val('eu-user') || u.username
         await API.updateUser(u.id, {
-          nickname: val('eu-nick'), title: val('eu-title'), phone: val('eu-phone'),
-          deptId: +document.getElementById('eu-dept').value, roleIds: pickedRoles()
+          username, nickname: val('eu-nick'), title: val('eu-title'), phone: val('eu-phone'),
+          deptId: +document.getElementById('eu-dept').value,
+          roleIds: canGrant.value ? pickedRoles() : undefined
         })
-        toast('用户资料与角色已保存'); load()
+        toast('用户资料已保存'); load()
       } catch (e) { toast(e.message, 'err'); return false }
     }
   })
@@ -73,7 +107,7 @@ function addUser() {
       <div class="field"><label>岗位</label><input id="au-title" placeholder="选填"></div>
       <div class="field"><label>手机号</label><input id="au-phone" placeholder="选填"></div>
       <div class="field"><label>所属部门</label><select id="au-dept">${deptOptions(0)}</select></div>
-      <div class="field"><label>绑定角色</label><div class="chk-grid">${roleChecks()}</div></div>`,
+      <div class="field"><label>绑定角色</label>${canGrant.value ? `<div class="chk-grid">${roleChecks()}</div>` : '<div class="muted">无角色分配权限，创建后由具备权限的管理员绑定</div>'}</div>`,
     okText: '创建',
     onOk: async () => {
       const username = val('au-name'), password = val('au-pwd')
@@ -82,7 +116,8 @@ function addUser() {
         await API.createUser({
           username, password, nickname: val('au-nick') || username,
           title: val('au-title'), phone: val('au-phone'),
-          deptId: +document.getElementById('au-dept').value, roleIds: pickedRoles()
+          deptId: +document.getElementById('au-dept').value,
+          roleIds: canGrant.value ? pickedRoles() : undefined
         })
         toast('用户创建成功'); page.value = 1; load()
       } catch (e) { toast(e.message, 'err'); return false }
@@ -129,12 +164,18 @@ async function exportUsers() {
         <button class="btn" @click="query">查询</button>
         <button class="btn" @click="reset">重置</button>
         <button class="btn" @click="exportUsers">导出 CSV</button>
+        <template v-if="selected.size">
+          <span class="muted">已选 {{ selected.size }} 人</span>
+          <button class="btn sm" @click="batchStatus(true)">批量启用</button>
+          <button class="btn sm danger" @click="batchStatus(false)">批量禁用</button>
+        </template>
         <button class="btn primary" @click="addUser">＋ 新增用户</button>
       </div>
       <table class="tbl">
-        <thead><tr><th>用户</th><th>部门</th><th>岗位</th><th>角色</th><th>手机号</th><th>状态</th><th>最后登录</th><th>操作</th></tr></thead>
+        <thead><tr><th style="width:34px"><input type="checkbox" :checked="allChecked" @change="toggleAll"></th><th>用户</th><th>部门</th><th>岗位</th><th>角色</th><th>手机号</th><th>状态</th><th>最后登录</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="u in data.list" :key="u.id">
+            <td><input type="checkbox" :checked="selected.has(u.id)" @change="toggleOne(u.id)"></td>
             <td><div class="u-cell"><span class="avatar sm" :style="{ background: u.avatar || '#4f6ef7' }">{{ u.nickname?.slice(0,1) }}</span><div><b>{{ u.nickname }}</b><div class="sr-desc">@{{ u.username }}</div></div></div></td>
             <td>{{ u.deptName || deptName(u.deptId) }}</td>
             <td>{{ u.title || '—' }}</td>
@@ -148,7 +189,7 @@ async function exportUsers() {
               <button class="btn sm" :class="u.status === 1 ? 'danger' : 'ghost'" @click="toggleStatus(u)">{{ u.status === 1 ? '禁用' : '启用' }}</button>
             </td>
           </tr>
-          <tr v-if="!data.list.length"><td colspan="8" class="loading">{{ loading ? '加载中…' : '未找到匹配的用户' }}</td></tr>
+          <tr v-if="!data.list.length"><td colspan="9" class="loading">{{ loading ? '加载中…' : '未找到匹配的用户' }}</td></tr>
         </tbody>
       </table>
       <div class="pager">共 {{ data.total }} 条

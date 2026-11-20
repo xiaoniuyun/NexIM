@@ -194,3 +194,69 @@ func (a *AdminService) DeleteDept(id int64) error {
 	}
 	return a.S.DB.Delete(&model.Dept{}, id).Error
 }
+
+// AddDeptMembers 批量把用户加入部门
+func (a *AdminService) AddDeptMembers(deptID int64, uids []string) (int, error) {
+	var d model.Dept
+	if a.S.DB.Where("id = ?", deptID).First(&d).Error != nil {
+		return 0, fmt.Errorf("部门不存在")
+	}
+	clean := []string{}
+	seen := map[string]bool{}
+	for _, u := range uids {
+		u = strings.TrimSpace(u)
+		if u != "" && !seen[u] {
+			seen[u] = true
+			clean = append(clean, u)
+		}
+	}
+	if len(clean) == 0 {
+		return 0, fmt.Errorf("请选择要加入的成员")
+	}
+	res := a.S.DB.Model(&model.User{}).Where("uid IN ?", clean).Updates(map[string]interface{}{
+		"dept_id": deptID, "updated_at": model.Now(),
+	})
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return int(res.RowsAffected), nil
+}
+
+// RemoveDeptMember 将成员移出部门（置为未分配）
+func (a *AdminService) RemoveDeptMember(deptID int64, uid string) error {
+	res := a.S.DB.Model(&model.User{}).Where("uid = ? AND dept_id = ?", uid, deptID).Updates(map[string]interface{}{
+		"dept_id": 0, "updated_at": model.Now(),
+	})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("该用户不在本部门")
+	}
+	return nil
+}
+
+// DeptMembersFor 部门成员（含下级），按操作人数据范围过滤
+func (a *AdminService) DeptMembersFor(deptID int64, callerUID string) []ContactVO {
+	list := NewContact(a.S).DeptMembers(deptID)
+	f := a.ScopeFor(callerUID)
+	if f.Unlimited {
+		return list
+	}
+	out := []ContactVO{}
+	for _, m := range list {
+		if f.SelfOnly {
+			if m.UID == f.SelfUID {
+				out = append(out, m)
+			}
+			continue
+		}
+		for _, id := range f.DeptIDs {
+			if id == m.DeptID {
+				out = append(out, m)
+				break
+			}
+		}
+	}
+	return out
+}

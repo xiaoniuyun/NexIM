@@ -2,7 +2,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { API } from '../api'
 import { toast } from '../toast'
+import { useAuthStore } from '../stores/auth'
 import ModalBox from '../components/ModalBox.vue'
+
+const auth = useAuthStore()
+const canEdit = computed(() => auth.can('dept:edit'))
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 const tree = ref([])
@@ -60,9 +64,9 @@ function formBody() {
     status: +document.getElementById('df-status').value
   }
 }
-function addDept() {
+function addDept(parentId = 0) {
   modal.value.open({
-    title: '新增部门', body: deptForm(), okText: '创建',
+    title: parentId ? '新增子部门' : '新增部门', body: deptForm(), okText: '创建',
     onOk: async () => {
       const body = formBody()
       if (!body.name) { toast('请输入部门名称', 'err'); return false }
@@ -70,6 +74,7 @@ function addDept() {
       catch (e) { toast(e.message, 'err'); return false }
     }
   })
+  setTimeout(() => { const el = document.getElementById('df-parent'); if (el) el.value = String(parentId) }, 0)
 }
 function editDept(d) {
   const html = deptForm(d)
@@ -110,6 +115,35 @@ function moveMember(u) {
   })
   setTimeout(() => { const el = document.getElementById('mm-dept'); if (el) el.value = String(u.deptId || 0) }, 0)
 }
+function addMembers() {
+  if (!selected.value) { toast('请先在左侧选择部门', 'err'); return }
+  const candidates = allUsers.value.filter(u => u.deptId !== selected.value)
+  if (!candidates.length) { toast('暂无可加入的用户', 'err'); return }
+  const items = candidates.map(u => `<label class="role-chk"><input type="checkbox" class="pick-uid" value="${esc(u.uid)}"> ${esc(u.nickname)} <span class="muted">${esc(u.deptName || '未分配')}</span></label>`).join('')
+  modal.value.open({
+    title: `添加成员到「${selectedDept.value?.name || ''}」`,
+    body: `<div class="field"><label>选择用户（可多选，加入后将调整其所属部门）</label><div class="chk-grid">${items}</div></div>`,
+    okText: '加入部门',
+    onOk: async () => {
+      const uids = Array.from(document.querySelectorAll('.pick-uid:checked')).map(x => x.value)
+      if (!uids.length) { toast('请选择要加入的成员', 'err'); return false }
+      try {
+        const r = await API.addDeptMembers(selected.value, uids)
+        toast(`已加入 ${r.data?.added ?? uids.length} 名成员`); await load()
+      } catch (e) { toast(e.message, 'err'); return false }
+    }
+  })
+}
+function removeMember(u) {
+  modal.value.open({
+    title: '移出部门', danger: true, okText: '移出',
+    body: `<p>确认将「${esc(u.nickname)}」移出「${esc(u.deptName || '本部门')}」？移出后其部门变为未分配。</p>`,
+    onOk: async () => {
+      try { await API.removeDeptMember(u.deptId, u.uid); toast('已移出部门'); await load() }
+      catch (e) { toast(e.message, 'err'); return false }
+    }
+  })
+}
 const scopeHint = computed(() => selectedDept.value ? `dept.path LIKE '${selectedDept.value.path}%'` : '不过滤部门（全部数据）')
 </script>
 <template>
@@ -125,6 +159,7 @@ const scopeHint = computed(() => selectedDept.value ? `dept.path LIKE '${selecte
           📁 {{ d.name }} <span class="tr-c">{{ countOf(d.id) }}</span>
           <span v-if="d.status === 2" class="state off">停用</span>
           <span class="tree-ops">
+            <button class="btn sm" @click.stop="addDept(d.id)">＋子部门</button>
             <button class="btn sm" @click.stop="editDept(d)">编辑</button>
             <button class="btn sm danger" @click.stop="deleteDept(d)">删除</button>
           </span>
@@ -135,7 +170,10 @@ const scopeHint = computed(() => selectedDept.value ? `dept.path LIKE '${selecte
         <div class="card">
           <div class="card-head">
             <h3>{{ selectedDept ? selectedDept.name : '全部部门' }} · 成员</h3>
-            <span class="muted">直属 {{ selectedDept ? countOf(selectedDept.id) : allUsers.length }} 人 · 当前列表 {{ members.length }} 人（含下级）</span>
+            <div class="head-actions">
+              <span class="muted">直属 {{ selectedDept ? countOf(selectedDept.id) : allUsers.length }} 人 · 当前列表 {{ members.length }} 人（含下级）</span>
+              <button class="btn sm primary" :disabled="!selectedDept || !canEdit" @click="addMembers">＋ 添加成员</button>
+            </div>
           </div>
           <table class="tbl">
             <thead><tr><th>姓名</th><th>部门</th><th>岗位</th><th>手机号</th><th>状态</th><th>操作</th></tr></thead>
@@ -146,7 +184,10 @@ const scopeHint = computed(() => selectedDept.value ? `dept.path LIKE '${selecte
                 <td>{{ u.title || '—' }}</td>
                 <td><span class="code">{{ u.phone || '—' }}</span></td>
                 <td><span class="state" :class="u.online ? 'ok' : 'off'">{{ u.online ? '在线' : '离线' }}</span></td>
-                <td><button class="btn sm" @click="moveMember(u)">调整部门</button></td>
+                <td>
+                  <button class="btn sm" @click="moveMember(u)">调整部门</button>
+                  <button class="btn sm danger" :disabled="!canEdit" @click="removeMember(u)">移出</button>
+                </td>
               </tr>
               <tr v-if="!members.length"><td colspan="6" class="loading">该范围暂无成员</td></tr>
             </tbody>
@@ -169,4 +210,7 @@ const scopeHint = computed(() => selectedDept.value ? `dept.path LIKE '${selecte
 .tree-row.off { opacity: .6; }
 .tree-ops { margin-left: auto; display: none; gap: 4px; }
 .tree-row:hover .tree-ops { display: flex; }
+.head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.chk-grid { display: flex; flex-wrap: wrap; gap: 8px 14px; max-height: 260px; overflow: auto; }
+.chk-grid :deep(.role-chk) { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
 </style>

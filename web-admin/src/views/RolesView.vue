@@ -2,7 +2,11 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { API } from '../api'
 import { toast } from '../toast'
+import { useAuthStore } from '../stores/auth'
 import ModalBox from '../components/ModalBox.vue'
+
+const auth = useAuthStore()
+const canGrant = computed(() => auth.can('rbac:role:grant'))
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 const roles = ref([])
@@ -12,6 +16,8 @@ const selectedId = ref(null)
 const checked = ref(new Set())
 const modal = ref(null)
 const saving = ref(false)
+const showMembers = ref(false)
+const members = ref([])
 
 const selected = computed(() => roles.value.find(r => r.id === selectedId.value) || null)
 const locked = computed(() => selected.value?.code === 'SUPER_ADMIN')
@@ -32,6 +38,8 @@ onMounted(() => load(false))
 
 watch(selected, r => {
   checked.value = new Set(r ? (r.permissions || []) : [])
+  showMembers.value = false
+  members.value = []
 }, { immediate: true })
 
 const isAll = g => g.nodes.length > 0 && (locked.value || g.nodes.every(n => checked.value.has(n.code)))
@@ -125,6 +133,56 @@ function deleteRole() {
     }
   })
 }
+async function refreshMembers() {
+  if (!selected.value) return
+  try { const r = await API.roleMembers(selected.value.id); members.value = r.data || [] }
+  catch (e) { toast(e.message, 'err') }
+}
+async function toggleMembers() {
+  if (!selected.value) return
+  if (showMembers.value) { showMembers.value = false; return }
+  await refreshMembers()
+  showMembers.value = true
+}
+async function addMembers() {
+  if (!selected.value) return
+  try {
+    const [m, u] = await Promise.all([API.roleMembers(selected.value.id), API.users({ size: 1000 })])
+    members.value = m.data || []
+    showMembers.value = true
+    const bound = new Set(members.value.map(x => x.uid))
+    const list = (u.data?.list || []).filter(x => !bound.has(x.uid))
+    if (!list.length) { toast('暂无可添加的用户', 'err'); return }
+    const items = list.map(x => `<label class="role-chk"><input type="checkbox" class="pick-uid" value="${esc(x.uid)}"> ${esc(x.nickname)} <span class="muted">${esc(x.deptName || '未分配')}</span></label>`).join('')
+    modal.value.open({
+      title: `添加成员到「${selected.value.name}」`,
+      body: `<div class="field"><label>选择用户（可多选，追加绑定该角色，不影响其原有角色）</label><div class="chk-grid">${items}</div></div>`,
+      okText: '添加',
+      onOk: async () => {
+        const uids = Array.from(document.querySelectorAll('.pick-uid:checked')).map(x => x.value)
+        if (!uids.length) { toast('请选择用户', 'err'); return false }
+        try {
+          await Promise.all(uids.map(uid => API.grantRole({ uid, roleId: selected.value.id })))
+          toast(`已添加 ${uids.length} 名成员`)
+          await load(); await refreshMembers(); showMembers.value = true
+        } catch (e) { toast(e.message, 'err'); return false }
+      }
+    })
+  } catch (e) { toast(e.message, 'err') }
+}
+function unbindMember(u) {
+  if (!selected.value) return
+  modal.value.open({
+    title: '解绑角色成员', danger: true, okText: '解绑',
+    body: `<p>确认将「${esc(u.nickname)}」从角色「${esc(selected.value.name)}」解绑？解绑后其权限立即按剩余角色重算。</p>`,
+    onOk: async () => {
+      try {
+        await API.removeRoleMember(selected.value.id, u.uid)
+        toast('已解绑'); await load(); await refreshMembers(); showMembers.value = true
+      } catch (e) { toast(e.message, 'err'); return false }
+    }
+  })
+}
 </script>
 <template>
   <div>
@@ -143,12 +201,29 @@ function deleteRole() {
           <div class="card-head">
             <div><h3>{{ selected.name }} · 权限配置</h3><div class="sr-desc">{{ selected.code }} · 权限版本 {{ versionText }} · {{ selected.memberCount || 0 }} 名成员{{ locked ? ' · 内置角色只读' : '' }}</div></div>
             <div class="head-actions">
+              <button class="btn sm" @click="toggleMembers">成员 {{ selected.memberCount || 0 }}</button>
+              <button class="btn sm" :disabled="locked || !canGrant" @click="addMembers">＋ 添加成员</button>
               <button class="btn sm" :disabled="locked" @click="renameRole">重命名</button>
               <button class="btn sm" :disabled="locked" @click="deleteRole">删除</button>
               <button class="btn sm" :disabled="locked" @click="selectAll">全选</button>
               <button class="btn sm" :disabled="locked" @click="clearAll">清空</button>
               <button class="btn sm primary" :disabled="locked || saving" @click="save">{{ saving ? '保存中…' : '保存并生效' }}</button>
             </div>
+          </div>
+          <div v-if="showMembers" class="member-panel">
+            <table class="tbl">
+              <thead><tr><th>成员</th><th>部门</th><th>岗位</th><th>状态</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr v-for="u in members" :key="u.uid">
+                  <td><div class="u-cell"><span class="avatar sm" :style="{ background: u.avatar || '#4f6ef7' }">{{ u.nickname?.slice(0,1) }}</span>{{ u.nickname }} <span class="sr-desc">@{{ u.username }}</span></div></td>
+                  <td>{{ u.deptName || '未分配' }}</td>
+                  <td>{{ u.title || '—' }}</td>
+                  <td><span class="state" :class="u.status === 1 ? 'ok' : 'off'">{{ u.status === 1 ? '正常' : '禁用' }}</span></td>
+                  <td><button class="btn sm danger" :disabled="locked || !canGrant" @click="unbindMember(u)">解绑</button></td>
+                </tr>
+                <tr v-if="!members.length"><td colspan="5" class="loading">该角色暂无成员</td></tr>
+              </tbody>
+            </table>
           </div>
           <div v-for="g in catalog" :key="g.title" class="perm-group">
             <div class="pg-title">
@@ -178,4 +253,7 @@ function deleteRole() {
 </template>
 <style scoped>
 .head-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.member-panel { margin: 4px 0 14px; padding: 10px 12px; background: var(--bg); border-radius: 9px; }
+.chk-grid { display: flex; flex-wrap: wrap; gap: 8px 14px; max-height: 260px; overflow: auto; }
+.chk-grid :deep(.role-chk) { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
 </style>

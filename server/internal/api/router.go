@@ -20,19 +20,19 @@ import (
 )
 
 type Router struct {
-	S       *store.Store
-	C       *config.Config
-	Auth    *service.AuthService
-	Msg     *service.MessageService
-	Contact *service.ContactService
-	Group   *service.GroupService
-	File    *service.FileService
-	Admin   *service.AdminService
-	Call    *service.CallService
-	Fav     *service.FavoriteService
+	S         *store.Store
+	C         *config.Config
+	Auth      *service.AuthService
+	Msg       *service.MessageService
+	Contact   *service.ContactService
+	Group     *service.GroupService
+	File      *service.FileService
+	Admin     *service.AdminService
+	Call      *service.CallService
+	Fav       *service.FavoriteService
 	Blacklist *service.BlacklistService
-	Hub     *gateway.Hub
-	Up      websocket.Upgrader
+	Hub       *gateway.Hub
+	Up        websocket.Upgrader
 }
 
 func NewRouter(s *store.Store, c *config.Config, auth *service.AuthService, msg *service.MessageService,
@@ -159,9 +159,13 @@ func (rt *Router) Engine() *gin.Engine {
 				adm.PUT("/roles/:id", rt.requirePerm("rbac:role:edit"), rt.adminUpdateRole)
 				adm.DELETE("/roles/:id", rt.requirePerm("rbac:role:delete"), rt.adminDeleteRole)
 				adm.POST("/roles/grant", rt.requirePerm("rbac:role:grant"), rt.adminGrantRole)
+				adm.GET("/roles/:id/members", rt.requirePerm("rbac:role:list"), rt.adminRoleMembers)
+				adm.DELETE("/roles/:id/members/:uid", rt.requirePerm("rbac:role:grant"), rt.adminRoleRemoveMember)
 				adm.POST("/depts", rt.requirePerm("dept:create"), rt.adminCreateDept)
 				adm.PUT("/depts/:id", rt.requirePerm("dept:edit"), rt.adminUpdateDept)
 				adm.DELETE("/depts/:id", rt.requirePerm("dept:delete"), rt.adminDeleteDept)
+				adm.POST("/depts/:id/members", rt.requirePerm("dept:edit"), rt.adminDeptAddMembers)
+				adm.DELETE("/depts/:id/members/:uid", rt.requirePerm("dept:edit"), rt.adminDeptRemoveMember)
 				adm.GET("/audit", rt.requirePerm("log:list"), rt.adminAudit)
 				adm.GET("/audit/export", rt.requirePerm("log:export"), rt.adminAuditExport)
 				adm.GET("/audit/messages", rt.requirePerm("audit:message:list"), rt.adminMessageAudit)
@@ -556,7 +560,7 @@ func (rt *Router) deptTree(c *gin.Context) {
 }
 func (rt *Router) deptMembers(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	pkg.OK(c, rt.Contact.DeptMembers(id))
+	pkg.OK(c, rt.Admin.DeptMembersFor(id, uid(c)))
 }
 
 // ============ 会话/消息 ============

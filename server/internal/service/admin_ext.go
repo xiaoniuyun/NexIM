@@ -18,8 +18,71 @@ type UserQuery struct {
 	Status     string // "" 全部 | "1" 正常 | "0" 禁用
 	DeptID     int64
 	IncludeSub bool
+	UIDs       []string // 指定用户集合（角色成员查询）
+	CallerUID  string   // 当前操作人：用于数据范围过滤，空表示不限制
 	Page       int
 	Size       int
+}
+
+// ScopeFilter 当前管理员的数据可见范围（由角色的 dataScope 计算）
+type ScopeFilter struct {
+	Unlimited bool
+	SelfOnly  bool
+	SelfUID   string
+	DeptIDs   []int64
+}
+
+// ScopeFor 计算操作人的数据范围：超管 / all 不限制；self 仅本人；dept 本部门；deptAndSub 本部门及下级
+func (a *AdminService) ScopeFor(callerUID string) ScopeFilter {
+	if callerUID == "" {
+		return ScopeFilter{Unlimited: true}
+	}
+	e := ComputeEffect(a.S, callerUID)
+	for _, p := range e.Permissions {
+		if p == "*" {
+			return ScopeFilter{Unlimited: true}
+		}
+	}
+	var u model.User
+	if a.S.DB.Select("uid, dept_id").Where("uid = ?", callerUID).First(&u).Error != nil {
+		return ScopeFilter{Unlimited: true}
+	}
+	f := ScopeFilter{SelfUID: u.UID}
+	switch e.DataScope {
+	case "all":
+		f.Unlimited = true
+	case "self":
+		f.SelfOnly = true
+	default: // dept / deptAndSub / custom
+		if u.DeptID > 0 {
+			f.DeptIDs = append(f.DeptIDs, u.DeptID)
+			if e.DataScope != "dept" {
+				var d model.Dept
+				if a.S.DB.Where("id = ?", u.DeptID).First(&d).Error == nil && d.Path != "" {
+					var subs []model.Dept
+					a.S.DB.Where("path LIKE ? AND id <> ?", d.Path+"%", u.DeptID).Find(&subs)
+					for _, s := range subs {
+						f.DeptIDs = append(f.DeptIDs, s.ID)
+					}
+				}
+			}
+		}
+	}
+	return f
+}
+
+// apply 将数据范围条件注入查询
+func (f ScopeFilter) apply(db *gorm.DB) *gorm.DB {
+	if f.Unlimited {
+		return db
+	}
+	if f.SelfOnly {
+		return db.Where("uid = ?", f.SelfUID)
+	}
+	if len(f.DeptIDs) == 0 {
+		return db.Where("1 = 0")
+	}
+	return db.Where("dept_id IN ?", f.DeptIDs)
 }
 
 // UserVO 用户列表项：附带部门名称与真实角色绑定
@@ -89,6 +152,12 @@ func validPerms(perms []string) error {
 // userRows 按条件查询用户（含部门名、角色绑定）
 func (a *AdminService) userRows(q UserQuery) ([]UserVO, error) {
 	db := a.S.DB.Model(&model.User{})
+	if len(q.UIDs) > 0 {
+		db = db.Where("uid IN ?", q.UIDs)
+	}
+	if q.CallerUID != "" {
+		db = a.ScopeFor(q.CallerUID).apply(db)
+	}
 	if kw := strings.TrimSpace(q.Keyword); kw != "" {
 		like := "%" + kw + "%"
 		db = db.Where("(username LIKE ? OR nickname LIKE ? OR phone LIKE ? OR title LIKE ?)", like, like, like, like)
@@ -250,6 +319,19 @@ func (a *AdminService) SetUserRoles(uid string, roleIDs []int64) error {
 		a.S.DB.Model(&model.Role{}).Where("id IN ?", ids).Count(&cnt)
 		if int(cnt) != len(ids) {
 			return fmt.Errorf("角色不存在")
+		}
+	}
+	// 超级管理员是权限体系的最后保险：不允许把最后一名超管降级
+	var sr model.Role
+	if a.S.DB.Where("code = ?", "SUPER_ADMIN").First(&sr).Error == nil {
+		var wasSuper int64
+		a.S.DB.Model(&model.UserRole{}).Where("uid = ? AND role_id = ?", uid, sr.ID).Count(&wasSuper)
+		if wasSuper > 0 && !uniq[sr.ID] {
+			var others int64
+			a.S.DB.Model(&model.UserRole{}).Where("role_id = ? AND uid <> ?", sr.ID, uid).Count(&others)
+			if others == 0 {
+				return fmt.Errorf("至少需要保留一名超级管理员")
+			}
 		}
 	}
 	tx := a.S.DB.Begin()
@@ -417,9 +499,68 @@ func (a *AdminService) DeleteRole(id int64) error {
 	return nil
 }
 
+// IsSuperAdmin 是否拥有通配权限（内置超级管理员）
+func (a *AdminService) IsSuperAdmin(uid string) bool {
+	for _, p := range ComputeEffect(a.S, uid).Permissions {
+		if p == "*" {
+			return true
+		}
+	}
+	return false
+}
+
+// HasSuperRole 判断角色集合中是否包含内置超级管理员
+func (a *AdminService) HasSuperRole(roleIDs []int64) bool {
+	if len(roleIDs) == 0 {
+		return false
+	}
+	var cnt int64
+	a.S.DB.Model(&model.Role{}).Where("id IN ? AND code = ?", roleIDs, "SUPER_ADMIN").Count(&cnt)
+	return cnt > 0
+}
+
 // EffectFor 预览指定用户的最终权限（多角色并集）
 func (a *AdminService) EffectFor(uid string) Effect {
 	return ComputeEffect(a.S, uid)
+}
+
+// RoleMembers 角色下的成员列表（含部门与角色信息）
+func (a *AdminService) RoleMembers(roleID int64) []UserVO {
+	var uids []string
+	a.S.DB.Model(&model.UserRole{}).Where("role_id = ?", roleID).Pluck("uid", &uids)
+	if len(uids) == 0 {
+		return []UserVO{}
+	}
+	rows, err := a.userRows(UserQuery{UIDs: uids})
+	if err != nil {
+		return []UserVO{}
+	}
+	return rows
+}
+
+// RemoveRoleMember 解绑单个用户的角色；超级管理员需至少保留一名
+func (a *AdminService) RemoveRoleMember(roleID int64, uid string) error {
+	var r model.Role
+	if err := a.S.DB.Where("id = ?", roleID).First(&r).Error; err != nil {
+		return fmt.Errorf("角色不存在")
+	}
+	var cnt int64
+	a.S.DB.Model(&model.UserRole{}).Where("role_id = ? AND uid = ?", roleID, uid).Count(&cnt)
+	if cnt == 0 {
+		return fmt.Errorf("该用户未绑定此角色")
+	}
+	if strings.EqualFold(r.Code, "SUPER_ADMIN") {
+		var admins int64
+		a.S.DB.Model(&model.UserRole{}).Where("role_id = ?", roleID).Count(&admins)
+		if admins <= 1 {
+			return fmt.Errorf("至少需要保留一名超级管理员")
+		}
+	}
+	if err := a.S.DB.Where("role_id = ? AND uid = ?", roleID, uid).Delete(&model.UserRole{}).Error; err != nil {
+		return err
+	}
+	BumpPermVersion(a.S)
+	return nil
 }
 
 func toStringSlice(v interface{}) []string {
