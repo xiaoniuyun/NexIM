@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,10 +10,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:record/record.dart';
+import 'package:video_player/video_player.dart';
 
 import '../app/app_state.dart';
 import '../app/call_state.dart';
 import '../core/api.dart';
+import '../core/image_cache.dart';
 import '../core/models.dart';
 import '../core/util.dart';
 import '../widgets/avatar.dart';
@@ -39,7 +42,15 @@ class _ChatPageState extends State<ChatPage> {
   DateTime? _recStart;
   Timer? _recTimer;
   String? _playingId;
+  bool _isPlaying = false;
+  Duration _pos = Duration.zero;
+  Duration _total = Duration.zero;
+  bool _userSeeking = false;
+  bool _muted = false;
+  double _speed = 1.0;
   StreamSubscription? _playerSub;
+  StreamSubscription? _posSub;
+  StreamSubscription? _durSub;
   // 工具栏面板
   bool _panelOpen = false;
   int _panelPage = 0;
@@ -50,6 +61,14 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
     _app = context.read<AppState>();
     _app.setChatVisible(true);
+    _playerSub = _player.onPlayerComplete.listen((_) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _pos = Duration.zero;
+        });
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _app.openConv(widget.conv.convId);
     });
@@ -58,6 +77,8 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     _playerSub?.cancel();
+    _posSub?.cancel();
+    _durSub?.cancel();
     _recTimer?.cancel();
     _recorder.dispose();
     _player.dispose();
@@ -139,24 +160,47 @@ class _ChatPageState extends State<ChatPage> {
     final extra = m.extra is Map ? Map<String, dynamic>.from(m.extra) : <String, dynamic>{};
     final fid = '${extra['fileId'] ?? ''}';
     if (fid.isEmpty) return;
-    if (_playingId == m.msgId) {
-      await _player.stop();
-      if (mounted) setState(() => _playingId = null);
-      return;
-    }
     try {
+      if (_playingId == m.msgId) {
+        if (_isPlaying) {
+          await _player.pause();
+          if (mounted) setState(() => _isPlaying = false);
+        } else {
+          await _player.resume();
+          if (mounted) setState(() => _isPlaying = true);
+        }
+        return;
+      }
       await _player.stop();
-      await _player.play(UrlSource(Api.fileUrl(fid)));
-      _playerSub?.cancel();
-      _playerSub = _player.onPlayerComplete.listen((_) {
-        if (mounted) setState(() => _playingId = null);
+      _posSub?.cancel();
+      _durSub?.cancel();
+      _posSub = _player.onPositionChanged.listen((p) {
+        if (mounted && !_userSeeking) setState(() => _pos = p);
       });
-      if (mounted) setState(() => _playingId = m.msgId);
+      _durSub = _player.onDurationChanged.listen((d) {
+        if (mounted && d.inMilliseconds > 0) setState(() => _total = d);
+      });
+      _pos = Duration.zero;
+      _total = Duration(seconds: (extra['duration'] as num?)?.toInt() ?? 0);
+      await _player.play(UrlSource(Api.fileUrl(fid)));
+      await _player.setPlaybackRate(_speed);
+      if (mounted) {
+        setState(() {
+          _playingId = m.msgId;
+          _isPlaying = true;
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('播放失败：$e')));
       }
     }
+  }
+
+  String _fmtDur(Duration d) {
+    final mm = d.inMinutes;
+    final ss = d.inSeconds % 60;
+    return '$mm:${ss.toString().padLeft(2, '0')}';
   }
 
   Future<void> _send() async {
@@ -178,27 +222,74 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _upload(String path, String name) async {
     final app = context.read<AppState>();
     setState(() => _uploading = true);
+    String localPath = '';
     try {
+      // 复制一份到应用自有目录，发送后本地立即展示（系统缓存中的原文件随后清理）
+      try {
+        final dir = await _sentDir();
+        final copy = File('${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$name');
+        await File(path).copy(copy.path);
+        localPath = copy.path;
+      } catch (_) {}
       final rec = await Api.upload('/files/upload', path, fields: {'convId': widget.conv.convId});
       final mime = '${rec['mimeType'] ?? ''}';
-      final type = mime.startsWith('image/')
+      final fname = '${rec['name'] ?? name}';
+      // 上传接口可能只返回 application/octet-stream，按扩展名兜底判定媒体类型
+      final ext = fname.contains('.') ? fname.toLowerCase().split('.').last : '';
+      const imgExts = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'heic', 'heif'};
+      const videoExts = {'mp4', 'mov', 'm4v', 'webm', 'avi', 'mkv'};
+      final type = mime.startsWith('image/') || imgExts.contains(ext)
           ? 'image'
-          : mime.startsWith('video/')
-              ? 'video'
-              : 'file';
-      app.sendMedia(type, '${rec['name'] ?? name}', {
+          : (mime.startsWith('video/') || videoExts.contains(ext) ? 'video' : 'file');
+      app.sendMedia(type, fname, {
         'fileId': rec['fileId'],
-        'name': rec['name'] ?? name,
+        'name': fname,
         'size': rec['size'] ?? 0,
         'mime': mime,
-      });
+      }, localPath: localPath);
+      // 清理 image_picker 在选择/拍摄时写入缓存的临时文件
+      await _cleanPicked(path);
+      await _pruneSent();
     } catch (e) {
+      if (localPath.isNotEmpty) {
+        try { await File(localPath).delete(); } catch (_) {}
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('上传失败：$e')));
       }
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
+  }
+
+  Future<Directory> _sentDir() async {
+    final dir = Directory('${(await getTemporaryDirectory()).path}/nexim_sent');
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// 仅删除系统缓存目录下的临时文件（相册/相机选择产生），用户目录中的原文件不动
+  Future<void> _cleanPicked(String path) async {
+    try {
+      final cacheRoot = (await getTemporaryDirectory()).path;
+      if (!path.startsWith(cacheRoot) || path.contains('nexim_sent')) return;
+      final f = File(path);
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
+  }
+
+  /// 已发送图片的本地副本保留 7 天，避免缓存无限增长
+  Future<void> _pruneSent() async {
+    try {
+      final dir = await _sentDir();
+      final cutoff = DateTime.now().subtract(const Duration(days: 7));
+      await for (final e in dir.list()) {
+        if (e is! File) continue;
+        try {
+          if ((await e.stat()).modified.isBefore(cutoff)) await e.delete();
+        } catch (_) {}
+      }
+    } catch (_) {}
   }
 
   void _snack(String msg) {
@@ -431,6 +522,15 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  // 历史消息可能因上传类型缺失被记为 file，按扩展名回退为图片渲染
+  bool _isImageMsg(Msg m) {
+    if (m.type == 'image') return true;
+    if (m.type != 'file') return false;
+    final ex = m.extra is Map ? Map<String, dynamic>.from(m.extra) : const <String, dynamic>{};
+    final n = '${ex['name'] ?? m.content}'.toLowerCase();
+    return RegExp(r'\.(png|jpe?g|gif|webp|bmp|heic|heif)$').hasMatch(n);
+  }
+
   Widget _messageTile(AppState app, Msg m) {
     if (m.type == 'system') {
       return Padding(
@@ -438,6 +538,31 @@ class _ChatPageState extends State<ChatPage> {
         child: Center(
           child: Text(m.content.isEmpty ? '系统消息' : m.content,
               style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        ),
+      );
+    }
+    if (m.type == 'call') {
+      final ex = m.extra is Map ? Map<String, dynamic>.from(m.extra) : const <String, dynamic>{};
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE9E9EE),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(ex['callType'] == 'video' ? Icons.videocam_outlined : Icons.call_outlined,
+                    size: 14, color: Colors.grey),
+                const SizedBox(width: 5),
+                Text(m.content.isEmpty ? '通话已结束' : m.content,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+          ),
         ),
       );
     }
@@ -449,30 +574,55 @@ class _ChatPageState extends State<ChatPage> {
     Widget content;
     if (m.status == 2) {
       content = Text('[消息已撤回]', style: TextStyle(fontSize: 12, color: mine ? Colors.white70 : Colors.grey));
-    } else if (m.type == 'image') {
+    } else if (_isImageMsg(m)) {
       final fid = '${extra['fileId'] ?? ''}';
+      final localPath = '${extra['localPath'] ?? ''}';
+      const placeholder = Padding(
+        padding: EdgeInsets.all(8),
+        child: Text('[图片加载失败]', style: TextStyle(color: Colors.grey, fontSize: 12)),
+      );
+      Widget netImage() => CachedNetworkImage(
+            imageUrl: Api.fileUrl(fid),
+            cacheKey: 'file_$fid',
+            cacheManager: AppImages.cache,
+            width: 190,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => const SizedBox(
+              width: 190,
+              height: 130,
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+            errorWidget: (_, __, ___) => placeholder,
+          );
       content = fid.isEmpty
           ? Text('[图片]', style: TextStyle(color: textColor))
-          : ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                Api.fileUrl(fid),
-                width: 190,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Text('[图片加载失败]', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                ),
+          : GestureDetector(
+              onTap: () => _openImage(Api.fileUrl(fid), localPath, 'file_$fid'),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                // 自己刚发出的图片直接用本地副本显示，避免再下载一次
+                child: (localPath.isNotEmpty && File(localPath).existsSync())
+                    ? Image.file(
+                        File(localPath),
+                        width: 190,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => netImage(),
+                      )
+                    : netImage(),
               ),
             );
     } else if (m.type == 'video') {
-      content = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.play_circle_fill, color: mine ? Colors.white : const Color(0xFF4F6EF7), size: 30),
-          const SizedBox(width: 8),
-          Text('视频 ${extra['name'] ?? ''}', style: TextStyle(color: textColor, fontSize: 13)),
-        ],
+      final fid = '${extra['fileId'] ?? ''}';
+      content = InkWell(
+        onTap: fid.isEmpty ? null : () => _openVideo(Api.fileUrl(fid), '${extra['name'] ?? '视频'}'),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.play_circle_fill, color: mine ? Colors.white : const Color(0xFF4F6EF7), size: 30),
+            const SizedBox(width: 8),
+            Text('视频 ${extra['name'] ?? ''}', style: TextStyle(color: textColor, fontSize: 13)),
+          ],
+        ),
       );
     } else if (m.type == 'file') {
       content = Row(
@@ -502,17 +652,94 @@ class _ChatPageState extends State<ChatPage> {
     } else if (m.type == 'voice') {
       final dur = (extra['duration'] as num?)?.toInt() ?? 0;
       final fid = '${extra['fileId'] ?? ''}';
-      final playing = _playingId == m.msgId;
-      content = InkWell(
-        onTap: fid.isEmpty ? null : () => _togglePlay(m),
+      final current = _playingId == m.msgId;
+      final playing = current && _isPlaying;
+      final total = current && _total.inMilliseconds > 0 ? _total : Duration(seconds: dur);
+      final pos = current ? _pos : Duration.zero;
+      final maxMs = total.inMilliseconds > 0 ? total.inMilliseconds : 1000;
+      final w = (MediaQuery.of(context).size.width * 0.58).clamp(200.0, 260.0).toDouble();
+      const ink = Color(0xFF20242C);
+      // 与 H5 一致的播放条：播放/暂停、0:00、可拖动进度、喇叭、更多
+      content = Container(
+        width: w,
+        padding: const EdgeInsets.fromLTRB(6, 1, 2, 1),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(9)),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(playing ? Icons.pause_circle_filled : Icons.play_circle_fill, color: textColor, size: 28),
-            const SizedBox(width: 6),
-            Text(dur > 0 ? '$dur″' : '语音', style: TextStyle(color: textColor, fontSize: 14)),
-            const SizedBox(width: 8),
-            Icon(Icons.graphic_eq, color: textColor, size: 18),
+            InkWell(
+              onTap: fid.isEmpty ? null : () => _togglePlay(m),
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    size: 22, color: ink),
+              ),
+            ),
+            SizedBox(
+              width: 36,
+              child: Text(_fmtDur(pos),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12.5, color: ink)),
+            ),
+            Expanded(
+              child: SizedBox(
+                height: 30,
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 2,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 3.5),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 9),
+                    activeTrackColor: const Color(0xFF3C4048),
+                    inactiveTrackColor: const Color(0xFFDADDE3),
+                    thumbColor: const Color(0xFF3C4048),
+                    disabledActiveTrackColor: const Color(0xFFDADDE3),
+                    disabledInactiveTrackColor: const Color(0xFFDADDE3),
+                    disabledThumbColor: const Color(0xFFDADDE3),
+                  ),
+                  child: Slider(
+                    value: pos.inMilliseconds.clamp(0, maxMs).toDouble(),
+                    max: maxMs.toDouble(),
+                    onChangeStart: current ? (_) => _userSeeking = true : null,
+                    onChanged: current
+                        ? (v) => setState(() => _pos = Duration(milliseconds: v.round()))
+                        : null,
+                    onChangeEnd: current
+                        ? (v) {
+                            _userSeeking = false;
+                            _player.seek(Duration(milliseconds: v.round()));
+                          }
+                        : null,
+                  ),
+                ),
+              ),
+            ),
+            InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () async {
+                _muted = !_muted;
+                await _player.setVolume(_muted ? 0 : 1);
+                if (mounted) setState(() {});
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(_muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                    size: 17, color: const Color(0xFF3C4048)),
+              ),
+            ),
+            PopupMenuButton<double>(
+              padding: EdgeInsets.zero,
+              iconSize: 18,
+              icon: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF3C4048)),
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 1.0, child: Text('1.0x')),
+                PopupMenuItem(value: 1.5, child: Text('1.5x')),
+                PopupMenuItem(value: 2.0, child: Text('2.0x')),
+              ],
+              onSelected: (s) async {
+                setState(() => _speed = s);
+                await _player.setPlaybackRate(s);
+              },
+            ),
           ],
         ),
       );
@@ -578,10 +805,23 @@ class _ChatPageState extends State<ChatPage> {
               ],
             ),
           ),
-          if (mine) const SizedBox(width: 4),
+          if (mine) ...[
+            const SizedBox(width: 8),
+            Avatar(name: app.myName, url: '${app.user?['avatar'] ?? ''}', size: 34),
+          ],
         ],
       ),
     );
+  }
+
+  void _openImage(String url, [String localPath = '', String cacheKey = '']) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => _ImageViewerPage(url: url, localPath: localPath, cacheKey: cacheKey),
+    ));
+  }
+
+  void _openVideo(String url, String title) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => _VideoPlayerPage(url: url, title: title)));
   }
 
   Widget _header(AppState app) {
@@ -655,25 +895,24 @@ class _ChatPageState extends State<ChatPage> {
     '❤️', '🔥', '✅', '💡', '🚀', '📌', '😅', '🤝', '😴', '🙌'
   ];
 
-  static const List<List<_PanelItem>> _panelPages = [
-    [
-      _PanelItem(Icons.call_outlined, '语音通话', 'call-audio'),
-      _PanelItem(Icons.videocam_outlined, '视频通话', 'call-video'),
-      _PanelItem(Icons.location_on_outlined, '位置', 'location'),
-      _PanelItem(Icons.folder_outlined, '文件', 'file'),
-      _PanelItem(Icons.card_giftcard, '红包', 'redpacket'),
-      _PanelItem(Icons.account_balance_wallet_outlined, '转账', 'transfer'),
-      _PanelItem(Icons.star_border, '收藏', 'favorite'),
-      _PanelItem(Icons.screen_share_outlined, '屏幕分享', 'screenshare'),
-    ],
-    [
-      _PanelItem(Icons.photo_library_outlined, '相册', 'image'),
-      _PanelItem(Icons.video_library_outlined, '视频', 'video'),
-      _PanelItem(Icons.mic_none, '语音消息', 'voice'),
-      _PanelItem(Icons.alternate_email, '提及', 'mention'),
-      _PanelItem(Icons.sentiment_satisfied_alt, '表情', 'emoji'),
-    ],
-  ];
+  List<List<_PanelItem>> get _panelPages => [
+        [
+          // 群聊不支持 1 对 1 通话，直接隐藏入口
+          if (!widget.conv.isGroup) ...[
+            const _PanelItem(Icons.call_outlined, '语音通话', 'call-audio'),
+            const _PanelItem(Icons.videocam_outlined, '视频通话', 'call-video'),
+          ],
+          const _PanelItem(Icons.folder_outlined, '文件', 'file'),
+          const _PanelItem(Icons.star_border, '收藏', 'favorite'),
+          const _PanelItem(Icons.photo_library_outlined, '相册', 'image'),
+          const _PanelItem(Icons.video_library_outlined, '视频', 'video'),
+        ],
+        [
+          const _PanelItem(Icons.mic_none, '语音消息', 'voice'),
+          const _PanelItem(Icons.alternate_email, '提及', 'mention'),
+          const _PanelItem(Icons.sentiment_satisfied_alt, '表情', 'emoji'),
+        ],
+      ];
 
   Widget _composer() {
     return Container(
@@ -713,34 +952,61 @@ class _ChatPageState extends State<ChatPage> {
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-              child: TextField(
-                controller: _input,
-                minLines: 1,
-                maxLines: 1,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _send(),
-                onTap: () => setState(() {
-                  _panelOpen = false;
-                  _emojiOpen = false;
-                }),
-                style: const TextStyle(fontSize: 15),
-                decoration: InputDecoration(
-                  hintText: '发消息…',
-                  hintStyle: const TextStyle(fontSize: 15, color: Color(0xFFADB3C1)),
-                  isDense: true,
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(22),
-                      borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(22),
-                      borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(22),
-                      borderSide: const BorderSide(color: Color(0xFFD7DBE4))),
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _input,
+                      minLines: 1,
+                      maxLines: 1,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _send(),
+                      onTap: () => setState(() {
+                        _panelOpen = false;
+                        _emojiOpen = false;
+                      }),
+                      style: const TextStyle(fontSize: 15),
+                      decoration: InputDecoration(
+                        hintText: '发消息…',
+                        hintStyle: const TextStyle(fontSize: 15, color: Color(0xFFADB3C1)),
+                        isDense: true,
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(22),
+                            borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(22),
+                            borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(22),
+                            borderSide: const BorderSide(color: Color(0xFFD7DBE4))),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // 发送按钮：随输入内容启用/禁用
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _input,
+                    builder: (_, v, __) {
+                      final on = v.text.trim().isNotEmpty;
+                      return GestureDetector(
+                        onTap: on ? _send : null,
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: on ? const Color(0xFF2F7CF6) : const Color(0xFFC9D3E3),
+                          ),
+                          child: const Icon(Icons.send_rounded, size: 18, color: Colors.white),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -759,13 +1025,16 @@ class _ChatPageState extends State<ChatPage> {
                       _emojiOpen = false;
                     }),
                     child: Container(
-                      width: 38,
-                      height: 38,
+                      width: 26,
+                      height: 26,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF2F7CF6),
+                        color: Colors.white,
+                        border: Border.all(color: const Color(0xFF1A1A1A), width: 1.2),
                       ),
-                      child: const Icon(Icons.close, size: 19, color: Colors.white),
+                      // 默认显示 +，展开面板后变为 ×；与左侧工具图标同尺寸
+                      child: Icon(_panelOpen ? Icons.close : Icons.add,
+                          size: 16, color: const Color(0xFF1A1A1A)),
                     ),
                   ),
                 ],
@@ -890,4 +1159,176 @@ class _PanelItem {
   final String label;
   final String key;
   const _PanelItem(this.icon, this.label, this.key);
+}
+
+/// 图片全屏查看：双击/双指缩放，点击返回
+class _ImageViewerPage extends StatefulWidget {
+  final String url;
+  final String localPath;
+  final String cacheKey;
+  const _ImageViewerPage({required this.url, this.localPath = '', this.cacheKey = ''});
+
+  @override
+  State<_ImageViewerPage> createState() => _ImageViewerPageState();
+}
+
+class _ImageViewerPageState extends State<_ImageViewerPage> {
+  Widget _net() {
+    final key = widget.cacheKey.isEmpty ? widget.url : widget.cacheKey;
+    return CachedNetworkImage(
+      imageUrl: widget.url,
+      cacheKey: key,
+      cacheManager: AppImages.cache,
+      fit: BoxFit.contain,
+      placeholder: (_, __) => const Center(child: CircularProgressIndicator(color: Colors.white70)),
+      errorWidget: (_, __, ___) => const Center(
+        child: Text('图片加载失败', style: TextStyle(color: Colors.white70, fontSize: 14)),
+      ),
+    );
+  }
+
+  Widget _image() {
+    if (widget.localPath.isNotEmpty && File(widget.localPath).existsSync()) {
+      return Image.file(
+        File(widget.localPath),
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => _net(),
+      );
+    }
+    return _net();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      extendBodyBehindAppBar: true,
+      body: InteractiveViewer(
+        minScale: 1,
+        maxScale: 4,
+        child: _image(),
+      ),
+    );
+  }
+}
+
+/// 视频播放：点击画面播放/暂停，底部可拖动进度
+class _VideoPlayerPage extends StatefulWidget {
+  final String url;
+  final String title;
+  const _VideoPlayerPage({required this.url, required this.title});
+
+  @override
+  State<_VideoPlayerPage> createState() => _VideoPlayerPageState();
+}
+
+class _VideoPlayerPageState extends State<_VideoPlayerPage> {
+  VideoPlayerController? _controller;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller = controller;
+    controller.addListener(_onTick);
+    try {
+      await controller.initialize();
+      await controller.setLooping(false);
+      await controller.play();
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  void _onTick() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _controller?.removeListener(_onTick);
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  String _fmt(Duration d) {
+    final m = d.inMinutes.toString().padLeft(2, '0');
+    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    final ready = controller != null && controller.value.isInitialized;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(widget.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white, fontSize: 15)),
+      ),
+      extendBodyBehindAppBar: true,
+      body: _failed
+          ? const Center(child: Text('视频加载失败', style: TextStyle(color: Colors.white70, fontSize: 14)))
+          : Center(
+              child: !ready
+                  ? const CircularProgressIndicator(color: Colors.white70)
+                  : GestureDetector(
+                      onTap: () {
+                        if (controller.value.isPlaying) {
+                          controller.pause();
+                        } else {
+                          controller.play();
+                        }
+                        setState(() {});
+                      },
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          AspectRatio(
+                            aspectRatio: controller.value.aspectRatio <= 0 ? 16 / 9 : controller.value.aspectRatio,
+                            child: VideoPlayer(controller),
+                          ),
+                          if (!controller.value.isPlaying)
+                            const Icon(Icons.play_circle_fill, color: Colors.white70, size: 64),
+                        ],
+                      ),
+                    ),
+            ),
+      bottomNavigationBar: ready
+          ? SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                child: Row(
+                  children: [
+                    Text(_fmt(controller.value.position),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    Expanded(
+                      child: VideoProgressIndicator(controller, allowScrubbing: true, padding: const EdgeInsets.symmetric(horizontal: 10)),
+                    ),
+                    Text(_fmt(controller.value.duration),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  ],
+                ),
+              ),
+            )
+          : null,
+    );
+  }
 }

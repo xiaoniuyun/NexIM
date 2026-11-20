@@ -76,7 +76,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MePage())),
               child: Row(
                 children: [
-                  ClipOval(child: Avatar(name: app.myName, size: 46)),
+                  ClipOval(child: Avatar(name: app.myName, url: '${app.user?['avatar'] ?? ''}', size: 46)),
                   const SizedBox(width: 11),
                   Expanded(
                     child: Column(

@@ -47,7 +47,7 @@ export const useChatStore = defineStore('chat', () => {
     try { return JSON.parse(v) } catch (_) { return null }
   }
 
-  const TYPE_MAP = { 1: 'text', 2: 'image', 3: 'system', 4: 'voice', 5: 'file', 6: 'video' }
+  const TYPE_MAP = { 1: 'text', 2: 'image', 3: 'system', 4: 'voice', 5: 'file', 6: 'video', 7: 'call' }
   function normType(v) {
     return typeof v === 'number' ? (TYPE_MAP[v] || 'text') : (v || 'text')
   }

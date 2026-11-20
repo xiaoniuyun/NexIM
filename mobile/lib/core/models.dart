@@ -7,6 +7,7 @@ const Map<int, String> kMsgTypes = {
   4: 'voice',
   5: 'file',
   6: 'video',
+  7: 'call',
 };
 
 String normType(dynamic v) {

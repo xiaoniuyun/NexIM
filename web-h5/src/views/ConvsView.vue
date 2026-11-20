@@ -110,7 +110,7 @@ async function removeConv(c) {
   <div class="cs-page">
     <div class="cs-head">
       <button class="cs-user" @click="router.push('/mine')">
-        <Avatar :name="auth.user?.nickname || 'U'" size="lg" />
+        <Avatar :name="auth.user?.nickname || 'U'" :src="auth.user?.avatar" size="lg" />
         <div class="cs-id">
           <div class="cs-name">{{ auth.user?.nickname || t('msg') }}</div>
           <div class="cs-status" :class="{ off: !chat.connected }">
@@ -130,7 +130,7 @@ async function removeConv(c) {
           @click="openConv(c)" @contextmenu.prevent="openMenu(c)"
           @touchstart="pressStart(c)" @touchend="pressEnd" @touchmove="pressEnd">
           <span class="cs-ava">
-            <Avatar :name="c.peerName || c.peerId" />
+            <Avatar :name="c.peerName || c.peerId" :src="c.peerAvatar" />
             <i v-if="c.unread" class="cs-badge">{{ c.unread > 99 ? '99+' : c.unread }}</i>
           </span>
           <div class="cs-main">
@@ -155,7 +155,7 @@ async function removeConv(c) {
       <div class="mb">
         <div class="h5-search"><LineIcon name="search" :size="16" /><input v-model="friendKeyword" :placeholder="t('inputSearchUser')"></div>
         <button v-for="u in friendFiltered" :key="u.uid" class="qentry" @click="pickFriend(u)">
-          <Avatar :name="u.nickname" size="sm" />
+          <Avatar :name="u.nickname" :src="u.avatar" size="sm" />
           <div><div class="qe-t">{{ u.nickname }}</div><div class="qe-s">@{{ u.username }} · {{ u.external ? '企业外部用户' : (u.deptName || '') }}</div></div>
         </button>
         <div v-if="!friendFiltered.length" class="loading">{{ t('noFriend') }}</div>

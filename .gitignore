@@ -17,3 +17,4 @@ node_modules/
 # 本地 IDE 配置
 .vscode/
 .idea/
+.screenshots/

@@ -537,5 +537,9 @@ body { font-size: var(--fs-body); }
 .send-btn:hover{background:var(--brand-dark)}
 .send-btn:disabled{opacity:.45;cursor:not-allowed}
 .send-btn i{width:1px;height:14px;background:rgba(255,255,255,.45)}
+.composer-foot{gap:8px}
+.more-btn{width:34px;height:34px;border-radius:50%;background:#fff;color:#1a1a1a;border:1.5px solid #1a1a1a;display:grid;place-items:center;flex:none}
+.more-btn:hover{background:#f2f2f2}
+.more-btn.on{background:#fff;color:#1a1a1a}
 .emoji-panel,.mention-panel{bottom:calc(100% - 6px);left:18px}
 .chat-empty .empty-logo{background:linear-gradient(140deg,#3dbcff,#0aa7ff);box-shadow:0 16px 32px rgba(10,167,255,.25)}

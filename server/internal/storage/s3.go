@@ -165,6 +165,11 @@ func (s *S3) Delete(ctx context.Context, key string) error {
 
 // do 发送 SigV4 签名请求；key 为空表示操作桶本身（HEAD/PUT bucket）
 func (s *S3) do(ctx context.Context, method, key string, body []byte, contentType string) (*http.Response, error) {
+	return s.doWithHeaders(ctx, method, key, body, contentType, nil)
+}
+
+// doWithHeaders 在签名请求上附加自定义头（如 Range），这些头不参与签名
+func (s *S3) doWithHeaders(ctx context.Context, method, key string, body []byte, contentType string, extra map[string]string) (*http.Response, error) {
 	canonicalURI := s.canonicalPath(key)
 	now := s.now().UTC()
 	amzDate := now.Format("20060102T150405Z")
@@ -201,7 +206,38 @@ func (s *S3) do(ctx context.Context, method, key string, body []byte, contentTyp
 	if body != nil {
 		req.ContentLength = int64(len(body))
 	}
+	for k, v := range extra {
+		req.Header.Set(k, v)
+	}
 	return s.hc.Do(req)
+}
+
+func (s *S3) OpenRange(ctx context.Context, key string, start, length int64) (*Object, error) {
+	rng := fmt.Sprintf("bytes=%d-%d", start, start+length-1)
+	resp, err := s.doWithHeaders(ctx, http.MethodGet, key, nil, "", map[string]string{"Range": rng})
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		return nil, ErrObjectNotFound
+	}
+	if resp.StatusCode != http.StatusPartialContent && resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+		return nil, fmt.Errorf("s3 get range %s: %s %s", key, resp.Status, readSnippet(resp))
+	}
+	ct := resp.Header.Get("Content-Type")
+	if ct == "" {
+		ct = mimeByKey(key)
+	}
+	if resp.StatusCode == http.StatusOK && start > 0 {
+		// 存储端忽略 Range：自行跳过起始偏移
+		if _, err := io.CopyN(io.Discard, resp.Body, start); err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+	}
+	return &Object{Body: resp.Body, Size: length, ContentType: ct}, nil
 }
 
 // canonicalPath 生成 S3 规范路径 /bucket/key，逐段编码（仅保留 A-Za-z0-9-_.~）

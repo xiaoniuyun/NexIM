@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -46,6 +47,42 @@ func (l *Local) Open(ctx context.Context, key string) (*Object, error) {
 	}
 	return &Object{Body: fh, Size: st.Size(), ContentType: mimeByKey(key)}, nil
 }
+
+func (l *Local) OpenRange(ctx context.Context, key string, start, length int64) (*Object, error) {
+	fh, err := os.Open(l.abs(key))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrObjectNotFound
+		}
+		return nil, err
+	}
+	st, err := fh.Stat()
+	if err != nil {
+		_ = fh.Close()
+		return nil, err
+	}
+	if start < 0 || start >= st.Size() {
+		_ = fh.Close()
+		return nil, ErrObjectNotFound
+	}
+	if length <= 0 || start+length > st.Size() {
+		length = st.Size() - start
+	}
+	if _, err := fh.Seek(start, io.SeekStart); err != nil {
+		_ = fh.Close()
+		return nil, err
+	}
+	return &Object{Body: &limitedFile{f: fh, r: io.LimitReader(fh, length)}, Size: length, ContentType: mimeByKey(key)}, nil
+}
+
+// limitedFile 区间读取：限制读取长度，Close 时关闭底层文件
+type limitedFile struct {
+	f *os.File
+	r io.Reader
+}
+
+func (l *limitedFile) Read(p []byte) (int, error) { return l.r.Read(p) }
+func (l *limitedFile) Close() error                { return l.f.Close() }
 
 func (l *Local) Delete(ctx context.Context, key string) error {
 	if err := os.Remove(l.abs(key)); err != nil && !os.IsNotExist(err) {

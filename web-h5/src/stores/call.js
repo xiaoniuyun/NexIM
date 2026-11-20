@@ -64,7 +64,10 @@ export const useCallStore = defineStore('call', () => {
     } catch (_) {
       iceServers = []
     }
-    if (!iceServers.length) iceServers = [{ urls: ['stun:stun.l.google.com:19302'] }]
+    if (!iceServers.length) {
+      // 兜底使用与页面同源的自建 coturn
+      iceServers = [{ urls: ['stun:' + (location.hostname || '127.0.0.1') + ':3478'] }]
+    }
   }
 
   async function openMedia(type) {

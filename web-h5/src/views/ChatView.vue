@@ -33,12 +33,8 @@ const gridPages = [
   [
     { key: 'call-audio', label: '语音通话', icon: 'phone' },
     { key: 'call-video', label: '视频通话', icon: 'video' },
-    { key: 'location', label: '位置', icon: 'location' },
     { key: 'file', label: '文件', icon: 'folder' },
-    { key: 'redpacket', label: '红包', icon: 'redpacket' },
-    { key: 'transfer', label: '转账', icon: 'transfer' },
-    { key: 'favorite', label: '收藏', icon: 'star' },
-    { key: 'screenshare', label: '屏幕分享', icon: 'screenshare' }
+    { key: 'favorite', label: '收藏', icon: 'star' }
   ],
   [
     { key: 'image', label: '相册', icon: 'image' },
@@ -48,7 +44,11 @@ const gridPages = [
     { key: 'emoji', label: '表情', icon: 'smile' }
   ]
 ]
-const gridItems = computed(() => gridPages[panelPage.value])
+const gridItems = computed(() => {
+  const items = gridPages[panelPage.value]
+  // 群聊不支持 1 对 1 通话，直接隐藏入口
+  return isGroup.value ? items.filter(i => !i.key.startsWith('call-')) : items
+})
 function gridAction(key) {
   showAttach.value = false
   switch (key) {
@@ -214,6 +214,14 @@ async function onFilePick(e) {
 function openFile(m) {
   if (!m.extra?.fileId) return
   window.open(fileUrl(m.extra.fileId), '_blank')
+}
+
+const IMG_EXT_RE = /\.(png|jpe?g|gif|webp|bmp|heic|heif)(\?.*)?$/i
+// 早期移动端上传缺失类型被记为 file，按扩展名回退为图片渲染，本地/对方都可直接看到图
+function isImgMsg(m) {
+  if (m.type === 'image') return true
+  if (m.type !== 'file') return false
+  return IMG_EXT_RE.test(m.extra?.name || m.content || '')
 }
 
 // ===== 语音消息（内联按住说话） =====
@@ -494,13 +502,18 @@ function pickTarget(id) {
 
   <div ref="msgList" class="chat-msgs">
     <div class="time-sep">{{ new Date().toLocaleDateString() }}</div>
-    <div v-for="(m, i) in chat.messages" :key="m.msgId || i" class="msg-row" :class="{ mine: m.mine }" :data-mid="m.msgId">
+    <div v-for="(m, i) in chat.messages" :key="m.msgId || i" class="msg-row" :class="{ mine: m.mine, call: m.type === 'call' }" :data-mid="m.msgId">
+      <div v-if="m.type === 'call'" class="msg-call">
+        <LineIcon :name="m.extra?.callType === 'video' ? 'video' : 'phone'" :size="14" />
+        <span>{{ m.content }}</span>
+      </div>
+      <template v-else>
       <Avatar v-if="!m.mine" :name="m.fromName || '?'" :src="isGroup ? '' : conv.peerAvatar" size="xs" />
       <div class="m-wrap">
         <div v-if="!m.mine" class="msg-sender">{{ m.fromName }}</div>
         <div v-if="m.status === 2" class="bubble msg-status-revoked">消息已撤回</div>
         <template v-else>
-          <div v-if="m.type === 'image'" class="bubble media">
+          <div v-if="isImgMsg(m)" class="bubble media">
             <img v-if="m.extra?.fileId" :src="fileUrl(m.extra.fileId)" class="msg-img" @click="openFile(m)">
             <div v-else class="img-ph">图片</div>
             <button class="media-more" @click.stop="openActions(m)">⋯</button>
@@ -531,6 +544,7 @@ function pickTarget(id) {
         </div>
       </div>
       <Avatar v-if="m.mine" :name="auth.user?.nickname || '我'" :src="auth.user?.avatar" size="xs" />
+      </template>
     </div>
   </div>
 
@@ -559,6 +573,7 @@ function pickTarget(id) {
           <span>{{ recording ? (willCancel ? '松开 取消' : '松开 发送') : '按住 说话' }}</span>
         </div>
         <input v-else v-model="text" :placeholder="t('inputMsg')" @keyup.enter="send">
+        <button class="c-send" :disabled="!text.trim()" title="发送" @click="send"><LineIcon name="send" :size="18" /></button>
       </div>
       <div class="c-tools">
         <button class="c-tool" :class="{ recording }" title="语音" @click="toggleVoiceMode"><LineIcon name="mic" :size="26" /></button>
@@ -566,7 +581,7 @@ function pickTarget(id) {
         <button class="c-tool" :disabled="uploading" title="拍摄" @click="attach('camera')"><LineIcon name="camera" :size="26" /></button>
         <button class="c-tool" title="贴纸" @click="toggleEmoji"><LineIcon name="sticker" :size="26" /></button>
         <button class="c-tool" title="表情" @click="toggleEmoji"><LineIcon name="smile" :size="26" /></button>
-        <button class="c-close" :class="{ on: showAttach }" title="更多" @click="showEmoji = false; showAttach = !showAttach"><LineIcon name="close" :size="18" /></button>
+        <button class="c-close" :class="{ on: showAttach }" title="更多" @click="showEmoji = false; showAttach = !showAttach"><LineIcon :name="showAttach ? 'close' : 'plus'" :size="16" /></button>
       </div>
     </div>
     <div v-if="showAttach" class="c-panel">

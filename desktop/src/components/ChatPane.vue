@@ -20,6 +20,7 @@ const text = ref('')
 const listEl = ref(null)
 const showEmoji = ref(false)
 const showAttach = ref(false)
+const showTools = ref(false)
 const showMore = ref(false)
 const showMembers = ref(false)
 const showInvite = ref(false)
@@ -108,6 +109,14 @@ async function onDrop(e) {
 function openFile(m) {
   if (!m.extra?.fileId) return
   window.open(fileUrl(m.extra.fileId), '_blank')
+}
+
+const IMG_EXT_RE = /\.(png|jpe?g|gif|webp|bmp|heic|heif)(\?.*)?$/i
+// 早期移动端上传缺失类型被记为 file，按扩展名回退为图片显示
+function isImgMsg(m) {
+  if (m.type === 'image') return true
+  if (m.type !== 'file') return false
+  return IMG_EXT_RE.test(m.extra?.name || m.content || '')
 }
 
 // ===== 语音消息（内联按住说话） =====
@@ -416,7 +425,6 @@ onBeforeUnmount(() => {
         <div class="chat-tools">
           <button v-if="canCall" class="icon-btn" title="语音通话" @click="startCall('audio')"><Icon name="phone" :size="19" /></button>
           <button v-if="canCall" class="icon-btn" title="视频通话" @click="startCall('video')"><Icon name="video" :size="20" /></button>
-          <button v-if="canCall" class="icon-btn" title="屏幕分享" @click="toast('暂不支持屏幕分享')"><Icon name="screen" :size="20" /></button>
           <button v-if="isGroup" class="icon-btn" title="群成员" @click="openMembers"><Icon name="users" :size="20" /></button>
           <button class="icon-btn" title="搜索聊天记录" @click="toggleSearch"><Icon name="search" :size="19" /></button>
           <button class="icon-btn" title="更多" @click="showMore = !showMore"><Icon name="more" :size="20" /></button>
@@ -447,9 +455,15 @@ onBeforeUnmount(() => {
       <div ref="listEl" class="msg-list scroll">
         <div
           v-for="m in msgs" :key="m.msgId" class="msg-row"
-          :class="{ mine: m.mine, system: m.type === 'system' }" :data-mid="m.msgId"
+          :class="{ mine: m.mine, system: m.type === 'system' || m.type === 'call' }" :data-mid="m.msgId"
         >
-          <template v-if="m.type === 'system'">
+          <template v-if="m.type === 'call'">
+            <div class="sys-msg">
+              <Icon :name="m.extra?.callType === 'video' ? 'video' : 'phone'" :size="14" />
+              {{ m.content }}
+            </div>
+          </template>
+          <template v-else-if="m.type === 'system'">
             <div class="sys-msg">{{ m.content }}</div>
           </template>
           <template v-else>
@@ -460,7 +474,7 @@ onBeforeUnmount(() => {
                 <template v-if="m.status === 2">
                   <span class="muted">该消息已撤回</span>
                 </template>
-                <template v-else-if="m.type === 'image'">
+                <template v-else-if="isImgMsg(m)">
                   <img class="msg-img" :src="fileUrl(m.extra?.fileId)" alt="图片" @click="openFile(m)">
                 </template>
                 <template v-else-if="m.type === 'video'">
@@ -503,7 +517,7 @@ onBeforeUnmount(() => {
       </div>
 
       <footer class="composer">
-        <div class="composer-tools">
+        <div v-if="showTools" class="composer-tools">
           <button class="tool-btn" title="表情" @click="showEmoji = !showEmoji"><Icon name="smile" :size="22" /></button>
           <button class="tool-btn" :disabled="!desk" title="截图并发送（Ctrl+Shift+A）" @click="sendScreenshot(chat)"><Icon name="scissors" :size="22" /></button>
           <button class="tool-btn" title="发送文件" @click="pick('file')"><Icon name="folder" :size="22" /></button>
@@ -549,6 +563,9 @@ onBeforeUnmount(() => {
           <div class="composer-foot" v-if="!voiceMode">
             <button class="send-btn" :disabled="!text.trim()" @click="send">
               <span>发送</span><i></i><Icon name="chevronDown" :size="14" />
+            </button>
+            <button class="more-btn" :class="{ on: showTools }" title="更多功能" @click="showTools = !showTools">
+              <Icon :name="showTools ? 'close' : 'plus'" :size="22" />
             </button>
           </div>
         </div>

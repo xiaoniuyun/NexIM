@@ -219,7 +219,7 @@ func setDefaults() {
 	viper.SetDefault("observability.tracingSample", 0.1)
 	viper.SetDefault("rtc.sfuNodes", 1)
 	viper.SetDefault("rtc.clusterEnabled", false)
-	viper.SetDefault("rtc.stunServers", []string{"stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"})
+	viper.SetDefault("rtc.stunServers", []string{"stun:127.0.0.1:3478"})
 	viper.SetDefault("message.history_limit", 200)
 	viper.SetDefault("message.retention_days", 90)
 	viper.SetDefault("server.mode", "release")

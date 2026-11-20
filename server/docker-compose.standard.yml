@@ -67,8 +67,9 @@ services:
       - "-n"
       - "--log-file=stdout"
       - "--lt-cred-mech"
-      - "--user=nexim:nexim123"
-      - "--realm=nexim.local"
+      - "--user=${TURN_USER:-nexim}:${TURN_PASS:-nexim123}"
+      - "--realm=${TURN_REALM:-nex.im}"
+      - "--external-ip=${TURN_EXTERNAL_IP:-127.0.0.1}"
       - "--fingerprint"
       - "--no-tls"
       - "--no-dtls"
@@ -142,6 +143,12 @@ services:
       STORAGE_ACCESS_KEY: "nexim"
       STORAGE_SECRET_KEY: "nexim123456"
       STORAGE_REGION: "us-east-1"
+      # 实时音视频：自建 coturn（STUN/TURN），公网部署只需设置 TURN_EXTERNAL_IP
+      STUN_SERVERS: "${STUN_SERVERS:-stun:${TURN_EXTERNAL_IP:-127.0.0.1}:3478}"
+      RTC_COTURNADDR: "coturn:3478"
+      RTC_TURNURL: "${TURN_URL:-turn:${TURN_EXTERNAL_IP:-127.0.0.1}:3478?transport=udp}"
+      RTC_TURNUSERNAME: "${TURN_USER:-nexim}"
+      RTC_TURNPASSWORD: "${TURN_PASS:-nexim123}"
     ports: ["8080:8080"]
 
 volumes:

@@ -166,10 +166,12 @@ class CallState extends ChangeNotifier {
         };
       }
     } catch (_) {}
+    // 兜底使用与服务端同主机的自建 coturn
+    final host = Uri.tryParse(Api.base)?.host ?? '127.0.0.1';
     return {
       'iceServers': [
         {
-          'urls': ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302']
+          'urls': ['stun:$host:3478']
         }
       ],
       'sdpSemantics': 'unified-plan',

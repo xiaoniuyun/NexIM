@@ -27,6 +27,8 @@ type ObjectStore interface {
 	Put(ctx context.Context, key string, data []byte, contentType string) error
 	// Open 读取对象
 	Open(ctx context.Context, key string) (*Object, error)
+	// OpenRange 读取对象指定字节区间（音视频拖动/边下边播）
+	OpenRange(ctx context.Context, key string, start, length int64) (*Object, error)
 	// Delete 删除对象
 	Delete(ctx context.Context, key string) error
 }

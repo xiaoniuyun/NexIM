@@ -176,20 +176,47 @@ func (rt *Router) fileDownload(c *gin.Context) {
 			return
 		}
 	}
-	rec, obj, err := rt.File.Open(c.Param("id"))
+	id := c.Param("id")
+	rec, rerr := rt.File.Record(id)
+	if rerr != nil {
+		pkg.Fail(c, 404, 4000, "文件不存在")
+		return
+	}
+	ct := rec.MimeType
+	headers := map[string]string{"Content-Disposition": contentDisposition(rec.Name)}
+	// 声明支持分段：iOS AVPlayer / Android ExoPlayer 依赖 Range 实现边下边播
+	c.Header("Accept-Ranges", "bytes")
+	if rng := c.GetHeader("Range"); rng != "" && rec.Size > 0 {
+		if start, length, ok := parseRangeHeader(rng, rec.Size); ok {
+			_, obj, err := rt.File.OpenRange(id, start, length)
+			if err != nil {
+				pkg.Fail(c, 404, 4000, "文件不存在")
+				return
+			}
+			defer obj.Body.Close()
+			if ct == "" {
+				ct = obj.ContentType
+			}
+			if ct == "" {
+				ct = "application/octet-stream"
+			}
+			c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, start+length-1, rec.Size))
+			c.DataFromReader(http.StatusPartialContent, length, ct, obj.Body, headers)
+			return
+		}
+	}
+	_, obj, err := rt.File.Open(id)
 	if err != nil {
 		pkg.Fail(c, 404, 4000, "文件不存在")
 		return
 	}
 	defer obj.Body.Close()
-	ct := rec.MimeType
 	if ct == "" {
 		ct = obj.ContentType
 	}
 	if ct == "" {
 		ct = "application/octet-stream"
 	}
-	headers := map[string]string{"Content-Disposition": contentDisposition(rec.Name)}
 	if obj.Size < 0 {
 		// 对象未返回长度（分块传输）：读全量后回写，避免 Content-Length 缺失导致截断
 		data, rerr := io.ReadAll(obj.Body)
@@ -201,6 +228,52 @@ func (rt *Router) fileDownload(c *gin.Context) {
 		return
 	}
 	c.DataFromReader(http.StatusOK, obj.Size, ct, obj.Body, headers)
+}
+
+// parseRangeHeader 解析单段 Range（bytes=start-end / bytes=start- / bytes=-suffix），
+// 返回起始偏移与长度；多段或非法值返回 false，回退整文件响应
+func parseRangeHeader(s string, total int64) (int64, int64, bool) {
+	s = strings.TrimSpace(s)
+	if !strings.HasPrefix(s, "bytes=") {
+		return 0, 0, false
+	}
+	p := strings.TrimSpace(strings.TrimPrefix(s, "bytes="))
+	if i := strings.IndexByte(p, ','); i >= 0 {
+		p = p[:i]
+	}
+	parts := strings.SplitN(p, "-", 2)
+	if len(parts) != 2 {
+		return 0, 0, false
+	}
+	atoi := func(v string) (int64, bool) {
+		n, err := strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+		return n, err == nil && n >= 0
+	}
+	if parts[0] == "" {
+		n, ok := atoi(parts[1])
+		if !ok || n == 0 {
+			return 0, 0, false
+		}
+		if n > total {
+			n = total
+		}
+		return total - n, n, true
+	}
+	start, ok := atoi(parts[0])
+	if !ok || start >= total {
+		return 0, 0, false
+	}
+	if parts[1] == "" {
+		return start, total - start, true
+	}
+	end, ok := atoi(parts[1])
+	if !ok || end < start {
+		return 0, 0, false
+	}
+	if end >= total {
+		end = total - 1
+	}
+	return start, end - start + 1, true
 }
 
 // contentDisposition 生成兼容中文文件名的下载头（RFC 5987）

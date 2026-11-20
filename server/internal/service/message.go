@@ -359,6 +359,8 @@ func convMsgType(s string) int {
 		return 5
 	case "video", "6":
 		return 6
+	case "call", "7":
+		return 7
 	case "system", "3":
 		return 3
 	default:

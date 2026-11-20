@@ -155,6 +155,9 @@ func (h *Hub) handle(c *Client, f *Frame) {
 		h.Signal(req.ToUID, "CALL_ANSWER_PUSH", map[string]interface{}{
 			"callId": req.CallID, "fromUid": c.UID, "accept": req.Accept, "sdp": req.SDP,
 		})
+		if !req.Accept {
+			h.PushCallRecord(req.CallID)
+		}
 	case "CALL_ICE":
 		var req struct {
 			CallID    string          `json:"callId"`
@@ -178,6 +181,7 @@ func (h *Hub) handle(c *Client, f *Frame) {
 		if h.Calls != nil {
 			h.Calls.End(req.CallID)
 		}
+		h.PushCallRecord(req.CallID)
 		h.Signal(req.ToUID, "CALL_HANGUP_PUSH", map[string]interface{}{
 			"callId": req.CallID, "fromUid": c.UID,
 		})
@@ -221,6 +225,53 @@ func (h *Hub) PushMessage(fromUID, convID, convType, toUID, clientMsgID, msgID, 
 			ConvID: convID, ConvType: convType, FromUID: fromUID, ToUID: toUID,
 			Type: msgType, Content: content, Extra: extra, Seq: seq, SendTime: createdAt,
 		})
+	}
+}
+
+// PushCallRecord 通话结束后写入一条通话记录消息并推送双方（居中提示，可长期留存）
+func (h *Hub) PushCallRecord(callID string) {
+	if callID == "" || h.Calls == nil || h.Msg == nil {
+		return
+	}
+	var call model.Call
+	if h.S.DB.Where("call_id = ?", callID).First(&call).Error != nil || call.ConvID == "" {
+		return
+	}
+	if call.Status != 3 && call.Status != 4 {
+		return
+	}
+	clientMsgID := "call_" + callID
+	// 幂等：双方同时挂断/拒接只落一条记录
+	if n, _ := h.S.RDB.Exists(h.S.Ctx, "idem:"+clientMsgID).Result(); n > 0 {
+		return
+	}
+	extra := mustJSON(map[string]interface{}{
+		"callId": call.CallID, "callType": call.CallType,
+		"duration": call.Duration, "status": call.Status,
+	})
+	msg, err := h.Msg.Send(call.CallerUID, call.ConvID, "single", call.CalleeUID,
+		"call", callRecordText(call), string(extra), clientMsgID)
+	if err != nil {
+		h.Log.Warn("save call record failed", zap.Error(err), zap.String("call", callID))
+		return
+	}
+	h.PushMessage(msg.FromUID, msg.ConvID, "single", msg.ToID, "", msg.MsgID,
+		"call", msg.Content, msg.Extra, msg.Seq, msg.CreatedAt)
+}
+
+// callRecordText 通话记录文案：已拒绝 / 未接听 / 通话时长
+func callRecordText(call model.Call) string {
+	kind := "语音通话"
+	if call.CallType == "video" {
+		kind = "视频通话"
+	}
+	switch {
+	case call.Status == 4:
+		return kind + " 已拒绝"
+	case call.AnsweredAt == 0:
+		return kind + " 未接听"
+	default:
+		return fmt.Sprintf("%s 通话时长 %02d:%02d", kind, call.Duration/60, call.Duration%60)
 	}
 }
 

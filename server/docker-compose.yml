@@ -71,6 +71,29 @@ services:
       timeout: 3s
       retries: 30
 
+  # coturn：自建 STUN/TURN 音视频中继（跨 NAT、移动网络通话必需）
+  # 公网部署时用 TURN_EXTERNAL_IP 指定服务器公网 IP，并放行 3478 与 49160-49200 端口
+  coturn:
+    image: coturn/coturn:4.6.2
+    container_name: nexim-coturn
+    restart: unless-stopped
+    command:
+      - "-n"
+      - "--lt-cred-mech"
+      - "--fingerprint"
+      - "--realm=${TURN_REALM:-nex.im}"
+      - "--user=${TURN_USER:-nexim}:${TURN_PASS:-nexim123}"
+      - "--listening-port=3478"
+      - "--min-port=49160"
+      - "--max-port=49200"
+      - "--external-ip=${TURN_EXTERNAL_IP:-127.0.0.1}"
+      - "--no-cli"
+      - "--no-multicast-peers"
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "49160-49200:49160-49200/udp"
+
   # 单二进制：Go API + WebSocket + Vue H5 + Vue Admin（前端已 embed 进二进制）
   server:
     build:
@@ -106,6 +129,13 @@ services:
       STORAGE_ACCESS_KEY: "nexim"
       STORAGE_SECRET_KEY: "nexim123456"
       STORAGE_REGION: "us-east-1"
+      # 实时音视频：自建 coturn（STUN/TURN），不再依赖公网 STUN
+      # 公网部署只需设置 TURN_EXTERNAL_IP（公网 IP/域名），STUN/TURN 地址自动跟随
+      STUN_SERVERS: "${STUN_SERVERS:-stun:${TURN_EXTERNAL_IP:-127.0.0.1}:3478}"
+      RTC_COTURNADDR: "coturn:3478"
+      RTC_TURNURL: "${TURN_URL:-turn:${TURN_EXTERNAL_IP:-127.0.0.1}:3478?transport=udp}"
+      RTC_TURNUSERNAME: "${TURN_USER:-nexim}"
+      RTC_TURNPASSWORD: "${TURN_PASS:-nexim123}"
     ports:
       - "8080:8080"
       - "8081:8081"

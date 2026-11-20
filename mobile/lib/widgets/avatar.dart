@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
+import '../core/image_cache.dart';
 import '../core/util.dart';
 
 class Avatar extends StatelessWidget {
@@ -31,13 +33,16 @@ class Avatar extends StatelessWidget {
     if (src.isEmpty) return fallback;
     return ClipRRect(
       borderRadius: BorderRadius.circular(size * 0.28),
-      child: Image.network(
-        src,
+      child: CachedNetworkImage(
+        imageUrl: src,
+        // token 会刷新，缓存键固定为不带 query 的地址，避免重复下载
+        cacheKey: src.split('?').first,
+        cacheManager: AppImages.cache,
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => fallback,
-        loadingBuilder: (c, w, p) => p == null ? w : fallback,
+        placeholder: (_, __) => fallback,
+        errorWidget: (_, __, ___) => fallback,
       ),
     );
   }

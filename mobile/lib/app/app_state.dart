@@ -332,7 +332,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  String sendPayload(String type, String content, dynamic extra) {
+  String sendPayload(String type, String content, dynamic extra, {String localPath = ''}) {
     final conv = convs.where((c) => c.convId == currentConvId).firstOrNull;
     final clientMsgId =
         'c_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(99999).toRadixString(36)}';
@@ -353,7 +353,10 @@ class AppState extends ChangeNotifier {
       fromName: myName,
       type: type,
       content: content,
-      extra: extra,
+      // localPath 仅保存在本机消息上用于即时预览，不进入发送报文
+      extra: (extra is Map && localPath.isNotEmpty)
+          ? {...extra, 'localPath': localPath}
+          : extra,
       createdAt: DateTime.now().millisecondsSinceEpoch,
       mine: true,
       pending: true,
@@ -375,8 +378,9 @@ class AppState extends ChangeNotifier {
 
   String sendText(String text) => sendPayload('text', text, null);
 
-  String sendMedia(String type, String content, Map<String, dynamic> extra) =>
-      sendPayload(type, content, extra);
+  String sendMedia(String type, String content, Map<String, dynamic> extra,
+          {String localPath = ''}) =>
+      sendPayload(type, content, extra, localPath: localPath);
 
   void markRevoked(String msgId) {
     final idx = messages.indexWhere((m) => m.msgId == msgId);
