@@ -30,8 +30,10 @@ class CallState extends ChangeNotifier {
 
   RTCPeerConnection? _pc;
   MediaStream? _local;
-  MediaStream? _remote;
+  String _remoteVideoTrackId = '';
   String _pendingOffer = '';
+  final Map<String, List<Map<String, dynamic>>> _pendingCandidates = {};
+  bool _remoteDescSet = false;
   Timer? _timer;
   StreamSubscription? _sub;
   bool _renderersReady = false;
@@ -98,6 +100,8 @@ class CallState extends ChangeNotifier {
       _bindPc();
       if (_pendingOffer.isNotEmpty) {
         await _pc!.setRemoteDescription(RTCSessionDescription(_pendingOffer, 'offer'));
+        _remoteDescSet = true;
+        _flushCandidates();
       }
       final answer = await _pc!.createAnswer();
       await _pc!.setLocalDescription(answer);
@@ -205,18 +209,25 @@ class CallState extends ChangeNotifier {
 
   void _bindPc() {
     final pc = _pc!;
+    _remoteDescSet = false;
     for (final t in _local?.getTracks() ?? <MediaStreamTrack>[]) {
       pc.addTrack(t, _local!);
     }
-    _remote = null;
+    _remoteVideoTrackId = '';
     remoteRenderer.srcObject = null;
-    pc.onTrack = (event) {
-      if (event.streams.isNotEmpty) {
-        _remote = event.streams.first;
-        remoteRenderer.srcObject = _remote;
+    pc.onTrack = (event) async {
+      final track = event.track;
+      final trackId = '${track.id}';
+      if (track.kind != 'video' || trackId == _remoteVideoTrackId) return;
+      _remoteVideoTrackId = trackId;
+      try {
+        // 部分场景（如发起方）onTrack 的 streams 为空，需自行组装远端流再渲染。
+        final stream = await createLocalMediaStream('remote_video');
+        await stream.addTrack(track);
+        remoteRenderer.srcObject = stream;
         if (state == 'connecting' || state == 'calling') _startTimer();
         notifyListeners();
-      }
+      } catch (_) {}
     };
     pc.onIceCandidate = (c) {
       final map = c.toMap();
@@ -233,6 +244,27 @@ class CallState extends ChangeNotifier {
         _finish('连接失败，可能需要 TURN 中继');
       }
     };
+  }
+
+  void _addCandidate(Map<String, dynamic> c) {
+    final pc = _pc;
+    if (pc == null) return;
+    try {
+      pc.addCandidate(RTCIceCandidate(
+        '${c['candidate'] ?? ''}',
+        c['sdpMid'] == null ? null : '${c['sdpMid']}',
+        (c['sdpMLineIndex'] as num?)?.toInt() ?? 0,
+      ));
+    } catch (_) {}
+  }
+
+  /// 远端描述就绪前收到的候选先缓存，避免提前到达的 ICE 候选被丢弃。
+  void _flushCandidates() {
+    final list = _pendingCandidates.remove(callId);
+    if (list == null) return;
+    for (final c in list) {
+      _addCandidate(c);
+    }
   }
 
   Future<void> _waitIce() async {
@@ -261,8 +293,12 @@ class CallState extends ChangeNotifier {
           app.ws.send('CALL_ANSWER', {'callId': p['callId'], 'toUid': p['fromUid'], 'accept': false});
           return;
         }
+        final incomingId = '${p['callId'] ?? ''}';
+        // 发起方会在 SDP 之前就开始发送 ICE 候选，先保留它们。
+        final early = _pendingCandidates[incomingId];
         _reset();
-        callId = '${p['callId'] ?? ''}';
+        if (early != null) _pendingCandidates[incomingId] = early;
+        callId = incomingId;
         peerUid = '${p['fromUid'] ?? ''}';
         peerName = '${p['fromName'] ?? p['fromUid'] ?? ''}';
         convId = '${p['convId'] ?? ''}';
@@ -287,21 +323,23 @@ class CallState extends ChangeNotifier {
         notifyListeners();
         final sdp = '${p['sdp'] ?? ''}';
         if (sdp.isNotEmpty && _pc != null) {
-          _pc!.setRemoteDescription(RTCSessionDescription(sdp, 'answer')).catchError((_) {
+          unawaited(_pc!.setRemoteDescription(RTCSessionDescription(sdp, 'answer')).then((_) {
+            _remoteDescSet = true;
+            _flushCandidates();
+          }).catchError((_) {
             _finish('连接建立失败');
-          });
+          }));
         }
         break;
       case 'CALL_ICE_PUSH':
-        if (p['callId'] != callId || _pc == null || p['candidate'] == null) return;
-        final c = Map<String, dynamic>.from(p['candidate']);
-        try {
-          _pc!.addCandidate(RTCIceCandidate(
-            '${c['candidate'] ?? ''}',
-            c['sdpMid'] == null ? null : '${c['sdpMid']}',
-            (c['sdpMLineIndex'] as num?)?.toInt() ?? 0,
-          ));
-        } catch (_) {}
+        final cid = '${p['callId'] ?? ''}';
+        if (cid.isEmpty || p['candidate'] == null) return;
+        final cand = Map<String, dynamic>.from(p['candidate']);
+        if (cid == callId && _pc != null && _remoteDescSet) {
+          _addCandidate(cand);
+        } else {
+          (_pendingCandidates[cid] ??= []).add(cand);
+        }
         break;
       case 'CALL_HANGUP_PUSH':
         if (p['callId'] != callId) return;
@@ -356,9 +394,11 @@ class CallState extends ChangeNotifier {
       t.stop();
     }
     _local = null;
-    _remote = null;
+    _remoteVideoTrackId = '';
     localRenderer.srcObject = null;
     remoteRenderer.srcObject = null;
+    _pendingCandidates.clear();
+    _remoteDescSet = false;
     state = 'idle';
     callId = '';
     convId = '';

@@ -20,7 +20,6 @@ const text = ref('')
 const listEl = ref(null)
 const showEmoji = ref(false)
 const showAttach = ref(false)
-const showTools = ref(false)
 const showMore = ref(false)
 const showMembers = ref(false)
 const showInvite = ref(false)
@@ -112,11 +111,50 @@ function openFile(m) {
 }
 
 const IMG_EXT_RE = /\.(png|jpe?g|gif|webp|bmp|heic|heif)(\?.*)?$/i
+const VIDEO_EXT_RE = /\.(mp4|mov|m4v|webm|avi|mkv)(\?.*)?$/i
 // 早期移动端上传缺失类型被记为 file，按扩展名回退为图片显示
 function isImgMsg(m) {
   if (m.type === 'image') return true
   if (m.type !== 'file') return false
   return IMG_EXT_RE.test(m.extra?.name || m.content || '')
+}
+// 被记为 file 的视频同样按视频渲染，保证各端都能直接播放
+function isVideoMsg(m) {
+  if (m.type === 'video') return true
+  if (m.type !== 'file') return false
+  return VIDEO_EXT_RE.test(m.extra?.name || m.content || '')
+}
+const videoRates = ref({})
+function videoRate(m) { return videoRates.value[m.msgId] || 1 }
+function cycleVideoRate(e, m) {
+  const rates = [0.5, 1, 1.5, 2]
+  const next = rates[(rates.indexOf(videoRate(m)) + 1) % rates.length]
+  videoRates.value = { ...videoRates.value, [m.msgId]: next }
+  const el = e.target.closest('.msg-video-wrap')?.querySelector('video')
+  if (el) el.playbackRate = next
+}
+function videoFullscreen(e) {
+  const el = e.target.closest('.msg-video-wrap')?.querySelector('video')
+  if (!el) return
+  if (document.fullscreenElement) document.exitFullscreen?.()
+  else el.requestFullscreen?.()
+}
+// 无封面的视频：元数据就绪后跳到 1/4 处渲染一帧，避免片头黑帧
+function onVideoMeta(e) {
+  const v = e.target
+  if (!v || v.dataset.seeked) return
+  v.dataset.seeked = '1'
+  if (v.poster) return
+  const d = v.duration
+  if (!isFinite(d) || d <= 4) return
+  try { v.currentTime = d / 4 } catch (_) {}
+}
+function fmtDuration(ms) {
+  const total = Math.max(0, Math.round((ms || 0) / 1000))
+  const h = Math.floor(total / 3600)
+  const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0')
+  const s = String(total % 60).padStart(2, '0')
+  return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`
 }
 
 // ===== 语音消息（内联按住说话） =====
@@ -477,8 +515,21 @@ onBeforeUnmount(() => {
                 <template v-else-if="isImgMsg(m)">
                   <img class="msg-img" :src="fileUrl(m.extra?.fileId)" alt="图片" @click="openFile(m)">
                 </template>
-                <template v-else-if="m.type === 'video'">
-                  <video class="msg-video" :src="fileUrl(m.extra?.fileId)" controls></video>
+                <template v-else-if="isVideoMsg(m)">
+                  <div class="msg-video-wrap">
+                    <video
+                      class="msg-video" :src="fileUrl(m.extra?.fileId) + (m.extra?.coverFileId ? '' : '#t=0.1')"
+                      :poster="m.extra?.coverFileId ? fileUrl(m.extra.coverFileId) : undefined"
+                      controls preload="auto" @loadedmetadata="onVideoMeta($event)"
+                    ></video>
+                    <div class="video-bar">
+                      <span v-if="m.extra?.durationMs" class="video-dur">{{ fmtDuration(m.extra.durationMs) }}</span>
+                      <span class="video-ops">
+                        <button class="video-op" @click="cycleVideoRate($event, m)">{{ videoRate(m) }}x</button>
+                        <button class="video-op" @click="videoFullscreen($event)">全屏</button>
+                      </span>
+                    </div>
+                  </div>
                 </template>
                 <template v-else-if="m.type === 'voice'">
                   <audio :src="fileUrl(m.extra?.fileId)" controls style="max-width:240px"></audio>
@@ -517,7 +568,7 @@ onBeforeUnmount(() => {
       </div>
 
       <footer class="composer">
-        <div v-if="showTools" class="composer-tools">
+        <div class="composer-tools">
           <button class="tool-btn" title="表情" @click="showEmoji = !showEmoji"><Icon name="smile" :size="22" /></button>
           <button class="tool-btn" :disabled="!desk" title="截图并发送（Ctrl+Shift+A）" @click="sendScreenshot(chat)"><Icon name="scissors" :size="22" /></button>
           <button class="tool-btn" title="发送文件" @click="pick('file')"><Icon name="folder" :size="22" /></button>
@@ -563,9 +614,6 @@ onBeforeUnmount(() => {
           <div class="composer-foot" v-if="!voiceMode">
             <button class="send-btn" :disabled="!text.trim()" @click="send">
               <span>发送</span><i></i><Icon name="chevronDown" :size="14" />
-            </button>
-            <button class="more-btn" :class="{ on: showTools }" title="更多功能" @click="showTools = !showTools">
-              <Icon :name="showTools ? 'close' : 'plus'" :size="22" />
             </button>
           </div>
         </div>

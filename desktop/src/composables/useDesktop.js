@@ -97,10 +97,19 @@ export async function uploadFiles(files, convId, chat) {
       const r = await API.fileUpload(fd)
       const rec = r.data || {}
       const mime = rec.mimeType || file.type || ''
-      const type = mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : 'file'
-      chat.sendMedia(type, rec.name || file.name, {
-        fileId: rec.fileId, name: rec.name || file.name,
-        size: rec.size || file.size, mime
+      const fname = rec.name || file.name
+      const ext = (fname || '').toLowerCase().split('.').pop()
+      const IMG_EXT = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'heic', 'heif']
+      const VIDEO_EXT = ['mp4', 'mov', 'm4v', 'webm', 'avi', 'mkv', '3gp']
+      const type = mime.startsWith('image/') || IMG_EXT.includes(ext)
+        ? 'image'
+        : (mime.startsWith('video/') || VIDEO_EXT.includes(ext) ? 'video' : 'file')
+      chat.sendMedia(type, fname, {
+        fileId: rec.fileId, name: fname,
+        size: rec.size || file.size, mime,
+        ...(rec.durationMs != null ? { durationMs: rec.durationMs } : {}),
+        ...(rec.coverFileId ? { coverFileId: rec.coverFileId } : {}),
+        ...(rec.width ? { width: rec.width, height: rec.height } : {})
       })
       ok++
     } catch (e) {

@@ -236,7 +236,15 @@ ul { margin: 0; padding-left: 18px; }
 .bubble.revoked { background: #f3f4f8; color: #9aa3b5; font-style: italic; }
 .msg-text { white-space: pre-wrap; line-height: 1.55; }
 .msg-img { max-width: 260px; max-height: 220px; border-radius: 8px; display: block; cursor: zoom-in; }
-.msg-video { max-width: 320px; border-radius: 8px; }
+.msg-video { max-width: 320px; max-height: 60vh; object-fit: contain; width: 100%; border-radius: 8px; display: block; background: #000; }
+.msg-video-wrap { display: inline-flex; flex-direction: column; gap: 4px; }
+.video-bar { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--muted); }
+.video-ops { display: inline-flex; gap: 4px; margin-left: auto; }
+.video-op {
+  border: 1px solid var(--line, #e3e6ef); background: #fff; color: var(--text, #1f2329);
+  font-size: 11px; line-height: 1; padding: 3px 6px; border-radius: 4px; cursor: pointer;
+}
+.video-op:hover { background: #f2f4fa; }
 .file-msg { display: flex; gap: 10px; align-items: center; cursor: pointer; min-width: 190px; }
 .file-ico { font-size: 19px; }
 .file-name { font-size: 13px; font-weight: 500; }
@@ -538,8 +546,5 @@ body { font-size: var(--fs-body); }
 .send-btn:disabled{opacity:.45;cursor:not-allowed}
 .send-btn i{width:1px;height:14px;background:rgba(255,255,255,.45)}
 .composer-foot{gap:8px}
-.more-btn{width:34px;height:34px;border-radius:50%;background:#fff;color:#1a1a1a;border:1.5px solid #1a1a1a;display:grid;place-items:center;flex:none}
-.more-btn:hover{background:#f2f2f2}
-.more-btn.on{background:#fff;color:#1a1a1a}
 .emoji-panel,.mention-panel{bottom:calc(100% - 6px);left:18px}
 .chat-empty .empty-logo{background:linear-gradient(140deg,#3dbcff,#0aa7ff);box-shadow:0 16px 32px rgba(10,167,255,.25)}

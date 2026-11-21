@@ -10,18 +10,18 @@ type User struct {
 	Nickname     string `gorm:"size:64" json:"nickname"`
 	Avatar       string `gorm:"size:256" json:"avatar"`
 	// 个人资料扩展：file:<fileId> 表示上传的头像图片，历史值可能为颜色
-	Signature    string `gorm:"size:255;default:''" json:"signature"`
-	Gender       int    `gorm:"default:0" json:"gender"` // 0未知 1男 2女
-	DeptID       int64  `gorm:"default:0" json:"deptId"`
+	Signature string `gorm:"size:255;default:''" json:"signature"`
+	Gender    int    `gorm:"default:0" json:"gender"` // 0未知 1男 2女
+	DeptID    int64  `gorm:"default:0" json:"deptId"`
 	// UserType 账号类型：0 企业内部员工 1 外部联系人（注册页注册默认外部联系人）
-	UserType     int    `gorm:"default:0" json:"userType"`
-	Phone        string `gorm:"size:32" json:"phone"`
-	Email        string `gorm:"size:128;default:''" json:"email"`
-	Title        string `gorm:"size:64" json:"title"`
-	Status       int    `gorm:"default:1" json:"status"`
-	LastLoginAt  int64  `gorm:"default:0" json:"lastLoginAt"`
-	CreatedAt    int64  `json:"createdAt"`
-	UpdatedAt    int64  `json:"updatedAt"`
+	UserType    int    `gorm:"default:0" json:"userType"`
+	Phone       string `gorm:"size:32" json:"phone"`
+	Email       string `gorm:"size:128;default:''" json:"email"`
+	Title       string `gorm:"size:64" json:"title"`
+	Status      int    `gorm:"default:1" json:"status"`
+	LastLoginAt int64  `gorm:"default:0" json:"lastLoginAt"`
+	CreatedAt   int64  `json:"createdAt"`
+	UpdatedAt   int64  `json:"updatedAt"`
 }
 
 type Device struct {
@@ -153,16 +153,21 @@ type GroupMember struct {
 }
 
 type FileRecord struct {
-	ID        int64  `gorm:"primaryKey;autoIncrement" json:"id"`
-	FileID    string `gorm:"size:64;uniqueIndex" json:"fileId"`
-	UID       string `gorm:"size:32;index" json:"uid"`
-	Name      string `gorm:"size:256" json:"name"`
-	Size      int64  `json:"size"`
-	MimeType  string `gorm:"size:64" json:"mimeType"`
-	Path      string `gorm:"size:512" json:"-"`
-	ConvID    string `gorm:"size:64" json:"convId"`
-	Status    int    `gorm:"default:1" json:"status"`
-	CreatedAt int64  `json:"createdAt"`
+	ID       int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	FileID   string `gorm:"size:64;uniqueIndex" json:"fileId"`
+	UID      string `gorm:"size:32;index" json:"uid"`
+	Name     string `gorm:"size:256" json:"name"`
+	Size     int64  `json:"size"`
+	MimeType string `gorm:"size:64" json:"mimeType"`
+	Path     string `gorm:"size:512" json:"-"`
+	ConvID   string `gorm:"size:64" json:"convId"`
+	// 视频元数据：时长、分辨率与封面文件，供各端气泡展示与直接播放
+	DurationMs int64  `json:"durationMs"`
+	Width      int    `json:"width"`
+	Height     int    `json:"height"`
+	CoverID    string `gorm:"size:64" json:"coverFileId"`
+	Status     int    `gorm:"default:1" json:"status"`
+	CreatedAt  int64  `json:"createdAt"`
 }
 
 type Notice struct {
@@ -243,25 +248,25 @@ type Blacklist struct {
 	CreatedAt  int64  `json:"createdAt"`
 }
 
-func (User) TableName() string         { return "sys_user" }
-func (Device) TableName() string       { return "sys_device" }
-func (Conversation) TableName() string { return "im_conversation" }
-func (Message) TableName() string      { return "im_message_0000" }
-func (Call) TableName() string         { return "im_call" }
-func (Friend) TableName() string       { return "im_friend" }
-func (FriendApply) TableName() string  { return "im_friend_apply" }
-func (Dept) TableName() string         { return "sys_dept" }
-func (AuditLog) TableName() string     { return "sys_audit_log" }
-func (Group) TableName() string        { return "im_group" }
-func (GroupMember) TableName() string  { return "im_group_member" }
-func (FileRecord) TableName() string   { return "im_file" }
-func (Notice) TableName() string       { return "sys_notice" }
-func (Role) TableName() string         { return "sys_role" }
-func (UserRole) TableName() string     { return "sys_user_role" }
-func (Favorite) TableName() string     { return "im_favorite" }
-func (SensitiveHit) TableName() string { return "sys_sensitive_hit" }
+func (User) TableName() string          { return "sys_user" }
+func (Device) TableName() string        { return "sys_device" }
+func (Conversation) TableName() string  { return "im_conversation" }
+func (Message) TableName() string       { return "im_message_0000" }
+func (Call) TableName() string          { return "im_call" }
+func (Friend) TableName() string        { return "im_friend" }
+func (FriendApply) TableName() string   { return "im_friend_apply" }
+func (Dept) TableName() string          { return "sys_dept" }
+func (AuditLog) TableName() string      { return "sys_audit_log" }
+func (Group) TableName() string         { return "im_group" }
+func (GroupMember) TableName() string   { return "im_group_member" }
+func (FileRecord) TableName() string    { return "im_file" }
+func (Notice) TableName() string        { return "sys_notice" }
+func (Role) TableName() string          { return "sys_role" }
+func (UserRole) TableName() string      { return "sys_user_role" }
+func (Favorite) TableName() string      { return "im_favorite" }
+func (SensitiveHit) TableName() string  { return "sys_sensitive_hit" }
 func (SystemSetting) TableName() string { return "sys_setting" }
-func (LoginLog) TableName() string     { return "sys_login_log" }
-func (Blacklist) TableName() string    { return "im_blacklist" }
+func (LoginLog) TableName() string      { return "sys_login_log" }
+func (Blacklist) TableName() string     { return "im_blacklist" }
 
 func Now() int64 { return time.Now().UnixMilli() }

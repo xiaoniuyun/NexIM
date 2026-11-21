@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/nexim-s
 
 # ---------- 阶段3：运行（单二进制，API + WS + Admin） ----------
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk add --no-cache ca-certificates tzdata ffmpeg \
     && addgroup -S nexim && adduser -S -G nexim nexim
 WORKDIR /app
 COPY --from=builder /out/nexim-server ./nexim-server

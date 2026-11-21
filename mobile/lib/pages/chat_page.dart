@@ -315,6 +315,10 @@ class _ChatPageState extends State<ChatPage> {
         'name': fname,
         'size': rec['size'] ?? 0,
         'mime': mime,
+        if (rec['durationMs'] != null) 'durationMs': rec['durationMs'],
+        if (rec['width'] != null) 'width': rec['width'],
+        if (rec['height'] != null) 'height': rec['height'],
+        if (rec['coverFileId'] != null) 'coverFileId': rec['coverFileId'],
       }, localPath: localPath);
       // 清理 image_picker 在选择/拍摄时写入缓存的临时文件
       await _cleanPicked(path);
@@ -680,6 +684,15 @@ class _ChatPageState extends State<ChatPage> {
     return RegExp(r'\.(png|jpe?g|gif|webp|bmp|heic|heif)$').hasMatch(n);
   }
 
+  // 历史消息被记为 file 的视频同样按视频渲染，保证各端都能直接播放
+  bool _isVideoMsg(Msg m) {
+    if (m.type == 'video') return true;
+    if (m.type != 'file') return false;
+    final ex = m.extra is Map ? Map<String, dynamic>.from(m.extra) : const <String, dynamic>{};
+    final n = '${ex['name'] ?? m.content}'.toLowerCase();
+    return RegExp(r'\.(mp4|mov|m4v|webm|avi|mkv)$').hasMatch(n);
+  }
+
   Widget _messageTile(AppState app, Msg m) {
     if (m.type == 'system') {
       return Padding(
@@ -760,18 +773,19 @@ class _ChatPageState extends State<ChatPage> {
                     : netImage(),
               ),
             );
-    } else if (m.type == 'video') {
+    } else if (_isVideoMsg(m)) {
       final fid = '${extra['fileId'] ?? ''}';
-      content = InkWell(
-        onTap: fid.isEmpty ? null : () => _openVideo(Api.fileUrl(fid), '${extra['name'] ?? '视频'}'),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.play_circle_fill, color: mine ? Colors.white : const Color(0xFF4F6EF7), size: 30),
-            const SizedBox(width: 8),
-            Text('视频 ${extra['name'] ?? ''}', style: TextStyle(color: textColor, fontSize: 13)),
-          ],
-        ),
+      content = _InlineVideo(
+        url: fid.isEmpty ? '' : Api.fileUrl(fid),
+        posterUrl: '${extra['coverFileId'] ?? ''}'.isEmpty
+            ? ''
+            : Api.fileUrl('${extra['coverFileId']}'),
+        coverKey: 'cover_${extra['coverFileId']}',
+        durationMs: (extra['durationMs'] as num?)?.toInt() ?? 0,
+        title: '${extra['name'] ?? '视频'}',
+        fg: textColor,
+        mediaWidth: (extra['width'] as num?)?.toInt() ?? 0,
+        mediaHeight: (extra['height'] as num?)?.toInt() ?? 0,
       );
     } else if (m.type == 'file') {
       content = Row(
@@ -896,8 +910,12 @@ class _ChatPageState extends State<ChatPage> {
       content = Text(m.content, style: TextStyle(color: textColor, fontSize: 15, height: 1.35));
     }
 
+    // 视频气泡占满可用宽度，其余消息沿用 72% 宽度上限
+    final wideBubble = m.status != 2 && _isVideoMsg(m);
     final bubble = Container(
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+      constraints: BoxConstraints(
+        maxWidth: wideBubble ? double.infinity : MediaQuery.of(context).size.width * 0.72,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: bubbleColor,
@@ -967,10 +985,6 @@ class _ChatPageState extends State<ChatPage> {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => _ImageViewerPage(url: url, localPath: localPath, cacheKey: cacheKey),
     ));
-  }
-
-  void _openVideo(String url, String title) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => _VideoPlayerPage(url: url, title: title)));
   }
 
   Widget _header(AppState app) {
@@ -1414,11 +1428,347 @@ class _ImageViewerPageState extends State<_ImageViewerPage> {
   }
 }
 
+/// 视频气泡内联播放：首帧展示封面，点一下就地播放，
+/// 底部带进度、倍速与全屏，与桌面端消息内的播放效果保持一致
+class _InlineVideo extends StatefulWidget {
+  final String url;
+  final String posterUrl;
+  final String coverKey;
+  final int durationMs;
+  final String title;
+  final Color fg;
+  final int mediaWidth;
+  final int mediaHeight;
+  const _InlineVideo({
+    required this.url,
+    required this.posterUrl,
+    required this.coverKey,
+    required this.durationMs,
+    required this.title,
+    required this.fg,
+    this.mediaWidth = 0,
+    this.mediaHeight = 0,
+  });
+
+  @override
+  State<_InlineVideo> createState() => _InlineVideoState();
+}
+
+class _InlineVideoState extends State<_InlineVideo> {
+  VideoPlayerController? _c;
+  bool _initing = false;
+  bool _failed = false;
+  bool _played = false;
+  double _speed = 1.0;
+  static const _speeds = [0.5, 1.0, 1.5, 2.0];
+
+  @override
+  void initState() {
+    super.initState();
+    // 没有封面（老消息/服务端未取到帧）时预加载首帧，让预览和图片一样直接出画面
+    if (widget.posterUrl.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _prepareFrame();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (identical(_playing, this)) _playing = null;
+    _c?.removeListener(_onTick);
+    _c?.dispose();
+    super.dispose();
+  }
+
+  /// 只初始化不播放，仅用于渲染首帧预览
+  Future<void> _prepareFrame() async {
+    if (_c != null || widget.url.isEmpty) return;
+    final nc = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _c = nc;
+    nc.addListener(_onTick);
+    try {
+      await nc.initialize();
+      // 片头常是黑帧，取 1/4 处做预览（与服务端封面取帧一致）
+      final d = nc.value.duration;
+      if (d.inSeconds > 4) {
+        await nc.seekTo(Duration(milliseconds: d.inMilliseconds ~/ 4));
+      }
+      // 静音试播一帧再暂停：部分机型 seek 后不重绘，预览会停在黑屏
+      await nc.setVolume(0);
+      await nc.play();
+      await Future.delayed(const Duration(milliseconds: 150));
+      await nc.pause();
+      await nc.setVolume(1);
+      if (mounted) setState(() {});
+    } catch (_) {
+      // 首帧加载失败保持占位，不影响点击播放
+    }
+  }
+
+  /// 同一列表内只允许一个视频播放：记录当前播放实例，播放新视频时暂停它
+  static _InlineVideoState? _playing;
+
+  void _claim() {
+    final prev = _playing;
+    if (prev != null && !identical(prev, this)) prev._pauseByOther();
+    _playing = this;
+  }
+
+  void _pauseByOther() {
+    final c = _c;
+    if (c == null || !c.value.isPlaying) return;
+    c.pause();
+    if (mounted) setState(() {});
+  }
+
+  void _onTick() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _toggle() async {
+    if (widget.url.isEmpty) return;
+    final c = _c;
+    if (c == null) {
+      if (_initing) return;
+      setState(() {
+        _initing = true;
+        _failed = false;
+      });
+      final nc = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      _c = nc;
+      nc.addListener(_onTick);
+      try {
+        await nc.initialize();
+        await nc.setPlaybackSpeed(_speed);
+        _claim();
+        _played = true;
+        await nc.play();
+        if (mounted) setState(() => _initing = false);
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _initing = false;
+            _failed = true;
+          });
+        }
+      }
+      return;
+    }
+    if (!c.value.isInitialized) return; // 预览首帧仍在加载
+    if (c.value.isPlaying) {
+      await c.pause();
+      if (identical(_playing, this)) _playing = null;
+    } else {
+      _claim();
+      // 预览停在 1/4 处，正式播放时从头开始
+      if (!_played) await c.seekTo(Duration.zero);
+      _played = true;
+      await c.play();
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _cycleSpeed() async {
+    final next = _speeds[(_speeds.indexOf(_speed) + 1) % _speeds.length];
+    await _c?.setPlaybackSpeed(next);
+    if (mounted) setState(() => _speed = next);
+  }
+
+  Future<void> _fullscreen() async {
+    if (_c == null) await _toggle();
+    final c = _c;
+    if (c == null || !c.value.isInitialized) return;
+    if (c.value.isPlaying) await c.pause();
+    if (!mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => _VideoPlayerPage(
+        url: widget.url,
+        title: widget.title,
+        startMs: c.value.position.inMilliseconds,
+        speed: _speed,
+        autoFullscreen: true,
+      ),
+    ));
+  }
+
+  String _t(Duration d) {
+    final m = d.inMinutes.toString().padLeft(2, '0');
+    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  String get _speedText => _speed == _speed.roundToDouble() ? '${_speed.toInt()}' : '$_speed';
+
+  Widget _poster() {
+    const placeholder = ColoredBox(color: Colors.black26);
+    if (widget.posterUrl.isEmpty) return placeholder;
+    return CachedNetworkImage(
+      imageUrl: widget.posterUrl,
+      cacheKey: widget.coverKey,
+      cacheManager: AppImages.cache,
+      fit: BoxFit.contain,
+      placeholder: (_, __) => placeholder,
+      errorWidget: (_, __, ___) {
+        // 封面取不到时退回视频首帧
+        if (_c == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _prepareFrame();
+          });
+        }
+        return placeholder;
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 预览铺满气泡可用宽度，高度按视频原始比例
+    return LayoutBuilder(builder: (context, cons) {
+      final c = _c;
+      final ready = c != null && c.value.isInitialized;
+      final total = ready && c.value.duration.inMilliseconds > 0
+          ? c.value.duration
+          : Duration(milliseconds: widget.durationMs);
+      final w = cons.maxWidth.isFinite
+          ? cons.maxWidth
+          : MediaQuery.sizeOf(context).width - 90;
+      // 高度完整容纳整段画面（不裁切），有元数据用原始宽高比
+      var ar = 16 / 9;
+      if (widget.mediaWidth > 0 && widget.mediaHeight > 0) {
+        ar = widget.mediaWidth / widget.mediaHeight;
+      } else if (ready && c.value.size.width > 0 && c.value.size.height > 0) {
+        ar = c.value.size.width / c.value.size.height;
+      }
+      var h = w / ar;
+      // 只限制不超出屏幕，保证整幅画面可见
+      h = h.clamp(140.0, MediaQuery.sizeOf(context).height * 0.85);
+      return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            width: w,
+            height: h,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: widget.url.isEmpty ? null : _toggle,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (ready)
+                    FittedBox(
+                      fit: BoxFit.contain,
+                      clipBehavior: Clip.hardEdge,
+                      child: SizedBox(
+                        width: c.value.size.width <= 0 ? 16 : c.value.size.width,
+                        height: c.value.size.height <= 0 ? 9 : c.value.size.height,
+                        child: VideoPlayer(c),
+                      ),
+                    )
+                  else
+                    _poster(),
+                  if (!ready || !c.value.isPlaying)
+                    ColoredBox(
+                      color: Colors.black26,
+                      child: Center(
+                        child: _initing
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : Icon(_failed ? Icons.error_outline : Icons.play_circle_fill,
+                                color: Colors.white, size: 44),
+                      ),
+                    ),
+                  if ((!ready || !c.value.isPlaying) && total.inMilliseconds > 0)
+                    Positioned(
+                      right: 6,
+                      bottom: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(_t(total), style: const TextStyle(color: Colors.white, fontSize: 11)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // 播放后显示与桌面端一致的控制条：进度 + 时间 + 倍速 + 全屏
+        if (ready && _played)
+          SizedBox(
+            width: w,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                VideoProgressIndicator(
+                  c,
+                  allowScrubbing: true,
+                  padding: const EdgeInsets.only(top: 4),
+                  colors: VideoProgressColors(
+                    playedColor: widget.fg,
+                    bufferedColor: widget.fg.withValues(alpha: 0.35),
+                    backgroundColor: widget.fg.withValues(alpha: 0.18),
+                  ),
+                ),
+                SizedBox(
+                  height: 24,
+                  child: Row(
+                    children: [
+                      Text('${_t(c.value.position)}/${_t(total)}',
+                          style: TextStyle(color: widget.fg, fontSize: 10)),
+                      const Spacer(),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _cycleSpeed,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          child: Text('${_speedText}x',
+                              style: TextStyle(color: widget.fg, fontSize: 11)),
+                        ),
+                      ),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _fullscreen,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                          child: Icon(Icons.fullscreen, color: widget.fg, size: 18),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+      );
+    });
+  }
+}
+
 /// 视频播放：点击画面播放/暂停，底部可拖动进度
 class _VideoPlayerPage extends StatefulWidget {
   final String url;
   final String title;
-  const _VideoPlayerPage({required this.url, required this.title});
+  final int startMs;
+  final double speed;
+  final bool autoFullscreen;
+  const _VideoPlayerPage({
+    required this.url,
+    required this.title,
+    this.startMs = 0,
+    this.speed = 1.0,
+    this.autoFullscreen = false,
+  });
 
   @override
   State<_VideoPlayerPage> createState() => _VideoPlayerPageState();
@@ -1427,11 +1777,21 @@ class _VideoPlayerPage extends StatefulWidget {
 class _VideoPlayerPageState extends State<_VideoPlayerPage> {
   VideoPlayerController? _controller;
   bool _failed = false;
+  bool _fullscreen = false;
+  double _speed = 1.0;
+  static const _speeds = [0.5, 1.0, 1.5, 2.0];
 
   @override
   void initState() {
     super.initState();
+    _speed = widget.speed;
     _init();
+    // 从气泡控制条点全屏进来时直接横屏铺满，与桌面端全屏效果一致
+    if (widget.autoFullscreen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_fullscreen) _toggleFullscreen();
+      });
+    }
   }
 
   Future<void> _init() async {
@@ -1441,6 +1801,11 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
     try {
       await controller.initialize();
       await controller.setLooping(false);
+      await controller.setPlaybackSpeed(_speed);
+      // 从气泡内播放位置续播，避免全屏后从头开始
+      if (widget.startMs > 0) {
+        await controller.seekTo(Duration(milliseconds: widget.startMs));
+      }
       await controller.play();
       if (mounted) setState(() {});
     } catch (_) {
@@ -1452,8 +1817,30 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _cycleSpeed() async {
+    final i = _speeds.indexOf(_speed);
+    final next = _speeds[(i + 1) % _speeds.length];
+    await _controller?.setPlaybackSpeed(next);
+    if (mounted) setState(() => _speed = next);
+  }
+
+  Future<void> _toggleFullscreen() async {
+    final next = !_fullscreen;
+    setState(() => _fullscreen = next);
+    if (next) {
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      await SystemChrome.setPreferredOrientations(
+          [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    } else {
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    }
+  }
+
   @override
   void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     _controller?.removeListener(_onTick);
     _controller?.dispose();
     super.dispose();
@@ -1471,42 +1858,59 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
     final ready = controller != null && controller.value.isInitialized;
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(widget.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white, fontSize: 15)),
-      ),
+      appBar: _fullscreen
+          ? null
+          : AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              title: Text(widget.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 15)),
+            ),
       extendBodyBehindAppBar: true,
       body: _failed
           ? const Center(child: Text('视频加载失败', style: TextStyle(color: Colors.white70, fontSize: 14)))
-          : Center(
-              child: !ready
-                  ? const CircularProgressIndicator(color: Colors.white70)
-                  : GestureDetector(
-                      onTap: () {
-                        if (controller.value.isPlaying) {
-                          controller.pause();
-                        } else {
-                          controller.play();
-                        }
-                        setState(() {});
-                      },
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          AspectRatio(
-                            aspectRatio: controller.value.aspectRatio <= 0 ? 16 / 9 : controller.value.aspectRatio,
-                            child: VideoPlayer(controller),
+          : Stack(
+              children: [
+                Center(
+                  child: !ready
+                      ? const CircularProgressIndicator(color: Colors.white70)
+                      : GestureDetector(
+                          onTap: () {
+                            if (controller.value.isPlaying) {
+                              controller.pause();
+                            } else {
+                              controller.play();
+                            }
+                            setState(() {});
+                          },
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              AspectRatio(
+                                aspectRatio: controller.value.aspectRatio <= 0 ? 16 / 9 : controller.value.aspectRatio,
+                                child: VideoPlayer(controller),
+                              ),
+                              if (!controller.value.isPlaying)
+                                const Icon(Icons.play_circle_fill, color: Colors.white70, size: 64),
+                            ],
                           ),
-                          if (!controller.value.isPlaying)
-                            const Icon(Icons.play_circle_fill, color: Colors.white70, size: 64),
-                        ],
+                        ),
+                ),
+                if (_fullscreen)
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: SafeArea(
+                      child: IconButton(
+                        icon: const Icon(Icons.fullscreen_exit, color: Colors.white, size: 28),
+                        onPressed: _toggleFullscreen,
                       ),
                     ),
+                  ),
+              ],
             ),
       bottomNavigationBar: ready
           ? SafeArea(
@@ -1521,6 +1925,22 @@ class _VideoPlayerPageState extends State<_VideoPlayerPage> {
                     ),
                     Text(_fmt(controller.value.duration),
                         style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    TextButton(
+                      onPressed: _cycleSpeed,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(44, 32),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                      ),
+                      child: Text('${_speed == _speed.roundToDouble() ? _speed.toInt() : _speed}x',
+                          style: const TextStyle(fontSize: 12)),
+                    ),
+                    IconButton(
+                      icon: Icon(_fullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                          color: Colors.white, size: 22),
+                      onPressed: _toggleFullscreen,
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ],
                 ),
               ),
