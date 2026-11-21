@@ -71,7 +71,7 @@ func (a *AdminService) CreateUser(username, password, nickname string, deptID in
 	return &u, nil
 }
 
-// EnsureDefaultRole 未分配任何角色的用户默认授予「普通用户」
+// EnsureDefaultRole 未分配任何角色时：内部成员授予「普通用户」，外部联系人授予「外部联系人」
 func (a *AdminService) EnsureDefaultRole(uid string) error {
 	if uid == "" {
 		return nil
@@ -81,9 +81,19 @@ func (a *AdminService) EnsureDefaultRole(uid string) error {
 	if cnt > 0 {
 		return nil
 	}
-	var r model.Role
-	if a.S.DB.Where("code = ?", "USER").First(&r).Error != nil {
+	var u model.User
+	if a.S.DB.Where("uid = ?", uid).First(&u).Error != nil {
 		return nil
+	}
+	code := "USER"
+	if IsExternalUser(&u) {
+		code = "EXTERNAL"
+	}
+	var r model.Role
+	if a.S.DB.Where("code = ?", code).First(&r).Error != nil {
+		if a.S.DB.Where("code = ?", "USER").First(&r).Error != nil {
+			return nil
+		}
 	}
 	return a.S.DB.Create(&model.UserRole{UID: uid, RoleID: r.ID}).Error
 }

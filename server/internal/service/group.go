@@ -19,14 +19,15 @@ const (
 	CompanyGroupName = "公司全员群"
 )
 
-// EnsureCompanyGroup 幂等创建公司全员群，并把现有全部启用用户纳入（启动时调用）
+// EnsureCompanyGroup 幂等创建公司全员群，并把组织架构内的启用用户纳入（启动时调用）
+// 外部联系人（user_type = 1 或未分配部门）不属于公司全员群
 func (g *GroupService) EnsureCompanyGroup() (*model.Group, error) {
 	now := model.Now()
 	var grp model.Group
 	if err := g.S.DB.Where("group_id = ?", CompanyGroupID).First(&grp).Error; err != nil {
 		grp = model.Group{
 			GroupID: CompanyGroupID, Name: CompanyGroupName, OwnerUID: g.companyOwner(),
-			Avatar: "#2f7df6", Notice: "公司全员群：所有成员自动加入，可在此与全公司同事交流",
+			Avatar: "#2f7df6", Notice: "公司全员群：组织架构内的成员自动加入，可在此与全公司同事交流",
 			Status: 1, CreatedAt: now,
 		}
 		if err := g.S.DB.Create(&grp).Error; err != nil {
@@ -34,9 +35,16 @@ func (g *GroupService) EnsureCompanyGroup() (*model.Group, error) {
 		}
 	}
 	var uids []string
-	g.S.DB.Model(&model.User{}).Where("status = 1").Order("id").Pluck("uid", &uids)
+	g.S.DB.Model(&model.User{}).Where("status = 1 AND user_type = 0 AND dept_id > 0").Order("id").Pluck("uid", &uids)
 	for _, uid := range uids {
 		g.joinCompanyMember(uid, now)
+	}
+	// 清理历史上被误加入公司群的外部联系人及其公司群会话
+	var extUIDs []string
+	g.S.DB.Model(&model.User{}).Where("user_type = 1 OR dept_id = 0").Pluck("uid", &extUIDs)
+	if len(extUIDs) > 0 {
+		g.S.DB.Where("group_id = ? AND uid IN ?", CompanyGroupID, extUIDs).Delete(&model.GroupMember{})
+		g.S.DB.Where("conv_id = ? AND owner_uid IN ?", "conv_"+CompanyGroupID, extUIDs).Delete(&model.Conversation{})
 	}
 	// 存量用户补会话，登录后即可在会话列表看到公司群
 	g.ensureConversations(CompanyGroupID, grp.Name, uids, now)
@@ -45,7 +53,7 @@ func (g *GroupService) EnsureCompanyGroup() (*model.Group, error) {
 	return &grp, nil
 }
 
-// JoinCompanyGroup 新用户加入公司全员群（幂等），创建用户与注册成功后调用
+// JoinCompanyGroup 新用户加入公司全员群（幂等），仅后台创建用户（加入组织架构）后调用
 func (g *GroupService) JoinCompanyGroup(uid string) error {
 	if uid == "" {
 		return nil
@@ -108,9 +116,31 @@ func (g *GroupService) MyGroups(uid string) []model.Group {
 	if len(ids) == 0 {
 		return []model.Group{}
 	}
+	// 外部联系人不可见公司全员群（内部组织架构群）
+	if g.isExternal(uid) {
+		filtered := ids[:0]
+		for _, id := range ids {
+			if id != CompanyGroupID {
+				filtered = append(filtered, id)
+			}
+		}
+		ids = filtered
+		if len(ids) == 0 {
+			return []model.Group{}
+		}
+	}
 	var groups []model.Group
 	g.S.DB.Where("group_id IN ? AND status = 1", ids).Find(&groups)
 	return groups
+}
+
+// isExternal 用户是否为外部联系人
+func (g *GroupService) isExternal(uid string) bool {
+	var u model.User
+	if g.S.DB.Select("user_type, dept_id").Where("uid = ?", uid).First(&u).Error != nil {
+		return false
+	}
+	return IsExternalUser(&u)
 }
 
 func (g *GroupService) Detail(groupID string) *model.Group {
@@ -120,6 +150,18 @@ func (g *GroupService) Detail(groupID string) *model.Group {
 	}
 	return &gr
 }
+
+// RoleOf 返回成员在群内的角色：owner / member，非成员返回空串
+func (g *GroupService) RoleOf(groupID, uid string) string {
+	var m model.GroupMember
+	if g.S.DB.Where("group_id = ? AND uid = ?", groupID, uid).First(&m).Error != nil {
+		return ""
+	}
+	return m.Role
+}
+
+// IsMember 是否为群成员
+func (g *GroupService) IsMember(groupID, uid string) bool { return g.RoleOf(groupID, uid) != "" }
 
 func (g *GroupService) Members(groupID string) []map[string]interface{} {
 	var ms []model.GroupMember

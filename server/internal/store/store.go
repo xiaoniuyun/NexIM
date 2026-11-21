@@ -220,16 +220,36 @@ func (s *Store) finalizeSeed() error {
 	return s.fixDeptPaths()
 }
 
-// ensureDefaultRoles 未分配角色的存量用户兜底为普通用户（USER）
+// ensureDefaultRoles 内部成员兜底为普通用户（USER），外部联系人兜底为外部联系人（EXTERNAL）
 func (s *Store) ensureDefaultRoles() error {
-	var userRole model.Role
-	if s.DB.Where("code = ?", "USER").First(&userRole).Error != nil {
-		return nil
+	var userRole, extRole model.Role
+	hasUser := s.DB.Where("code = ?", "USER").First(&userRole).Error == nil
+	hasExt := s.DB.Where("code = ?", "EXTERNAL").First(&extRole).Error == nil
+	// 仅持有普通用户角色的外部联系人，改为外部联系人角色
+	if hasUser && hasExt {
+		if err := s.DB.Exec(`UPDATE sys_user_role ur
+			JOIN sys_user u ON u.uid = ur.uid
+			JOIN (SELECT uid FROM sys_user_role GROUP BY uid HAVING COUNT(1) = 1) single_role ON single_role.uid = ur.uid
+			SET ur.role_id = ?
+			WHERE ur.role_id = ? AND (u.user_type = 1 OR u.dept_id = 0)`, extRole.ID, userRole.ID).Error; err != nil {
+			return err
+		}
 	}
-	return s.DB.Exec(`INSERT INTO sys_user_role (uid, role_id)
-		SELECT u.uid, ? FROM sys_user u
-		LEFT JOIN sys_user_role ur ON ur.uid = u.uid
-		WHERE u.status = 1 AND ur.role_id IS NULL`, userRole.ID).Error
+	if hasExt {
+		if err := s.DB.Exec(`INSERT INTO sys_user_role (uid, role_id)
+			SELECT u.uid, ? FROM sys_user u
+			LEFT JOIN sys_user_role ur ON ur.uid = u.uid
+			WHERE u.status = 1 AND (u.user_type = 1 OR u.dept_id = 0) AND ur.role_id IS NULL`, extRole.ID).Error; err != nil {
+			return err
+		}
+	}
+	if hasUser {
+		return s.DB.Exec(`INSERT INTO sys_user_role (uid, role_id)
+			SELECT u.uid, ? FROM sys_user u
+			LEFT JOIN sys_user_role ur ON ur.uid = u.uid
+			WHERE u.status = 1 AND u.user_type = 0 AND u.dept_id > 0 AND ur.role_id IS NULL`, userRole.ID).Error
+	}
+	return nil
 }
 
 // fixUserDeptRefs 修复历史种子中「按路径编号」而非真实部门 ID 的用户引用
@@ -310,6 +330,7 @@ func builtinRoles() []model.Role {
 		{Code: "AUDITOR", Name: "审计员", Permissions: `["dashboard:view","menu:audit","menu:logs","audit:message:list","audit:message:export","log:list","log:export","rtc:record:list"]`, DataScope: "all", Version: 1},
 		{Code: "DEPT_ADMIN", Name: "部门管理员", Permissions: `["dashboard:view","menu:users","menu:depts","user:list","dept:list"]`, DataScope: "deptAndSub", Version: 1},
 		{Code: "USER", Name: "普通用户", Permissions: `[]`, DataScope: "self", Version: 1},
+		{Code: "EXTERNAL", Name: "外部联系人", Permissions: `[]`, DataScope: "self", Version: 1},
 	}
 }
 

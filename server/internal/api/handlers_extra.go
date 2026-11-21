@@ -43,10 +43,25 @@ func (rt *Router) messageSearch(c *gin.Context) {
 		pkg.Fail(c, 400, 1001, "参数错误")
 		return
 	}
+	me := uid(c)
+	if req.ConvID != "" && !rt.Msg.CanRead(me, req.ConvID) {
+		pkg.Fail(c, 403, 3003, "无权访问该会话")
+		return
+	}
 	list, err := rt.S.Msg.Search(req.Keyword, req.ConvID, 50)
 	if err != nil {
 		pkg.Fail(c, 500, 9000, err.Error())
 		return
+	}
+	// 全局搜索仅返回当前用户有权访问的会话消息
+	if req.ConvID == "" {
+		allowed := make([]model.Message, 0, len(list))
+		for _, m := range list {
+			if rt.Msg.CanRead(me, m.ConvID) {
+				allowed = append(allowed, m)
+			}
+		}
+		list = allowed
 	}
 	pkg.OK(c, list)
 }
@@ -67,6 +82,10 @@ func (rt *Router) messageForward(c *gin.Context) {
 		return
 	}
 	me := uid(c)
+	if !rt.Msg.CanRead(me, src.ConvID) {
+		pkg.Fail(c, 403, 3003, "无权转发该消息")
+		return
+	}
 	content := "[转发] " + src.Content
 	if req.Note != "" {
 		content = req.Note + " · " + content
@@ -91,7 +110,12 @@ func (rt *Router) groups(c *gin.Context) {
 	pkg.OK(c, rt.Group.MyGroups(uid(c)))
 }
 func (rt *Router) groupDetail(c *gin.Context) {
-	g := rt.Group.Detail(c.Param("id"))
+	id := c.Param("id")
+	if !rt.Group.IsMember(id, uid(c)) {
+		pkg.Fail(c, 403, 3003, "非群成员无法查看群信息")
+		return
+	}
+	g := rt.Group.Detail(id)
 	if g == nil {
 		pkg.Fail(c, 404, 4000, "群不存在")
 		return
@@ -99,6 +123,10 @@ func (rt *Router) groupDetail(c *gin.Context) {
 	pkg.OK(c, g)
 }
 func (rt *Router) groupMembers(c *gin.Context) {
+	if !rt.Group.IsMember(c.Param("id"), uid(c)) {
+		pkg.Fail(c, 403, 3003, "非群成员无法查看群成员")
+		return
+	}
 	pkg.OK(c, rt.Group.Members(c.Param("id")))
 }
 func (rt *Router) groupCreate(c *gin.Context) {
@@ -109,6 +137,15 @@ func (rt *Router) groupCreate(c *gin.Context) {
 	if c.ShouldBindJSON(&req) != nil {
 		pkg.Fail(c, 400, 1001, "参数错误")
 		return
+	}
+	// 外部联系人只能与外部联系人建群，避免把企业成员拉入外部群
+	if rt.Contact.IsExternal(uid(c)) {
+		for _, mu := range req.Members {
+			if !rt.Contact.IsExternal(mu) {
+				pkg.Fail(c, 403, 3003, "外部联系人只能邀请外部联系人加入群聊")
+				return
+			}
+		}
 	}
 	g, err := rt.Group.Create(uid(c), req.Name, req.Members)
 	if err != nil {
@@ -126,15 +163,47 @@ func (rt *Router) groupInvite(c *gin.Context) {
 		pkg.Fail(c, 400, 1001, "参数错误")
 		return
 	}
-	_ = rt.Group.Invite(c.Param("id"), req.Members)
+	id := c.Param("id")
+	me := uid(c)
+	if !rt.Group.IsMember(id, me) {
+		pkg.Fail(c, 403, 3003, "非群成员无法邀请他人入群")
+		return
+	}
+	// 外部联系人只能邀请其他外部联系人
+	if rt.Contact.IsExternal(me) {
+		for _, mu := range req.Members {
+			if !rt.Contact.IsExternal(mu) {
+				pkg.Fail(c, 403, 3003, "外部联系人无法邀请企业成员入群")
+				return
+			}
+		}
+	}
+	_ = rt.Group.Invite(id, req.Members)
 	pkg.OK(c, nil)
 }
 func (rt *Router) groupRemoveMember(c *gin.Context) {
-	_ = rt.Group.RemoveMember(c.Param("id"), c.Param("uid"))
+	id := c.Param("id")
+	target := c.Param("uid")
+	me := uid(c)
+	// 本人可退群，移出他人仅群主可操作
+	if target != me && rt.Group.RoleOf(id, me) != "owner" {
+		pkg.Fail(c, 403, 3003, "仅群主可移出成员")
+		return
+	}
+	_ = rt.Group.RemoveMember(id, target)
 	pkg.OK(c, nil)
 }
 func (rt *Router) groupDissolve(c *gin.Context) {
-	_ = rt.Group.Dissolve(c.Param("id"))
+	id := c.Param("id")
+	if id == service.CompanyGroupID {
+		pkg.Fail(c, 403, 3003, "公司全员群不支持解散")
+		return
+	}
+	if rt.Group.RoleOf(id, uid(c)) != "owner" {
+		pkg.Fail(c, 403, 3003, "仅群主可解散群聊")
+		return
+	}
+	_ = rt.Group.Dissolve(id)
 	pkg.OK(c, nil)
 }
 
@@ -328,12 +397,15 @@ func (rt *Router) adminCreateUser(c *gin.Context) {
 			return
 		}
 	}
-	// 默认角色与公司全员群：新用户可直接与全组织成员交流
+	// 默认角色：内部成员为普通用户，外部联系人为外部联系人
 	if err := rt.Admin.EnsureDefaultRole(u.UID); err != nil {
 		rt.S.Log.Warn("default role assign failed", zap.String("uid", u.UID), zap.Error(err))
 	}
-	if err := rt.Group.JoinCompanyGroup(u.UID); err != nil {
-		rt.S.Log.Warn("join company group failed", zap.String("uid", u.UID), zap.Error(err))
+	// 仅组织架构内的成员自动加入公司全员群，外部联系人不加入
+	if u.DeptID > 0 {
+		if err := rt.Group.JoinCompanyGroup(u.UID); err != nil {
+			rt.S.Log.Warn("join company group failed", zap.String("uid", u.UID), zap.Error(err))
+		}
 	}
 	rt.Admin.Audit(uid(c), "user:create", u.UID, req.Username)
 	pkg.OK(c, u)

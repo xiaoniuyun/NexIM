@@ -5,7 +5,9 @@ import '../app/app_state.dart';
 import '../core/api.dart';
 import '../core/models.dart';
 import '../widgets/avatar.dart';
+import 'add_contact_page.dart';
 import 'chat_page.dart';
+import 'create_group_page.dart';
 
 class ContactsPage extends StatefulWidget {
   const ContactsPage({super.key});
@@ -31,6 +33,11 @@ class _ContactsPageState extends State<ContactsPage> with SingleTickerProviderSt
     // 外部联系人默认无法查看组织架构：隐藏该页签且不请求部门数据
     external = context.read<AppState>().user?['isExternal'] == true;
     _tab = TabController(length: external ? 2 : 3, vsync: this);
+    // 页签切换后右上角按钮行为随之变化，需要刷新
+    _tab.addListener(() {
+      if (_tab.indexIsChanging) return;
+      if (mounted) setState(() {});
+    });
     _load();
   }
 
@@ -66,6 +73,8 @@ class _ContactsPageState extends State<ContactsPage> with SingleTickerProviderSt
         members = parse(results[2], (j) => Contact.fromJson(j));
       }
       groups = parse(results[external ? 1 : 3], (j) => GroupInfo.fromJson(j));
+      // 外部联系人不可见公司全员群（内部组织架构群）
+      if (external) groups.removeWhere((g) => g.groupId == 'g_company');
     } catch (e) {
       error = '$e';
     } finally {
@@ -99,6 +108,38 @@ class _ContactsPageState extends State<ContactsPage> with SingleTickerProviderSt
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatPage(conv: conv)));
   }
 
+  int get _groupTabIndex => external ? 1 : 2;
+
+  /// 右上角「+」：外部联系人页 -> 添加联系人；群聊页 -> 发起群聊；组织架构页不显示
+  VoidCallback? get _plusAction {
+    final i = _tab.index;
+    if (i == 0) return _addContact;
+    if (i == _groupTabIndex) return _createGroup;
+    return null;
+  }
+
+  Future<void> _addContact() async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddContactPage()));
+    if (mounted) await _load();
+  }
+
+  Future<void> _createGroup() async {
+    final g = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(builder: (_) => const CreateGroupPage()),
+    );
+    if (g == null || !mounted) return;
+    final groupId = '${g['groupId'] ?? ''}';
+    if (groupId.isEmpty) return;
+    final name = '${g['name'] ?? '群聊'}';
+    final app = context.read<AppState>();
+    await app.loadConvs();
+    final convId = app.ensureGroupConv(groupId, name);
+    final conv = app.convs.firstWhere((c) => c.convId == convId);
+    if (!mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatPage(conv: conv)));
+    if (mounted) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,7 +157,12 @@ class _ContactsPageState extends State<ContactsPage> with SingleTickerProviderSt
           ],
         ),
         actions: [
-          IconButton(tooltip: '刷新', onPressed: _load, icon: const Icon(Icons.add, size: 26)),
+          if (_plusAction != null)
+            IconButton(
+              tooltip: _tab.index == 0 ? '添加外部联系人' : '发起群聊',
+              onPressed: _plusAction,
+              icon: const Icon(Icons.add, size: 26),
+            ),
         ],
         bottom: TabBar(
           controller: _tab,
@@ -247,7 +293,7 @@ class _ContactsPageState extends State<ContactsPage> with SingleTickerProviderSt
             ],
           ]),
           subtitle: Text(
-            [u.external ? '企业外部用户' : '', u.deptName, u.title, '@${u.username}']
+            [u.external ? '企业外部用户' : '', u.orgName.isNotEmpty ? u.orgName : u.deptName, u.title, '@${u.username}']
                 .where((s) => s.isNotEmpty)
                 .join(' · '),
             maxLines: 1,

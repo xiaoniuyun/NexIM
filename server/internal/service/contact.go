@@ -1,6 +1,9 @@
 package service
 
 import (
+	"strconv"
+	"strings"
+
 	"nexim/server/internal/model"
 	"nexim/server/internal/store"
 
@@ -17,12 +20,15 @@ type ContactVO struct {
 	Username string `json:"username"`
 	Nickname string `json:"nickname"`
 	Phone    string `json:"phone"`
-	Title     string `json:"title"`
-	Avatar    string `json:"avatar"`
+	Email    string `json:"email"`
+	Title    string `json:"title"`
+	Avatar   string `json:"avatar"`
 	Signature string `json:"signature"`
 	Gender    int    `json:"gender"`
 	DeptID    int64  `json:"deptId"`
 	DeptName string `json:"deptName"`
+	// OrgName 所在组织全路径（总部 / 研发中心）
+	OrgName string `json:"orgName"`
 	// External 企业外部用户（未归属任何部门），与企业内部用户单聊前需先添加好友
 	External bool `json:"external"`
 	Online   bool `json:"online"`
@@ -110,10 +116,32 @@ func (c *ContactService) ApplyFriend(fromUID, toUID, message string) error {
 	return c.S.DB.Create(&model.FriendApply{FromUID: fromUID, ToUID: toUID, Message: message, Status: 0, CreatedAt: model.Now()}).Error
 }
 
-func (c *ContactService) Applies(uid string) []model.FriendApply {
+// ApplyVO 好友申请，附带申请人资料便于直接展示
+type ApplyVO struct {
+	ID        int64  `json:"id"`
+	FromUID   string `json:"fromUid"`
+	ToUID     string `json:"toUid"`
+	Message   string `json:"message"`
+	Status    int    `json:"status"`
+	CreatedAt int64  `json:"createdAt"`
+	Username  string `json:"username"`
+	Nickname  string `json:"nickname"`
+	Avatar    string `json:"avatar"`
+}
+
+func (c *ContactService) Applies(uid string) []ApplyVO {
 	var list []model.FriendApply
 	c.S.DB.Where("to_uid = ? AND status = 0", uid).Order("created_at desc").Find(&list)
-	return list
+	out := make([]ApplyVO, 0, len(list))
+	for _, a := range list {
+		vo := ApplyVO{ID: a.ID, FromUID: a.FromUID, ToUID: a.ToUID,
+			Message: a.Message, Status: a.Status, CreatedAt: a.CreatedAt}
+		if u := c.userByUID(a.FromUID); u != nil {
+			vo.Username, vo.Nickname, vo.Avatar = u.Username, u.Nickname, u.Avatar
+		}
+		out = append(out, vo)
+	}
+	return out
 }
 
 func (c *ContactService) HandleApply(uid string, applyID int64, accept bool) error {
@@ -151,6 +179,36 @@ func (c *ContactService) toVO(u *model.User) ContactVO {
 		online = true
 	}
 	return ContactVO{ID: u.ID, UID: u.UID, Username: u.Username, Nickname: u.Nickname,
-		Phone: u.Phone, Title: u.Title, Avatar: u.Avatar, Signature: u.Signature, Gender: u.Gender,
-		DeptID: u.DeptID, DeptName: deptName, External: IsExternalUser(u), Online: online}
+		Phone: u.Phone, Email: u.Email, Title: u.Title, Avatar: u.Avatar, Signature: u.Signature, Gender: u.Gender,
+		DeptID: u.DeptID, DeptName: deptName, OrgName: c.OrgName(u.DeptID), External: IsExternalUser(u), Online: online}
+}
+
+// OrgName 组织全路径名称：按部门物化路径逐级取名称，如「总部 / 研发中心」
+// 未归属部门（外部联系人）返回空串
+func (c *ContactService) OrgName(deptID int64) string {
+	if deptID <= 0 {
+		return ""
+	}
+	var d model.Dept
+	if c.S.DB.Where("id = ?", deptID).First(&d).Error != nil {
+		return ""
+	}
+	if d.Path == "" {
+		return d.Name
+	}
+	names := []string{}
+	for _, seg := range strings.Split(d.Path, "/") {
+		id, err := strconv.ParseInt(seg, 10, 64)
+		if err != nil || id <= 0 {
+			continue
+		}
+		var one model.Dept
+		if c.S.DB.Select("name").Where("id = ?", id).First(&one).Error == nil && one.Name != "" {
+			names = append(names, one.Name)
+		}
+	}
+	if len(names) == 0 {
+		return d.Name
+	}
+	return strings.Join(names, " / ")
 }

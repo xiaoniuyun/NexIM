@@ -64,6 +64,16 @@ func (m *MessageService) Send(fromUID, convID, convType, toID, msgType, content,
 		}
 	}
 
+	// 群聊准入：必须是群成员
+	if strings.HasPrefix(convID, "conv_g_") {
+		gid := strings.TrimPrefix(convID, "conv_")
+		var cnt int64
+		m.S.DB.Model(&model.GroupMember{}).Where("group_id = ? AND uid = ?", gid, fromUID).Count(&cnt)
+		if cnt == 0 {
+			return nil, fmt.Errorf("非群成员无法在该群发送消息")
+		}
+	}
+
 	seq, err := m.nextSeq(convID)
 	if err != nil {
 		return nil, err
@@ -228,6 +238,30 @@ func (m *MessageService) ListMessages(uid, convID string, limit int) []model.Mes
 	return msgs
 }
 
+// CanRead 是否有权访问该会话：群聊需为群成员，单聊需为会话参与方
+func (m *MessageService) CanRead(uid, convID string) bool {
+	if uid == "" || convID == "" {
+		return false
+	}
+	if strings.HasPrefix(convID, "conv_g_") {
+		gid := strings.TrimPrefix(convID, "conv_")
+		var cnt int64
+		m.S.DB.Model(&model.GroupMember{}).Where("group_id = ? AND uid = ?", gid, uid).Count(&cnt)
+		return cnt > 0
+	}
+	var cnt int64
+	m.S.DB.Model(&model.Conversation{}).Where("conv_id = ? AND owner_uid = ? AND conv_type = 1", convID, uid).Count(&cnt)
+	if cnt > 0 {
+		return true
+	}
+	for _, id := range convUIDPattern.FindAllString(convID, -1) {
+		if id == uid {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *MessageService) isSingleConv(uid, convID string) bool {
 	var c model.Conversation
 	if m.S.DB.Where("conv_id = ? AND owner_uid = ?", convID, uid).First(&c).Error != nil {
@@ -240,8 +274,17 @@ func (m *MessageService) Conversations(uid string) []model.Conversation {
 	var convs []model.Conversation
 	m.S.DB.Where("owner_uid = ?", uid).Order("pinned desc, last_msg_at desc").Find(&convs)
 	blocked := m.BlockedMap(uid)
+	// 外部联系人不可见公司全员群（内部组织架构群）会话
+	external := false
+	var me model.User
+	if m.S.DB.Select("user_type, dept_id").Where("uid = ?", uid).First(&me).Error == nil {
+		external = IsExternalUser(&me)
+	}
 	out := convs[:0]
 	for i := range convs {
+		if external && convs[i].ConvID == "conv_"+CompanyGroupID {
+			continue
+		}
 		// 历史会话 peer_id 缺失时从 convId 解析并回填，避免会话列表出现空对端
 		if convs[i].ConvType == 1 && convs[i].PeerID == "" {
 			if p := peerFromConvID(convs[i].ConvID, convs[i].OwnerUID); p != "" {

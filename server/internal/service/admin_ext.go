@@ -108,7 +108,7 @@ type RoleVO struct {
 }
 
 var builtInRoles = map[string]bool{
-	"SUPER_ADMIN": true, "USER": true, "DEPT_ADMIN": true, "OPS_ADMIN": true, "AUDITOR": true,
+	"SUPER_ADMIN": true, "USER": true, "DEPT_ADMIN": true, "OPS_ADMIN": true, "AUDITOR": true, "EXTERNAL": true,
 }
 
 func isBuiltIn(code string) bool { return builtInRoles[strings.ToUpper(code)] }
@@ -271,7 +271,7 @@ func (a *AdminService) ExportUsers(q UserQuery) []UserVO {
 // UpdateUserSafe 白名单更新用户信息，禁止直接改写 UID / 密码散列等敏感列
 func (a *AdminService) UpdateUserSafe(id int64, updates map[string]interface{}) error {
 	allowed := map[string]string{
-		"nickname": "nickname", "username": "username", "phone": "phone", "title": "title",
+		"nickname": "nickname", "username": "username", "phone": "phone", "email": "email", "title": "title",
 		"dept_id": "dept_id", "deptId": "dept_id", "status": "status",
 		"user_type": "user_type", "userType": "user_type",
 	}

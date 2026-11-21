@@ -2,3 +2,4 @@ bin/
 *.exe
 *.test
 configs/config.local.yaml
+.env

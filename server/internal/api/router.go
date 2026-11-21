@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -71,6 +72,7 @@ func (rt *Router) Engine() *gin.Engine {
 	{
 		// 认证（匿名）
 		api.POST("/auth/login", rt.login)
+		api.POST("/auth/login/code", rt.loginCode)
 		api.POST("/auth/register", rt.register)
 		api.POST("/auth/refresh", rt.refresh)
 		api.POST("/auth/sms-code", rt.smsCode)
@@ -86,6 +88,7 @@ func (rt *Router) Engine() *gin.Engine {
 		auth.Use(rt.authMiddleware())
 		{
 			auth.POST("/auth/logout", rt.logout)
+			auth.POST("/auth/password", rt.changePassword)
 			auth.GET("/auth/permissions", rt.permissions)
 			auth.GET("/auth/devices", rt.devices)
 			auth.POST("/auth/devices/bind", rt.bindDevice)
@@ -359,6 +362,36 @@ func (rt *Router) login(c *gin.Context) {
 	pkg.OK(c, data)
 }
 
+func (rt *Router) loginCode(c *gin.Context) {
+	var req struct {
+		Account  string `json:"account" binding:"required"`
+		Code     string `json:"code" binding:"required"`
+		DeviceID string `json:"deviceId"`
+		Platform string `json:"platform"`
+	}
+	if c.ShouldBindJSON(&req) != nil {
+		pkg.Fail(c, 400, 1001, "参数错误")
+		return
+	}
+	ip := c.ClientIP()
+	platform := req.Platform
+	if platform == "" {
+		platform = "DESKTOP"
+	}
+	if rt.Admin.IsIPBanned(ip) {
+		pkg.Fail(c, 403, 3002, "该 IP 已被封禁，请联系管理员")
+		return
+	}
+	data, err := rt.Auth.LoginWithCode(req.Account, req.Code, req.DeviceID, req.Platform)
+	if err != nil {
+		rt.Admin.RecordLogin("", req.Account, ip, platform, req.DeviceID, false)
+		pkg.Fail(c, 401, 2000, err.Error())
+		return
+	}
+	rt.Admin.RecordLogin(fmt.Sprint(data["uid"]), req.Account, ip, platform, req.DeviceID, true)
+	pkg.OK(c, data)
+}
+
 func (rt *Router) register(c *gin.Context) {
 	var req struct {
 		Username string `json:"username" binding:"required"`
@@ -374,13 +407,11 @@ func (rt *Router) register(c *gin.Context) {
 		pkg.Fail(c, 400, 4000, err.Error())
 		return
 	}
-	// 自助注册同样默认普通用户并加入公司全员群
+	// 自助注册用户属于外部联系人：仅分配默认角色，不加入公司全员群
+	// （只有后台加入组织架构的用户才会自动入群）
 	if newUID, ok := data["uid"].(string); ok && newUID != "" {
 		if err := rt.Admin.EnsureDefaultRole(newUID); err != nil {
 			rt.S.Log.Warn("default role assign failed", zap.String("uid", newUID), zap.Error(err))
-		}
-		if err := rt.Group.JoinCompanyGroup(newUID); err != nil {
-			rt.S.Log.Warn("join company group failed", zap.String("uid", newUID), zap.Error(err))
 		}
 	}
 	pkg.OK(c, data)
@@ -428,6 +459,23 @@ func (rt *Router) forgot(c *gin.Context) {
 func (rt *Router) logout(c *gin.Context) {
 	cl := c.MustGet("claims").(*pkg.Claims)
 	_ = rt.Auth.Logout(cl.ID, cl.ExpiresAt.Unix())
+	pkg.OK(c, nil)
+}
+
+// changePassword 登录用户修改密码：需校验原密码
+func (rt *Router) changePassword(c *gin.Context) {
+	var req struct {
+		OldPassword string `json:"oldPassword" binding:"required"`
+		NewPassword string `json:"newPassword" binding:"required"`
+	}
+	if c.ShouldBindJSON(&req) != nil {
+		pkg.Fail(c, 400, 1001, "参数错误")
+		return
+	}
+	if err := rt.Auth.ChangePassword(uid(c), req.OldPassword, req.NewPassword); err != nil {
+		pkg.Fail(c, 400, 4000, err.Error())
+		return
+	}
 	pkg.OK(c, nil)
 }
 
@@ -491,6 +539,7 @@ func (rt *Router) updateMyProfile(c *gin.Context) {
 		Avatar    string `json:"avatar"`
 		Signature string `json:"signature"`
 		Gender    int    `json:"gender"`
+		Email     string `json:"email"`
 	}
 	if c.ShouldBindJSON(&req) != nil {
 		pkg.Fail(c, 400, 1001, "参数错误")
@@ -498,12 +547,17 @@ func (rt *Router) updateMyProfile(c *gin.Context) {
 	}
 	req.Nickname = strings.TrimSpace(req.Nickname)
 	req.Signature = strings.TrimSpace(req.Signature)
+	req.Email = strings.TrimSpace(req.Email)
 	if n := utf8.RuneCountInString(req.Nickname); n < 1 || n > 32 {
 		pkg.Fail(c, 400, 1001, "昵称需为 1-32 个字符")
 		return
 	}
 	if utf8.RuneCountInString(req.Signature) > 120 {
 		pkg.Fail(c, 400, 1001, "个性签名不能超过 120 个字符")
+		return
+	}
+	if req.Email != "" && (!strings.Contains(req.Email, "@") || len(req.Email) > 128) {
+		pkg.Fail(c, 400, 1001, "邮箱格式不正确")
 		return
 	}
 	if req.Gender < 0 || req.Gender > 2 {
@@ -516,7 +570,8 @@ func (rt *Router) updateMyProfile(c *gin.Context) {
 	}
 	updates := map[string]interface{}{
 		"nickname": req.Nickname, "avatar": req.Avatar,
-		"signature": req.Signature, "gender": req.Gender, "updated_at": model.Now(),
+		"signature": req.Signature, "gender": req.Gender,
+		"email": req.Email, "updated_at": model.Now(),
 	}
 	if err := rt.S.DB.Model(&model.User{}).Where("uid = ?", uid(c)).Updates(updates).Error; err != nil {
 		pkg.Fail(c, 500, 9000, "保存失败")
@@ -538,7 +593,8 @@ func (rt *Router) myProfileData(uidStr string) map[string]interface{} {
 	return map[string]interface{}{
 		"uid": u.UID, "username": u.Username, "nickname": u.Nickname,
 		"avatar": u.Avatar, "signature": u.Signature, "gender": u.Gender,
-		"phone": u.Phone, "title": u.Title, "deptId": u.DeptID, "deptName": deptName,
+		"phone": u.Phone, "email": u.Email, "title": u.Title,
+		"deptId": u.DeptID, "deptName": deptName, "orgName": rt.Contact.OrgName(u.DeptID),
 		"userType": u.UserType, "isExternal": service.IsExternalUser(&u),
 	}
 }
@@ -607,7 +663,13 @@ func (rt *Router) readAll(c *gin.Context) {
 	pkg.OK(c, nil)
 }
 func (rt *Router) messages(c *gin.Context) {
-	pkg.OK(c, rt.Msg.ListMessages(uid(c), c.Param("id"), 200))
+	me := uid(c)
+	convID := c.Param("id")
+	if !rt.Msg.CanRead(me, convID) {
+		pkg.Fail(c, 403, 3003, "无权访问该会话")
+		return
+	}
+	pkg.OK(c, rt.Msg.ListMessages(me, convID, 200))
 }
 func (rt *Router) markRead(c *gin.Context) {
 	var req struct {
@@ -681,15 +743,16 @@ func (rt *Router) revoke(c *gin.Context) {
 
 // rtcConfig 下发 WebRTC ICE Servers（STUN/TURN），前端建立 PeerConnection 时使用
 func (rt *Router) rtcConfig(c *gin.Context) {
+	host := requestHost(c)
 	ice := make([]gin.H, 0, len(rt.C.RTC.STUNServers)+1)
 	for _, u := range rt.C.RTC.STUNServers {
 		if u != "" {
-			ice = append(ice, gin.H{"urls": []string{u}})
+			ice = append(ice, gin.H{"urls": []string{clientReachableURL(u, host)}})
 		}
 	}
 	if rt.C.RTC.TurnURL != "" {
 		ice = append(ice, gin.H{
-			"urls":     []string{rt.C.RTC.TurnURL},
+			"urls":     []string{clientReachableURL(rt.C.RTC.TurnURL, host)},
 			"username": rt.C.RTC.TurnUsername, "credential": rt.C.RTC.TurnPassword,
 		})
 	}
@@ -697,6 +760,61 @@ func (rt *Router) rtcConfig(c *gin.Context) {
 		"iceServers": ice, "sfuNodes": rt.C.RTC.SFUNodes,
 		"clusterEnabled": rt.C.RTC.ClusterEnabled, "coturnAddr": rt.C.RTC.CoturnAddr,
 	})
+}
+
+// requestHost 返回客户端实际访问服务端使用的主机（支持反向代理）
+func requestHost(c *gin.Context) string {
+	if v := c.GetHeader("X-Forwarded-Host"); v != "" {
+		if i := strings.IndexByte(v, ','); i >= 0 {
+			v = v[:i]
+		}
+		if h := strings.TrimSpace(v); h != "" {
+			return h
+		}
+	}
+	return c.Request.Host
+}
+
+// clientReachableURL 把 ICE 地址中的回环主机替换成客户端访问服务端时使用的主机。
+// 配置里保留 127.0.0.1 便于单机调试，但模拟器/局域网设备拿回环地址无法连通；
+// 显式配置的公网/内网地址保持原样。
+func clientReachableURL(raw, requestHost string) string {
+	lower := strings.ToLower(raw)
+	scheme := ""
+	for _, s := range []string{"stuns:", "turns:", "turn:", "stun:"} {
+		if strings.HasPrefix(lower, s) {
+			scheme = raw[:len(s)]
+			break
+		}
+	}
+	if scheme == "" {
+		return raw
+	}
+	rest := raw[len(scheme):]
+	query := ""
+	if i := strings.IndexByte(rest, '?'); i >= 0 {
+		query, rest = rest[i:], rest[:i]
+	}
+	host, port := rest, ""
+	if h, p, err := net.SplitHostPort(rest); err == nil {
+		host, port = h, p
+	}
+	ip := net.ParseIP(strings.Trim(host, "[]"))
+	if !strings.EqualFold(host, "localhost") && !strings.EqualFold(host, "0.0.0.0") &&
+		(ip == nil || !ip.IsLoopback()) {
+		return raw
+	}
+	target := requestHost
+	if target == "" {
+		return raw
+	}
+	if h, _, err := net.SplitHostPort(target); err == nil {
+		target = h
+	}
+	if port != "" {
+		target = net.JoinHostPort(target, port)
+	}
+	return scheme + target + query
 }
 
 // callRecords 当前用户的通话记录

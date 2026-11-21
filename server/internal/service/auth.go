@@ -38,7 +38,42 @@ func (a *AuthService) Login(username, password, deviceID, platform string) (map[
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
 		return nil, fmt.Errorf("账号或密码错误")
 	}
+	return a.issueSession(&u, deviceID, platform)
+}
 
+// LoginWithCode 验证码登录（演示环境验证码固定为 123456）
+func (a *AuthService) LoginWithCode(account, code, deviceID, platform string) (map[string]interface{}, error) {
+	account = strings.TrimSpace(account)
+	if account == "" {
+		return nil, fmt.Errorf("请输入手机号或账号")
+	}
+	if code == "" {
+		return nil, fmt.Errorf("请输入验证码")
+	}
+	key := fmt.Sprintf("sms:code:%s:login", account)
+	saved, err := a.S.RDB.Get(a.S.Ctx, key).Result()
+	if err != nil && err != redis.Nil {
+		return nil, err
+	}
+	if saved == "" || saved != code {
+		return nil, fmt.Errorf("验证码错误或已过期")
+	}
+	var u model.User
+	if err := a.S.DB.Where("username = ? OR uid = ? OR phone = ?", account, account, account).First(&u).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("账号不存在")
+		}
+		return nil, err
+	}
+	if u.Status != 1 {
+		return nil, fmt.Errorf("账号已禁用")
+	}
+	a.S.RDB.Del(a.S.Ctx, key)
+	return a.issueSession(&u, deviceID, platform)
+}
+
+// issueSession 生成令牌并记录设备/登录时间，密码登录与验证码登录共用
+func (a *AuthService) issueSession(u *model.User, deviceID, platform string) (map[string]interface{}, error) {
 	// 角色/权限来自 RBAC 表；admin 标记供管理后台登录判断（拥有任一菜单权限即可进入）
 	e := ComputeEffect(a.S, u.UID)
 	roles := append([]string{"user"}, e.RoleCodes...)
@@ -72,18 +107,15 @@ func (a *AuthService) Login(username, password, deviceID, platform string) (map[
 			a.S.DB.Model(&d).Updates(map[string]interface{}{"last_active": now, "platform": platform})
 		}
 	}
-	a.S.DB.Model(&u).Update("last_login_at", now)
+	a.S.DB.Model(u).Update("last_login_at", now)
 
 	// 外部联系人角色：注册页注册的账号 user_type = 1；历史未分配部门的账号同样视为外部联系人
-	ext := IsExternalUser(&u)
-	if ext {
-		roles = append(roles, "external")
-	}
+	ext := IsExternalUser(u)
 	return map[string]interface{}{
 		"accessToken": access, "refreshToken": refresh,
 		"uid": u.UID, "username": u.Username, "nickname": u.Nickname,
 		"avatar": u.Avatar, "signature": u.Signature, "gender": u.Gender,
-		"phone": u.Phone, "title": u.Title, "deptId": u.DeptID,
+		"phone": u.Phone, "email": u.Email, "title": u.Title, "deptId": u.DeptID,
 		"userType": u.UserType, "isExternal": ext,
 		"roles": roles, "permissions": e.Permissions, "dataScope": e.DataScope,
 	}, nil
@@ -112,6 +144,29 @@ func (a *AuthService) Register(username, password, nickname string) (map[string]
 		return nil, err
 	}
 	return a.Login(username, password, "", "DESKTOP")
+}
+
+// ChangePassword 修改密码：校验原密码后写入新密码哈希
+func (a *AuthService) ChangePassword(uid, oldPassword, newPassword string) error {
+	if len(newPassword) < 6 {
+		return fmt.Errorf("新密码至少 6 位")
+	}
+	if oldPassword == newPassword {
+		return fmt.Errorf("新密码不能与原密码相同")
+	}
+	var u model.User
+	if err := a.S.DB.Where("uid = ?", uid).First(&u).Error; err != nil {
+		return fmt.Errorf("账号不存在")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(oldPassword)); err != nil {
+		return fmt.Errorf("原密码错误")
+	}
+	h, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	return a.S.DB.Model(&model.User{}).Where("uid = ?", uid).
+		Updates(map[string]interface{}{"password_hash": string(h), "updated_at": model.Now()}).Error
 }
 
 func (a *AuthService) Refresh(refreshToken string) (map[string]interface{}, error) {

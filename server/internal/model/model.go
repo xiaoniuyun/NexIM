@@ -16,6 +16,7 @@ type User struct {
 	// UserType 账号类型：0 企业内部员工 1 外部联系人（注册页注册默认外部联系人）
 	UserType     int    `gorm:"default:0" json:"userType"`
 	Phone        string `gorm:"size:32" json:"phone"`
+	Email        string `gorm:"size:128;default:''" json:"email"`
 	Title        string `gorm:"size:64" json:"title"`
 	Status       int    `gorm:"default:1" json:"status"`
 	LastLoginAt  int64  `gorm:"default:0" json:"lastLoginAt"`

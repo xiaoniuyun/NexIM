@@ -140,7 +140,10 @@ class Contact {
   final String username;
   final String nickname;
   final String avatar;
+  final String phone;
+  final String email;
   final String deptName;
+  final String orgName;
   final String title;
   final bool external;
 
@@ -149,7 +152,10 @@ class Contact {
         username = '${j['username'] ?? ''}',
         nickname = '${j['nickname'] ?? j['remark'] ?? j['uid'] ?? ''}',
         avatar = '${j['avatar'] ?? ''}',
+        phone = '${j['phone'] ?? ''}',
+        email = '${j['email'] ?? ''}',
         deptName = '${j['deptName'] ?? ''}',
+        orgName = '${j['orgName'] ?? ''}',
         title = '${j['title'] ?? ''}',
         external = j['external'] == true || (j['deptId'] as num?)?.toInt() == 0;
 }

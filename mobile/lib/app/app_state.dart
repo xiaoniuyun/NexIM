@@ -29,6 +29,7 @@ class AppState extends ChangeNotifier {
 
   String get myUid => '${user?['uid'] ?? ''}';
   String get myName => '${user?['nickname'] ?? user?['username'] ?? ''}';
+  bool get isExternal => user?['isExternal'] == true;
   bool get isLogin => user != null && Api.token.isNotEmpty;
   int get unreadTotal => convs.fold(0, (s, c) => s + c.unread);
 
@@ -86,6 +87,31 @@ class AppState extends ChangeNotifier {
       'deviceId': deviceId,
       'platform': Platform.isIOS ? 'iOS' : 'Android',
     });
+    await _applyAuth(data);
+  }
+
+  /// 验证码登录（演示环境验证码固定为 123456）
+  Future<void> loginWithCode(String account, String code) async {
+    final data = await Api.post('/auth/login/code', {
+      'account': account,
+      'code': code,
+      'deviceId': deviceId,
+      'platform': Platform.isIOS ? 'iOS' : 'Android',
+    });
+    await _applyAuth(data);
+  }
+
+  /// 自助注册：注册成功后直接登录
+  Future<void> register(String username, String password, String nickname) async {
+    final data = await Api.post('/auth/register', {
+      'username': username,
+      'password': password,
+      'nickname': nickname.isEmpty ? username : nickname,
+    });
+    await _applyAuth(data);
+  }
+
+  Future<void> _applyAuth(Map<String, dynamic> data) async {
     Api.token = '${data['accessToken'] ?? ''}';
     Api.refreshToken = '${data['refreshToken'] ?? ''}';
     user = {
@@ -96,7 +122,11 @@ class AppState extends ChangeNotifier {
       'signature': data['signature'] ?? '',
       'gender': data['gender'] ?? 0,
       'phone': data['phone'] ?? '',
+      'email': data['email'] ?? '',
       'title': data['title'] ?? '',
+      'deptId': data['deptId'] ?? 0,
+      'deptName': data['deptName'] ?? '',
+      'orgName': data['orgName'] ?? '',
       'userType': data['userType'] ?? 0,
       'isExternal': data['isExternal'] == true,
       'roles': data['roles'] ?? [],
@@ -229,6 +259,8 @@ class AppState extends ChangeNotifier {
       final list = (data is List)
           ? data.whereType<Map>().map((j) => Conv.fromJson(Map<String, dynamic>.from(j))).toList()
           : <Conv>[];
+      // 外部联系人不可见公司全员群（内部组织架构群）
+      if (isExternal) list.removeWhere((c) => c.convId == 'conv_g_company');
       list.sort((a, b) {
         if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
         return b.lastMsgAt.compareTo(a.lastMsgAt);

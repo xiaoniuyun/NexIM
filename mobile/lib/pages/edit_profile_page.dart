@@ -16,6 +16,7 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _nickname;
   late final TextEditingController _signature;
+  late final TextEditingController _email;
   int _gender = 0;
   String _avatar = '';
   bool _uploading = false;
@@ -27,6 +28,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final u = context.read<AppState>().user ?? {};
     _nickname = TextEditingController(text: '${u['nickname'] ?? ''}');
     _signature = TextEditingController(text: '${u['signature'] ?? ''}');
+    _email = TextEditingController(text: '${u['email'] ?? ''}');
     _gender = (u['gender'] as num?)?.toInt() ?? 0;
     _avatar = '${u['avatar'] ?? ''}';
   }
@@ -35,6 +37,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void dispose() {
     _nickname.dispose();
     _signature.dispose();
+    _email.dispose();
     super.dispose();
   }
 
@@ -69,11 +72,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
     setState(() => _saving = true);
     try {
+      final email = _email.text.trim();
+      if (email.isNotEmpty && !email.contains('@')) {
+        _toast('邮箱格式不正确');
+        return;
+      }
       await context.read<AppState>().updateProfile({
         'nickname': nickname,
         'signature': _signature.text.trim(),
         'gender': _gender,
         'avatar': _avatar,
+        'email': email,
       });
       if (!mounted) return;
       Navigator.pop(context);
@@ -87,6 +96,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final u = app.user ?? {};
+    final phoneText = '${u['phone'] ?? ''}';
+    final orgText = '${u['orgName'] ?? ''}'.isNotEmpty ? '${u['orgName']}' : '${u['deptName'] ?? ''}';
     return Scaffold(
       appBar: AppBar(
         title: const Text('编辑资料'),
@@ -140,7 +152,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
             maxLines: 3,
             decoration: const InputDecoration(labelText: '个性签名', hintText: '介绍一下自己吧'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
+          TextField(
+            controller: _email,
+            keyboardType: TextInputType.emailAddress,
+            maxLength: 128,
+            decoration: const InputDecoration(labelText: '邮箱', hintText: 'name@company.com'),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '手机号：${phoneText.isEmpty ? '未绑定（由管理员维护）' : phoneText} · '
+            '所在组织：${orgText.isEmpty ? '未加入组织' : orgText}',
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 6),
           Text(
             '@${app.user?['username'] ?? ''} · UID ${app.user?['uid'] ?? ''}',
             style: const TextStyle(color: Colors.grey, fontSize: 12),

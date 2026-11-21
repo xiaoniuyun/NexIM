@@ -61,6 +61,11 @@ rtc:
   sfuNodes: 1
   clusterEnabled: false
   coturnAddr: "coturn:3478"
+  # 这里保留回环地址用于单机调试；/rtc/config 会把回环主机替换成客户端
+  # 实际访问服务端的主机，因此模拟器/局域网设备拿到的地址始终可达。
+  # 跨设备或公网部署时，仍建议显式配置为可达地址（可用环境变量覆盖）：
+  #   STUN_SERVERS="stun:192.168.1.10:3478,stun:stun.example.com:3478"
+  #   RTC_TURNURL="turn:192.168.1.10:3478?transport=udp"
   stunServers: ["stun:127.0.0.1:3478"]
   turnUrl: "turn:127.0.0.1:3478?transport=udp"
   turnUsername: "nexim"
